@@ -2,16 +2,26 @@ services:
   - type: web
     name: usc-ir-portal
     env: python
+    plan: free
     buildCommand: |
+      pip install --upgrade pip
       pip install -r requirements.txt
-    startCommand: gunicorn app:server --bind 0.0.0.0:$PORT --timeout 120 --workers 1
+    startCommand: gunicorn --bind 0.0.0.0:$PORT demo_app:server
     envVars:
       - key: PYTHON_VERSION
-        value: 3.10.12
-      - key: RENDER
-        value: "true"
+        value: "3.10"
+      - key: PORT
+        generateValue: true
       - key: SECRET_KEY
-        value: "usc-ir-production-secret-2025-change-this-in-dashboard"
-      - key: GOOGLE_CLIENT_ID
-        value: "890006312213-3k7f200g3a94je1j9trfjru716v3kidc.apps.googleusercontent.com"
-    healthCheckPath: /health
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: FLASK_ENV
+        value: "production"
+      # Add these in Render Dashboard Environment tab:
+      # GOOGLE_CLIENT_SECRET (your actual secret)
+      # GOOGLE_CLIENT_ID (already in your code)
+    healthCheckPath: /
+
+# Alternative simple configuration if render.yaml doesn't work:
+# Just add these files to your repo root instead
