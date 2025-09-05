@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="f6f93d84-f206-4ef2-8de4-7f980a01f4aa" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.env" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/USCirPortalV4.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/USC-LOGO.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/banner.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/usc-styles.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/components/navbar.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/About Us.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/AdministrativeCouncil.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/AdministrativeCouncil2.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/Board of Trusties.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/GovernenceAndAdmin.xlsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/GraduationData.xlsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/HigherFaculty.xlsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/HrAppointments.xlsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/HrData.xlsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/June 30 2024.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/March 2025.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/Preface.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/ProgrammeOffering.xlsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/Teaching Load.xlsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/The President's Pen.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/ThePresidentsCabinet.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/counselling.xlsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/credits.xlsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/debt_collection.xlsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/endowment_funds.xlsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/enrolment_data.xlsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/financial_data.xlsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/gate_funding.xlsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/income_generating_units.xlsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/ojt_training_report.xlsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/outreach_activities.xlsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/requirements.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/scholarship_discount_tuition.xlsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/student_labour_report.xlsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/subsidies.xlsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/database_fix.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/database_init.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pages/access_control.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pages/factbook_landing.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pages/facts_about_usc.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pages/placeholder_pages.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pages/request_reports.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pages/student_services.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 2
+}</component>
+  <component name="ProjectId" id="32EvqcNM7rJelv3GEfzpo9AMhXP" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.database_fix.executor&quot;: &quot;Run&quot;,
+    &quot;Python.databse_init.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/savio/PycharmProjects/USCirPortalV4/pages&quot;
+  }
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\pages" />
+      <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\components" />
+      <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4" />
+      <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\assets" />
+      <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\data" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Python.database_fix">
+    <configuration name="app" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
+      <module name="USCirPortalV4" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="C:\Users\savio\PycharmProjects\USCirPortalV4\app.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="database_fix" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="USCirPortalV4" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/database_fix.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="database_init" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="USCirPortalV4" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="C:\Users\savio\PycharmProjects\USCirPortalV4\database_init.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.database_fix" />
+        <item itemvalue="Python.database_init" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-python-sdk-c69650fc56ca-d3b881c8e49f-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-233.15619.17" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="f6f93d84-f206-4ef2-8de4-7f980a01f4aa" name="Changes" comment="" />
+      <created>1756998738082</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1756998738082</updated>
+    </task>
+    <servers />
+  </component>
+</project>
