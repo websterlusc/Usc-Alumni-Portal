@@ -4,59 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f6f93d84-f206-4ef2-8de4-7f980a01f4aa" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.env" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/USCirPortalV4.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/assets/USC-LOGO.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/assets/banner.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/assets/usc-styles.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/components/navbar.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/About Us.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/AdministrativeCouncil.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/AdministrativeCouncil2.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/Board of Trusties.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/GovernenceAndAdmin.xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/GraduationData.xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/HigherFaculty.xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/HrAppointments.xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/HrData.xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/June 30 2024.pdf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/March 2025.pdf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/Preface.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/ProgrammeOffering.xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/Teaching Load.xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/The President's Pen.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/ThePresidentsCabinet.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/counselling.xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/credits.xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/debt_collection.xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/endowment_funds.xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/enrolment_data.xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/financial_data.xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/gate_funding.xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/income_generating_units.xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/ojt_training_report.xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/outreach_activities.xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/requirements.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/scholarship_discount_tuition.xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/student_labour_report.xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/subsidies.xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/database_fix.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/database_init.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pages/access_control.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pages/factbook_landing.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pages/facts_about_usc.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pages/placeholder_pages.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pages/request_reports.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pages/student_services.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+    <list default="true" id="f6f93d84-f206-4ef2-8de4-7f980a01f4aa" name="Changes" comment="First Commit">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -75,16 +24,16 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Python.database_fix.executor&quot;: &quot;Run&quot;,
-    &quot;Python.databse_init.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/savio/PycharmProjects/USCirPortalV4/pages&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Python.database_fix.executor": "Run",
+    "Python.databse_init.executor": "Run",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "master",
+    "last_opened_file_path": "C:/Users/savio/PycharmProjects/USCirPortalV4"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\pages" />
@@ -184,6 +133,19 @@
       <option name="presentableId" value="Default" />
       <updated>1756998738082</updated>
     </task>
+    <task id="LOCAL-00001" summary="First Commit">
+      <option name="closed" value="true" />
+      <created>1757079347505</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1757079347505</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="First Commit" />
+    <option name="LAST_COMMIT_MESSAGE" value="First Commit" />
   </component>
 </project>
