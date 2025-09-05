@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 USC Institutional Research Portal - Main Application
-Fixed for Render deployment with Gunicorn
+Clean main app with organized imports from separate page files
 """
 
 import os
@@ -14,10 +14,26 @@ from flask import Flask, session, request, redirect, url_for, flash
 import dash
 from dash import dcc, html, Input, Output, callback
 import dash_bootstrap_components as dbc
-from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Import components and pages
+from components.navbar import create_navbar, create_footer, USC_COLORS
+from pages.facts_about_usc import (
+    create_about_usc_page, create_vision_mission_page, create_governance_page,
+    create_usc_history_page, create_campus_info_page, create_contact_page
+)
+from pages.student_services import (
+    create_admissions_page, create_programs_page, create_calendar_page,
+    create_student_life_page, create_student_support_page
+)
+from pages.access_control import (
+    create_login_page, create_access_denied_page, create_profile_page,
+    create_request_access_page, create_login_history_page
+)
+from pages.factbook_landing import create_factbook_landing_page
+from pages.request_reports import create_request_reports_page
+from pages.placeholder_pages import (
+    create_admin_dashboard_page, create_user_management_page
+)
 
 # ============================================================================
 # CONFIGURATION
@@ -30,55 +46,6 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'usc-ir-secret-key-change-in-production-202
 # ============================================================================
 # DATABASE FUNCTIONS
 # ============================================================================
-
-def init_database():
-    """Initialize database if it doesn't exist"""
-    if not os.path.exists(DATABASE):
-        print("🔧 Creating database...")
-        conn = sqlite3.connect(DATABASE)
-        cursor = conn.cursor()
-
-        # Create basic users table
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                email TEXT UNIQUE NOT NULL,
-                password_hash TEXT NOT NULL,
-                full_name TEXT,
-                role TEXT DEFAULT 'employee',
-                access_tier INTEGER DEFAULT 2,
-                is_active BOOLEAN DEFAULT TRUE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                last_login TIMESTAMP
-            )
-        ''')
-
-        # Create sessions table
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS user_sessions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                session_token TEXT UNIQUE NOT NULL,
-                user_id INTEGER NOT NULL,
-                expires_at TIMESTAMP NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users (id)
-            )
-        ''')
-
-        # Create default admin
-        admin_password = "admin123"
-        password_hash = bcrypt.hashpw(admin_password.encode('utf-8'), bcrypt.gensalt())
-
-        cursor.execute('''
-            INSERT OR IGNORE INTO users (username, email, password_hash, full_name, role, access_tier)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', ('admin', 'admin@usc.edu.tt', password_hash, 'System Administrator', 'admin', 3))
-
-        conn.commit()
-        conn.close()
-        print("✅ Database initialized")
-
 
 def get_db_connection():
     """Get database connection"""
@@ -129,6 +96,12 @@ def create_session(user_id):
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    # Update user last login
+    cursor.execute('''
+        UPDATE users SET last_login = datetime('now') WHERE id = ?
+    ''', (user_id,))
+
+    # Create session
     cursor.execute('''
         INSERT INTO user_sessions (session_token, user_id, expires_at)
         VALUES (?, ?, ?)
@@ -140,240 +113,319 @@ def create_session(user_id):
     return session_token
 
 
-# ============================================================================
-# SAFE COMPONENT IMPORTS
-# ============================================================================
-
-def safe_import_components():
-    """Safely import components, create fallbacks if missing"""
-    global create_navbar, create_footer, USC_COLORS
-    global create_home_page, create_factbook_landing_page
-    global create_login_page, create_access_denied_page
-
-    try:
-        from components.navbar import create_navbar, create_footer, USC_COLORS
-        print("✅ Navbar components imported")
-    except ImportError as e:
-        print(f"⚠️ Navbar import failed: {e}")
-        # Fallback navbar
-        USC_COLORS = {'primary_green': '#1B5E20', 'accent_yellow': '#FDD835'}
-
-        def create_navbar(user=None):
-            return dbc.NavbarSimple(
-                brand="USC IR Portal",
-                brand_href="/",
-                color="primary",
-                dark=True,
-                children=[
-                    dbc.NavItem(dbc.NavLink("Home", href="/")),
-                    dbc.NavItem(dbc.NavLink("Login", href="/login")) if not user else
-                    dbc.NavItem(dbc.NavLink("Logout", href="/logout"))
-                ]
-            )
-
-        def create_footer():
-            return html.Footer("USC Institutional Research Portal", className="text-center p-3")
-
-    try:
-        from pages.home import create_home_page
-        print("✅ Home page imported")
-    except ImportError:
-        print("⚠️ Home page import failed, using fallback")
-
-        def create_home_page(user=None):
-            return dbc.Container([
-                html.H1("USC Institutional Research Portal", className="text-center my-4"),
-                html.P("Welcome to the USC IR Portal", className="text-center"),
-                dbc.Button("View Factbook", href="/factbook", color="primary") if user else
-                dbc.Button("Login", href="/login", color="primary")
-            ])
-
-    try:
-        from pages.factbook_landing import create_factbook_landing_page
-        print("✅ Factbook landing imported")
-    except ImportError:
-        print("⚠️ Factbook landing import failed, using fallback")
-
-        def create_factbook_landing_page(user=None):
-            return dbc.Container([
-                html.H1("Factbook", className="text-center my-4"),
-                html.P("Institutional Research Data Portal", className="text-center"),
-                html.P(f"Welcome, {user.get('full_name', 'User') if user else 'Guest'}")
-            ])
-
-    try:
-        from pages.access_control import create_login_page, create_access_denied_page
-        print("✅ Access control imported")
-    except ImportError:
-        print("⚠️ Access control import failed, using fallback")
-
-        def create_login_page():
-            return dbc.Container([
-                html.H2("Login", className="text-center my-4"),
-                dbc.Form([
-                    dbc.Row([
-                        dbc.Col([
-                            dbc.Label("Username"),
-                            dbc.Input(type="text", name="username", required=True),
-                        ], width=12),
-                    ], className="mb-3"),
-                    dbc.Row([
-                        dbc.Col([
-                            dbc.Label("Password"),
-                            dbc.Input(type="password", name="password", required=True),
-                        ], width=12),
-                    ], className="mb-3"),
-                    dbc.Button("Login", type="submit", color="primary")
-                ], action="/login", method="post")
-            ])
-
-        def create_access_denied_page():
-            return dbc.Container([
-                html.H2("Access Denied", className="text-center my-4 text-danger"),
-                html.P("You don't have permission to access this resource.", className="text-center"),
-                dbc.Button("Go Home", href="/", color="primary")
-            ])
-
-
-# ============================================================================
-# CREATE APPLICATION
-# ============================================================================
-
-# Initialize database
-init_database()
-
-# Import components safely
-safe_import_components()
-
-# Create Flask server
-server = Flask(__name__)
-server.secret_key = SECRET_KEY
-
-# Create Dash app
-app = dash.Dash(
-    __name__,
-    server=server,
-    external_stylesheets=[dbc.themes.BOOTSTRAP],
-    suppress_callback_exceptions=True,
-    title="USC Institutional Research"
-)
-
-# CRITICAL: Expose server for Gunicorn
-print("✅ Server variable created and exposed")
-
-
-# ============================================================================
-# FLASK ROUTES
-# ============================================================================
-
-@server.route('/login', methods=['POST'])
-def handle_login():
-    """Handle login form submission"""
-    username = request.form.get('username')
-    password = request.form.get('password')
-
-    if username and password:
-        user = verify_user(username, password)
-        if user:
-            session_token = create_session(user['id'])
-            session['session_token'] = session_token
-            session['user_id'] = user['id']
-            return redirect('/')
-        else:
-            flash('Invalid username or password', 'error')
-
-    return redirect('/login')
-
-
-@server.route('/logout')
-def handle_logout():
-    """Handle logout"""
-    session.clear()
-    return redirect('/')
-
-
-# ============================================================================
-# DASH LAYOUT
-# ============================================================================
-
-app.layout = html.Div([
-    dcc.Location(id='url', refresh=False),
-    html.Div(id='page-content')
-])
-
-
-# ============================================================================
-# DASH CALLBACKS
-# ============================================================================
-
-@app.callback(
-    Output('page-content', 'children'),
-    Input('url', 'pathname')
-)
-def display_page(pathname):
-    """Route pages based on URL"""
-
-    # Get current user from session
-    user = None
-    try:
-        session_token = session.get('session_token')
-        if session_token:
-            user = get_user_by_session(session_token)
-    except:
-        pass
-
-    # Create page layout with navbar and footer
-    navbar = create_navbar(user)
-    footer = create_footer()
-
-    # Route to appropriate page
-    if pathname == '/login':
-        content = create_login_page()
-    elif pathname == '/factbook':
-        if user and user.get('access_tier', 1) >= 2:
-            content = create_factbook_landing_page(user)
-        else:
-            content = create_access_denied_page()
-    elif pathname == '/admin':
-        if user and user.get('role') == 'admin':
-            content = dbc.Container([
-                html.H1("Admin Dashboard", className="my-4"),
-                html.P("Admin functionality coming soon...")
-            ])
-        else:
-            content = create_access_denied_page()
-    else:
-        # Default to home page
-        content = create_home_page(user)
-
-    # Combine layout
+def create_homepage(user=None):
+    """Create homepage content"""
     return html.Div([
-        navbar,
-        content,
-        footer
+        create_navbar(user),
+        dbc.Container([
+            dbc.Row([
+                dbc.Col([
+                    html.Div([
+                        html.H1("University of Southern Caribbean",
+                                className="display-4 mb-3",
+                                style={'color': USC_COLORS['primary_green']}),
+                        html.H2("Institutional Research Portal",
+                                className="h3 text-muted mb-4"),
+                        html.P([
+                            "Welcome to the USC Institutional Research Portal. ",
+                            "Access comprehensive data and insights about our university community, ",
+                            "academic programs, and institutional effectiveness."
+                        ], className="lead mb-4"),
+
+                        # Quick stats
+                        dbc.Row([
+                            dbc.Col([
+                                dbc.Card([
+                                    dbc.CardBody([
+                                        html.H4("3,110", className="text-primary mb-0"),
+                                        html.P("Current Students", className="small text-muted mb-0")
+                                    ])
+                                ], className="text-center")
+                            ], width=3),
+                            dbc.Col([
+                                dbc.Card([
+                                    dbc.CardBody([
+                                        html.H4("350+", className="text-primary mb-0"),
+                                        html.P("Faculty & Staff", className="small text-muted mb-0")
+                                    ])
+                                ], className="text-center")
+                            ], width=3),
+                            dbc.Col([
+                                dbc.Card([
+                                    dbc.CardBody([
+                                        html.H4("15+", className="text-primary mb-0"),
+                                        html.P("Academic Programs", className="small text-muted mb-0")
+                                    ])
+                                ], className="text-center")
+                            ], width=3),
+                            dbc.Col([
+                                dbc.Card([
+                                    dbc.CardBody([
+                                        html.H4("98", className="text-primary mb-0"),
+                                        html.P("Years of Excellence", className="small text-muted mb-0")
+                                    ])
+                                ], className="text-center")
+                            ], width=3)
+                        ], className="g-3 mb-4"),
+
+                        # Access info
+                        html.Div([
+                            html.H5("Data Access", className="mb-3"),
+                            html.P([
+                                "Access to institutional data is provided based on your role and authorization level. ",
+                                "Please log in to access the factbook and analytical tools."
+                            ], className="mb-3"),
+
+                            dbc.ButtonGroup([
+                                dbc.Button("View Factbook", href="/factbook", color="primary", size="lg")
+                                if user and user.get('access_tier', 1) >= 2
+                                else dbc.Button("Login to Access Data", href="/login", color="outline-primary",
+                                                size="lg"),
+
+                                dbc.Button("Request Access", href="/request-access", color="outline-secondary",
+                                           size="lg")
+                                if user and user.get('access_tier', 1) < 3
+                                else None
+                            ], className="d-flex flex-wrap gap-2")
+                        ])
+                    ])
+                ], width=8),
+
+                dbc.Col([
+                    dbc.Card([
+                        dbc.CardHeader([
+                            html.H5("Quick Links", className="mb-0")
+                        ]),
+                        dbc.CardBody([
+                            dbc.ListGroup([
+                                dbc.ListGroupItem([
+                                    dbc.Button("About USC", href="/about-usc", color="link", className="p-0")
+                                ], className="border-0"),
+                                dbc.ListGroupItem([
+                                    dbc.Button("Vision & Mission", href="/vision-mission-motto", color="link",
+                                               className="p-0")
+                                ], className="border-0"),
+                                dbc.ListGroupItem([
+                                    dbc.Button("Governance", href="/governance", color="link", className="p-0")
+                                ], className="border-0"),
+                                dbc.ListGroupItem([
+                                    dbc.Button("Academic Programs", href="/programs", color="link", className="p-0")
+                                ], className="border-0"),
+                                dbc.ListGroupItem([
+                                    dbc.Button("Campus Life", href="/student-life", color="link", className="p-0")
+                                ], className="border-0"),
+                                dbc.ListGroupItem([
+                                    dbc.Button("Contact Us", href="/contact", color="link", className="p-0")
+                                ], className="border-0")
+                            ], flush=True)
+                        ])
+                    ])
+                ], width=4)
+            ])
+        ], fluid=True, className="py-4"),
+
+        # Contact info footer
+        dbc.Container([
+            html.Hr(),
+            dbc.Row([
+                dbc.Col([
+                    html.Div([
+                        html.H6("Institutional Research Department", className="mb-2"),
+                        html.P([
+                            html.Strong("Email: "), html.A("ir@usc.edu.tt", href="mailto:ir@usc.edu.tt"), html.Br(),
+                            html.Strong("Phone: "), "(868) 663-9932, ext. 2150", html.Br(),
+                            html.Strong("Office: "), "Administration Building", html.Br(),
+                            html.Strong("Web Developer: "), "Liam Webster (websterl@usc.edu.tt, ext. 1014)"
+                        ])
+                    ])
+                ], width=12)
+            ], className="g-4")
+        ], fluid=True, className="px-4"),
+        create_footer()
+    ], style={'backgroundColor': '#fafafa', 'minHeight': '100vh'})
+
+
+# ============================================================================
+# MAIN APPLICATION
+# ============================================================================
+
+def create_app():
+    """Create Dash application"""
+
+    # Flask server
+    server = Flask(__name__)
+    server.secret_key = SECRET_KEY
+
+    # Dash app
+    app = dash.Dash(
+        __name__,
+        server=server,
+        external_stylesheets=[
+            dbc.themes.BOOTSTRAP,
+            "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+        ],
+        title="USC Institutional Research"
+    )
+
+    # App layout
+    app.layout = html.Div([
+        dcc.Location(id='url', refresh=False),
+        html.Div(id='page-content')
     ])
 
+    # ========================================================================
+    # FLASK ROUTES
+    # ========================================================================
+
+    @server.route('/login', methods=['POST'])
+    def handle_login():
+        """Handle login form submission"""
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        if username and password:
+            user = verify_user(username, password)
+            if user:
+                session_token = create_session(user['id'])
+                session['session_token'] = session_token
+                session['user_id'] = user['id']
+                return redirect('/')
+            else:
+                flash('Invalid username or password', 'error')
+
+        return redirect('/login')
+
+    @server.route('/logout')
+    def handle_logout():
+        """Handle logout"""
+        session.clear()
+        return redirect('/')
+
+    # ========================================================================
+    # DASH CALLBACKS
+    # ========================================================================
+
+    @app.callback(
+        Output('page-content', 'children'),
+        Input('url', 'pathname')
+    )
+    def display_page(pathname):
+        """Route pages based on URL"""
+
+        # Get current user from session
+        user = None
+        try:
+            session_token = session.get('session_token')
+            if session_token:
+                user = get_user_by_session(session_token)
+        except:
+            pass
+
+        # Route to appropriate page
+        if pathname == '/login':
+            return create_login_page()
+
+        # Facts About USC pages (public)
+        elif pathname == '/about-usc':
+            return create_about_usc_page()
+        elif pathname == '/vision-mission-motto':
+            return create_vision_mission_page()
+        elif pathname == '/governance':
+            return create_governance_page()
+        elif pathname == '/usc-history':
+            return create_usc_history_page()
+        elif pathname == '/campus-info':
+            return create_campus_info_page()
+        elif pathname == '/contact':
+            return create_contact_page()
+
+        # Student Services pages (public)
+        elif pathname == '/admissions':
+            return create_admissions_page()
+        elif pathname == '/programs':
+            return create_programs_page()
+        elif pathname == '/calendar':
+            return create_calendar_page()
+        elif pathname == '/student-life':
+            return create_student_life_page()
+        elif pathname == '/student-support':
+            return create_student_support_page()
+
+        # Factbook landing page
+        elif pathname == '/factbook':
+            return create_factbook_landing_page(user)
+
+        # Request reports page
+        elif pathname == '/request-reports':
+            return create_request_reports_page(user)
+
+        # User pages
+        elif pathname == '/profile' and user:
+            return create_profile_page(user)
+        elif pathname == '/request-access':
+            return create_request_access_page(user)
+        elif pathname == '/login-history' and user:
+            return create_login_history_page(user)
+        elif pathname == '/account-settings' and user:
+            return create_profile_page(user)
+
+        # Admin pages
+        elif pathname == '/admin' and user and user.get('is_admin'):
+            return create_admin_dashboard_page()
+        elif pathname == '/user-management' and user and user.get('is_admin'):
+            return create_user_management_page()
+
+        # Factbook data pages (to be implemented)
+        elif pathname.startswith('/factbook/'):
+            if not user:
+                return create_access_denied_page(required_tier=2)
+            elif user['access_tier'] < 2:
+                return create_access_denied_page(required_tier=2)
+            elif pathname in ['/factbook/debt-collection', '/factbook/endowment-funds',
+                              '/factbook/financial-data', '/factbook/gate-funding',
+                              '/factbook/income-units', '/factbook/scholarships',
+                              '/factbook/subsidies'] and user['access_tier'] < 3:
+                return create_access_denied_page(required_tier=3)
+            else:
+                return create_factbook_landing_page(user)
+
+        # Default to homepage
+        else:
+            return create_homepage(user)
+
+    return app
+
+
+# ============================================================================
+# CREATE APP INSTANCE AND EXPOSE SERVER
+# ============================================================================
+
+# Create the app instance
+app = create_app()
+
+# CRITICAL: Expose the Flask server for Gunicorn
+server = app.server
 
 # ============================================================================
 # RUN APPLICATION
 # ============================================================================
 
 if __name__ == '__main__':
+    print("🎓 Starting USC Institutional Research Portal...")
+
+    # Check if database exists
+    if not os.path.exists(DATABASE):
+        print("❌ Database not found! Please run database_init.py first.")
+        # Don't exit in production, try to continue
+
     # Get configuration from environment
-    debug_mode = os.getenv('DEBUG', 'False').lower() == 'true'
+    debug_mode = os.getenv('DEBUG', 'True').lower() == 'true'
     host = os.getenv('HOST', '0.0.0.0')
     port = int(os.getenv('PORT', 8050))
 
-    print(f"🚀 Starting USC IR Portal...")
-    print(f"   Debug: {debug_mode}")
-    print(f"   Host: {host}")
-    print(f"   Port: {port}")
-    print(f"   Database: {DATABASE}")
+    print("✅ Application initialized")
+    print(f"📍 Access the portal at: http://{host}:{port}")
+    print("🔑 Default admin login: admin@usc.edu.tt / admin123")
+    print("🗂️  Application now uses organized file structure")
 
-    app.run_server(
-        debug=debug_mode,
-        host=host,
-        port=port
-    )
-else:
-    print("✅ App loaded for Gunicorn")
+    app.run_server(debug=debug_mode, host=host, port=port)
