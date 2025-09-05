@@ -524,29 +524,34 @@ def create_app():
 # RUN APPLICATION
 # ============================================================================
 
+# ============================================================================
+# DEPLOYMENT SETUP
+# ============================================================================
+
+# Create app instance for deployment
+app = create_app()
+server = app.server  # Expose Flask server for Gunicorn
+
+# ============================================================================
+# RUN APPLICATION
+# ============================================================================
+
 if __name__ == '__main__':
+    import os
 
-    if __name__ == '__main__':
-        import os
+    print("🎓 Starting USC Institutional Research Portal...")
 
-        print("🎓 Starting USC Institutional Research Portal...")
+    # Skip database check for deployment
+    # if not os.path.exists(DATABASE):
+    #     print("❌ Database not found! Please run fix_database.py first.")
+    #     exit(1)
 
-        # Check if database exists (skip for demo)
-        # if not os.path.exists(DATABASE):
-        #     print("❌ Database not found! Please run fix_database.py first.")
-        #     exit(1)
+    print("✅ Application initialized")
+    print("📍 Access the portal at: http://localhost:8050")
+    print("🔑 Default admin login: ir@usc.edu.tt / admin123!USC")
+    print("🗂️  Application now uses organized file structure")
 
-        app = create_app()
+    # Get port from environment for deployment
+    port = int(os.environ.get('PORT', 8050))
 
-        # Expose server for deployment
-        server = app.server
-
-        print("✅ Application initialized")
-        print("📍 Access the portal at: http://localhost:8050")
-        print("🔑 Default admin login: ir@usc.edu.tt / admin123!USC")
-        print("🗂️  Application now uses organized file structure")
-
-        # Get port from environment for deployment
-        port = int(os.environ.get('PORT', 8050))
-
-        app.run_server(debug=False, host='0.0.0.0', port=port)
+    app.run_server(debug=False, host='0.0.0.0', port=port)
