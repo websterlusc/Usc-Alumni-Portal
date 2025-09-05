@@ -8,4 +8,3 @@ flask==2.3.3
 bcrypt==4.0.1
 python-dotenv==1.0.0
 werkzeug==2.3.6
-sqlite3
