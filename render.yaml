@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: usc-ir-portal
+    env: python
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+      python database_init.py
+    startCommand: gunicorn --bind 0.0.0.0:$PORT app:server
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: HOST
+        value: "0.0.0.0"
+      - key: DATABASE_PATH
+        value: "/opt/render/project/src/usc_ir.db"
+      - key: SESSION_TIMEOUT_HOURS
+        value: "8"
+      - key: GOOGLE_CLIENT_ID
+        value: "890006312213-3k7f200g3a94je1j9trfjru716v3kidc.apps.googleusercontent.com"
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false  # Add this as a secret in Render dashboard
+      - key: USC_DOMAIN
+        value: "usc.edu.tt"
+      - key: ADMIN_EMAIL
+        value: "ir@usc.edu.tt"
