@@ -5,8 +5,8 @@ services:
     buildCommand: |
       pip install --upgrade pip
       pip install -r requirements.txt
-      python database_init.py
-    startCommand: gunicorn --bind 0.0.0.0:$PORT app:server
+      python -c "print('Build completed successfully')"
+    startCommand: python app.py
     envVars:
       - key: SECRET_KEY
         generateValue: true
@@ -15,7 +15,7 @@ services:
       - key: HOST
         value: "0.0.0.0"
       - key: DATABASE_PATH
-        value: "/opt/render/project/src/usc_ir.db"
+        value: "./usc_ir.db"
       - key: SESSION_TIMEOUT_HOURS
         value: "8"
       - key: GOOGLE_CLIENT_ID
