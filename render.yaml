@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: usc-ir-portal
+    env: python
+    buildCommand: |
+      pip install -r requirements.txt
+    startCommand: gunicorn app:server --bind 0.0.0.0:$PORT --timeout 120 --workers 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12
+      - key: RENDER
+        value: "true"
+      - key: SECRET_KEY
+        value: "usc-ir-production-secret-2025-change-this-in-dashboard"
+      - key: GOOGLE_CLIENT_ID
+        value: "890006312213-3k7f200g3a94je1j9trfjru716v3kidc.apps.googleusercontent.com"
+    healthCheckPath: /health
