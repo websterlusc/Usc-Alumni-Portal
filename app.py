@@ -483,6 +483,14 @@ def display_page(pathname, session_data):
 
     if pathname == '/' or pathname is None:
         content = create_home_layout(user_email)
+    elif pathname == '/about-usc':
+        return create_about_usc_page()
+    elif pathname == '/vision-mission':
+        return create_vision_mission_page()
+    elif pathname == '/governance':
+        return create_governance_page()
+    elif pathname == '/contact':
+        return create_contact_page()
     elif pathname == '/alumni':
         content = create_placeholder_page("Alumni Portal", "Connect with USC alumni and access alumni services.", 1)
     else:

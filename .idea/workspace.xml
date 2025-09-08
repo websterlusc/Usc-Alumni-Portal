@@ -5,9 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f6f93d84-f206-4ef2-8de4-7f980a01f4aa" name="Changes" comment="First Commit">
+      <change afterPath="$PROJECT_DIR$/pages/about_usc_page.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pages/contact_page.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pages/governance_page.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pages/vision_mission_page.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pages/facts_about_usc.py" beforeDir="false" afterPath="$PROJECT_DIR$/pages/facts_about_usc.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -26,20 +29,20 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Python.database_fix.executor&quot;: &quot;Run&quot;,
-    &quot;Python.databse_init.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/savio/PycharmProjects/USCirPortalV4&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Python.database_fix.executor": "Run",
+    "Python.databse_init.executor": "Run",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "master",
+    "last_opened_file_path": "C:/Users/savio/PycharmProjects/USCirPortalV4/pages"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
-      <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4" />
       <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\pages" />
+      <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4" />
       <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\components" />
       <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\assets" />
       <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\data" />
@@ -311,7 +314,23 @@
       <option name="project" value="LOCAL" />
       <updated>1757336658804</updated>
     </task>
-    <option name="localTasksCounter" value="23" />
+    <task id="LOCAL-00023" summary="First Commit">
+      <option name="closed" value="true" />
+      <created>1757342215605</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1757342215605</updated>
+    </task>
+    <task id="LOCAL-00024" summary="First Commit">
+      <option name="closed" value="true" />
+      <created>1757356621178</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1757356621178</updated>
+    </task>
+    <option name="localTasksCounter" value="25" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
