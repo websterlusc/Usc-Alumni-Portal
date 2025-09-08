@@ -14,7 +14,10 @@ import secrets
 import os
 from datetime import datetime, timedelta
 import json
-
+from pages.about_usc_page import create_about_usc_page
+from pages.vision_mission_page import create_vision_mission_page
+from pages.contact_page import create_contact_page
+from pages.governance_page import create_governance_page
 # USC Brand Colors
 USC_COLORS = {
     'primary_green': '#1B5E20',
@@ -137,10 +140,10 @@ def create_modern_navbar(user_email=None):
                     style={'color': '#1B5E20', 'fontWeight': '600'}
                 )),
                 dbc.DropdownMenu([
-                    dbc.DropdownMenuItem("About USC", href="#"),
-                    dbc.DropdownMenuItem("Vision & Mission", href="#"),
-                    dbc.DropdownMenuItem("Governance", href="#"),
-                    dbc.DropdownMenuItem("Contact", href="#")
+                    dbc.DropdownMenuItem("About USC", href="about-usc"),
+                    dbc.DropdownMenuItem("Vision & Mission", href="vision-mission"),
+                    dbc.DropdownMenuItem("Governance", href="governance"),
+                    dbc.DropdownMenuItem("Contact", href="contact")
                 ],
                 label="About USC", nav=True,
                 toggle_style={'color': '#1B5E20', 'fontWeight': '600', 'border': 'none', 'background': 'transparent'}
@@ -467,6 +470,8 @@ app.layout = serve_layout
 # CALLBACKS
 # ============================================================================
 
+# REPLACE your display_page callback with this fixed version:
+
 @callback(
     Output('page-content', 'children'),
     Input('url', 'pathname'),
@@ -484,19 +489,19 @@ def display_page(pathname, session_data):
     if pathname == '/' or pathname is None:
         content = create_home_layout(user_email)
     elif pathname == '/about-usc':
-        return create_about_usc_page()
+        content = create_about_usc_page()  # CHANGED: removed 'return', made it 'content ='
     elif pathname == '/vision-mission':
-        return create_vision_mission_page()
+        content = create_vision_mission_page()  # CHANGED: removed 'return', made it 'content ='
     elif pathname == '/governance':
-        return create_governance_page()
+        content = create_governance_page()  # CHANGED: removed 'return', made it 'content ='
     elif pathname == '/contact':
-        return create_contact_page()
+        content = create_contact_page()  # CHANGED: removed 'return', made it 'content ='
     elif pathname == '/alumni':
         content = create_placeholder_page("Alumni Portal", "Connect with USC alumni and access alumni services.", 1)
     else:
         content = create_placeholder_page("Page Under Development", f"The page '{pathname}' is being developed.", 1)
 
-    return html.Div([navbar, content])
+    return html.Div([navbar, content])  # This line wraps ALL pages with navbar
 
 @callback(
     Output('user-session', 'data'),
