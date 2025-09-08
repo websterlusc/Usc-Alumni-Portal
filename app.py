@@ -39,8 +39,8 @@ from pages.placeholder_pages import (
 # CONFIGURATION
 # ============================================================================
 
-DATABASE = os.getenv('DATABASE_PATH', 'usc_ir.db')
-SECRET_KEY = os.getenv('SECRET_KEY', 'usc-ir-secret-key-change-in-production-2025')
+DATABASE = 'usc_ir.db'
+SECRET_KEY = 'usc-ir-secret-key-change-in-production-2025'
 
 
 # ============================================================================
@@ -79,7 +79,7 @@ def verify_user(username, password):
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute('SELECT * FROM users WHERE username = ? OR email = ?', (username, username))
+    cursor.execute('SELECT * FROM users WHERE username = ? AND is_active = 1', (username,))
     user = cursor.fetchone()
     conn.close()
 
@@ -90,152 +90,276 @@ def verify_user(username, password):
 
 def create_session(user_id):
     """Create user session"""
-    session_token = secrets.token_urlsafe(32)
+    token = secrets.token_urlsafe(32)
     expires_at = datetime.now() + timedelta(hours=8)
 
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Update user last login
     cursor.execute('''
-        UPDATE users SET last_login = datetime('now') WHERE id = ?
-    ''', (user_id,))
-
-    # Create session
-    cursor.execute('''
-        INSERT INTO user_sessions (session_token, user_id, expires_at)
+        INSERT INTO user_sessions (user_id, session_token, expires_at)
         VALUES (?, ?, ?)
-    ''', (session_token, user_id, expires_at))
-
+    ''', (user_id, token, expires_at))
     conn.commit()
     conn.close()
 
-    return session_token
+    return token
+
+
+def load_enrollment_stats():
+    """Load quick enrollment statistics"""
+    try:
+        df = pd.read_excel('data/enrolment_data.xlsx', sheet_name='2024-2025')
+
+        stats = {
+            'total_students': len(df),
+            'undergraduate': len(df[df['Course Level'] == 'Undergraduate']) if 'Course Level' in df.columns else 0,
+            'graduate': len(df[df['Course Level'] == 'Graduate']) if 'Course Level' in df.columns else 0,
+            'campuses': df['Campus'].nunique() if 'Campus' in df.columns else 1
+        }
+        return stats
+    except Exception as e:
+        print(f"Error loading enrollment data: {e}")
+        return {
+            'total_students': 3110,
+            'undergraduate': 2800,
+            'graduate': 310,
+            'campuses': 4
+        }
+
+
+# ============================================================================
+# HOMEPAGE COMPONENTS
+# ============================================================================
+
+def create_stats_cards():
+    """Create statistics cards"""
+    stats = load_enrollment_stats()
+
+    card_style = {
+        'border': f'2px solid {USC_COLORS["light_gray"]}',
+        'borderRadius': '10px',
+        'boxShadow': '0 4px 8px rgba(0,0,0,0.1)',
+        'transition': 'transform 0.2s',
+        'height': '100%'
+    }
+
+    return dbc.Row([
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.Div([
+                        html.I(className="fas fa-users",
+                               style={'fontSize': '2rem', 'color': USC_COLORS['secondary_green'],
+                                      'marginBottom': '1rem'}),
+                        html.H2(f"{stats['total_students']:,}", className="fw-bold mb-2",
+                                style={'color': USC_COLORS['primary_green']}),
+                        html.H6("Total Students", className="text-muted mb-0")
+                    ], className="text-center")
+                ])
+            ], style=card_style)
+        ], width=3),
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.Div([
+                        html.I(className="fas fa-graduation-cap",
+                               style={'fontSize': '2rem', 'color': USC_COLORS['secondary_green'],
+                                      'marginBottom': '1rem'}),
+                        html.H2(f"{stats['undergraduate']:,}", className="fw-bold mb-2",
+                                style={'color': USC_COLORS['primary_green']}),
+                        html.H6("Undergraduates", className="text-muted mb-0")
+                    ], className="text-center")
+                ])
+            ], style=card_style)
+        ], width=3),
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.Div([
+                        html.I(className="fas fa-user-graduate",
+                               style={'fontSize': '2rem', 'color': USC_COLORS['secondary_green'],
+                                      'marginBottom': '1rem'}),
+                        html.H2(f"{stats['graduate']:,}", className="fw-bold mb-2",
+                                style={'color': USC_COLORS['primary_green']}),
+                        html.H6("Graduate Students", className="text-muted mb-0")
+                    ], className="text-center")
+                ])
+            ], style=card_style)
+        ], width=3),
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.Div([
+                        html.I(className="fas fa-building",
+                               style={'fontSize': '2rem', 'color': USC_COLORS['secondary_green'],
+                                      'marginBottom': '1rem'}),
+                        html.H2(f"{stats['campuses']}", className="fw-bold mb-2",
+                                style={'color': USC_COLORS['primary_green']}),
+                        html.H6("Campuses", className="text-muted mb-0")
+                    ], className="text-center")
+                ])
+            ], style=card_style)
+        ], width=3),
+    ], className="mb-5 g-3")
 
 
 def create_homepage(user=None):
-    """Create homepage content"""
+    """Create homepage layout focused on IR services"""
+
+    # Hero section
+    hero_section = dbc.Card([
+        dbc.CardBody([
+            html.Div([
+                html.H1("USC Institutional Research", className="display-4 fw-bold mb-4",
+                        style={'color': USC_COLORS['primary_green']}),
+                html.P([
+                    "We provide comprehensive data analysis, research support, and evidence-based insights ",
+                    "to inform strategic decision-making across the University of the Southern Caribbean. ",
+                    "Our team transforms raw institutional data into actionable intelligence for administrators, ",
+                    "faculty, and stakeholders."
+                ], className="lead mb-4", style={'fontSize': '1.1rem', 'lineHeight': '1.6'})
+            ], className="text-center py-4")
+        ])
+    ], style={
+        'background': f'linear-gradient(135deg, {USC_COLORS["white"]}, {USC_COLORS["light_gray"]})',
+        'border': f'3px solid {USC_COLORS["primary_green"]}',
+        'borderRadius': '15px',
+        'marginBottom': '3rem'
+    })
+
+    # What we do section
+    services_section = html.Div([
+        html.H2("What We Do", className="text-center mb-5 fw-bold", style={'color': USC_COLORS['primary_green']}),
+        dbc.Row([
+            dbc.Col([
+                dbc.Card([
+                    dbc.CardBody([
+                        html.Div([
+                            html.I(className="fas fa-chart-line fa-3x mb-3",
+                                   style={'color': USC_COLORS['secondary_green']}),
+                            html.H4("Data Analytics & Reporting", className="fw-bold mb-3"),
+                            html.P(
+                                "We analyze enrollment trends, graduation rates, retention statistics, and academic performance metrics to support institutional planning and accreditation requirements.")
+                        ], className="text-center")
+                    ])
+                ])
+            ], width=4),
+            dbc.Col([
+                dbc.Card([
+                    dbc.CardBody([
+                        html.Div([
+                            html.I(className="fas fa-search fa-3x mb-3",
+                                   style={'color': USC_COLORS['secondary_green']}),
+                            html.H4("Research Support", className="fw-bold mb-3"),
+                            html.P(
+                                "We conduct institutional research studies, surveys, and assessments to evaluate program effectiveness and support evidence-based decision making.")
+                        ], className="text-center")
+                    ])
+                ])
+            ], width=4),
+            dbc.Col([
+                dbc.Card([
+                    dbc.CardBody([
+                        html.Div([
+                            html.I(className="fas fa-file-alt fa-3x mb-3",
+                                   style={'color': USC_COLORS['secondary_green']}),
+                            html.H4("Custom Reports", className="fw-bold mb-3"),
+                            html.P(
+                                "We create tailored reports and analyses for specific departments, committees, and administrative needs across the university.")
+                        ], className="text-center")
+                    ])
+                ])
+            ], width=4)
+        ], className="g-4 mb-5")
+    ])
+
+    # Quick request form section
+    request_form_section = dbc.Card([
+        dbc.CardHeader([
+            html.H3("Request a Custom Report", className="fw-bold mb-0 text-center",
+                    style={'color': USC_COLORS['primary_green']})
+        ]),
+        dbc.CardBody([
+            html.P(
+                "Need specific data analysis or a custom report? Submit your request below and our team will get back to you.",
+                className="text-center mb-4"),
+            dbc.Form([
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Label("Your Name", className="fw-bold"),
+                        dbc.Input(type="text", placeholder="Full Name", className="mb-3")
+                    ], width=6),
+                    dbc.Col([
+                        dbc.Label("Email Address", className="fw-bold"),
+                        dbc.Input(type="email", placeholder="your.email@usc.edu.tt", className="mb-3")
+                    ], width=6)
+                ]),
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Label("Department/Office", className="fw-bold"),
+                        dbc.Input(type="text", placeholder="Your Department", className="mb-3")
+                    ], width=6),
+                    dbc.Col([
+                        dbc.Label("Report Type", className="fw-bold"),
+                        dbc.Select(
+                            options=[
+                                {"label": "Enrollment Analysis", "value": "enrollment"},
+                                {"label": "Graduation Data", "value": "graduation"},
+                                {"label": "Financial Analysis", "value": "financial"},
+                                {"label": "HR Analytics", "value": "hr"},
+                                {"label": "Custom Analysis", "value": "custom"},
+                                {"label": "Other", "value": "other"}
+                            ],
+                            placeholder="Select report type",
+                            className="mb-3"
+                        )
+                    ], width=6)
+                ]),
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Label("Request Details", className="fw-bold"),
+                        dbc.Textarea(
+                            placeholder="Please describe what data you need, the purpose of the report, any specific metrics or time periods, and when you need it by...",
+                            rows=4,
+                            className="mb-3"
+                        )
+                    ])
+                ]),
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Button([
+                            html.I(className="fas fa-paper-plane me-2"),
+                            "Submit Request"
+                        ], color="success", size="lg", className="w-100")
+                    ], width={"size": 6, "offset": 3})
+                ])
+            ])
+        ])
+    ], className="mb-5")
+
     return html.Div([
         create_navbar(user),
         dbc.Container([
+            hero_section,
+            create_stats_cards(),
+            services_section,
+            request_form_section,
+
+            # Contact section
             dbc.Row([
-                dbc.Col([
-                    html.Div([
-                        html.H1("University of Southern Caribbean",
-                                className="display-4 mb-3",
-                                style={'color': USC_COLORS['primary_green']}),
-                        html.H2("Institutional Research Portal",
-                                className="h3 text-muted mb-4"),
-                        html.P([
-                            "Welcome to the USC Institutional Research Portal. ",
-                            "Access comprehensive data and insights about our university community, ",
-                            "academic programs, and institutional effectiveness."
-                        ], className="lead mb-4"),
-
-                        # Quick stats
-                        dbc.Row([
-                            dbc.Col([
-                                dbc.Card([
-                                    dbc.CardBody([
-                                        html.H4("3,110", className="text-primary mb-0"),
-                                        html.P("Current Students", className="small text-muted mb-0")
-                                    ])
-                                ], className="text-center")
-                            ], width=3),
-                            dbc.Col([
-                                dbc.Card([
-                                    dbc.CardBody([
-                                        html.H4("350+", className="text-primary mb-0"),
-                                        html.P("Faculty & Staff", className="small text-muted mb-0")
-                                    ])
-                                ], className="text-center")
-                            ], width=3),
-                            dbc.Col([
-                                dbc.Card([
-                                    dbc.CardBody([
-                                        html.H4("15+", className="text-primary mb-0"),
-                                        html.P("Academic Programs", className="small text-muted mb-0")
-                                    ])
-                                ], className="text-center")
-                            ], width=3),
-                            dbc.Col([
-                                dbc.Card([
-                                    dbc.CardBody([
-                                        html.H4("98", className="text-primary mb-0"),
-                                        html.P("Years of Excellence", className="small text-muted mb-0")
-                                    ])
-                                ], className="text-center")
-                            ], width=3)
-                        ], className="g-3 mb-4"),
-
-                        # Access info
-                        html.Div([
-                            html.H5("Data Access", className="mb-3"),
-                            html.P([
-                                "Access to institutional data is provided based on your role and authorization level. ",
-                                "Please log in to access the factbook and analytical tools."
-                            ], className="mb-3"),
-
-                            dbc.ButtonGroup([
-                                dbc.Button("View Factbook", href="/factbook", color="primary", size="lg")
-                                if user and user.get('access_tier', 1) >= 2
-                                else dbc.Button("Login to Access Data", href="/login", color="outline-primary",
-                                                size="lg"),
-
-                                dbc.Button("Request Access", href="/request-access", color="outline-secondary",
-                                           size="lg")
-                                if user and user.get('access_tier', 1) < 3
-                                else None
-                            ], className="d-flex flex-wrap gap-2")
-                        ])
-                    ])
-                ], width=8),
-
                 dbc.Col([
                     dbc.Card([
-                        dbc.CardHeader([
-                            html.H5("Quick Links", className="mb-0")
-                        ]),
+                        dbc.CardHeader(html.H4("Contact Our Team", className="mb-0 fw-bold",
+                                               style={'color': USC_COLORS['primary_green']})),
                         dbc.CardBody([
-                            dbc.ListGroup([
-                                dbc.ListGroupItem([
-                                    dbc.Button("About USC", href="/about-usc", color="link", className="p-0")
-                                ], className="border-0"),
-                                dbc.ListGroupItem([
-                                    dbc.Button("Vision & Mission", href="/vision-mission-motto", color="link",
-                                               className="p-0")
-                                ], className="border-0"),
-                                dbc.ListGroupItem([
-                                    dbc.Button("Governance", href="/governance", color="link", className="p-0")
-                                ], className="border-0"),
-                                dbc.ListGroupItem([
-                                    dbc.Button("Academic Programs", href="/programs", color="link", className="p-0")
-                                ], className="border-0"),
-                                dbc.ListGroupItem([
-                                    dbc.Button("Campus Life", href="/student-life", color="link", className="p-0")
-                                ], className="border-0"),
-                                dbc.ListGroupItem([
-                                    dbc.Button("Contact Us", href="/contact", color="link", className="p-0")
-                                ], className="border-0")
-                            ], flush=True)
-                        ])
-                    ])
-                ], width=4)
-            ])
-        ], fluid=True, className="py-4"),
-
-        # Contact info footer
-        dbc.Container([
-            html.Hr(),
-            dbc.Row([
-                dbc.Col([
-                    html.Div([
-                        html.H6("Institutional Research Department", className="mb-2"),
-                        html.P([
-                            html.Strong("Email: "), html.A("ir@usc.edu.tt", href="mailto:ir@usc.edu.tt"), html.Br(),
-                            html.Strong("Phone: "), "(868) 663-9932, ext. 2150", html.Br(),
-                            html.Strong("Office: "), "Administration Building", html.Br(),
-                            html.Strong("Web Developer: "), "Liam Webster (websterl@usc.edu.tt, ext. 1014)"
+                            html.P([
+                                html.Strong("Director: "), "Nordian C. Swaby Robinson", html.Br(),
+                                html.Strong("Email: "), html.A("ir@usc.edu.tt", href="mailto:ir@usc.edu.tt"), html.Br(),
+                                html.Strong("Phone: "), "868-645-3265 ext. 2150", html.Br(),
+                                html.Strong("Office: "), "Administration Building", html.Br(),
+                                html.Strong("Web Developer: "), "Liam Webster (websterl@usc.edu.tt, ext. 1014)"
+                            ])
                         ])
                     ])
                 ], width=12)
@@ -397,16 +521,6 @@ def create_app():
 
 
 # ============================================================================
-# CREATE APP INSTANCE AND EXPOSE SERVER
-# ============================================================================
-
-# Create the app instance
-app = create_app()
-
-# CRITICAL: Expose the Flask server for Gunicorn
-server = app.server
-
-# ============================================================================
 # RUN APPLICATION
 # ============================================================================
 
@@ -415,17 +529,14 @@ if __name__ == '__main__':
 
     # Check if database exists
     if not os.path.exists(DATABASE):
-        print("❌ Database not found! Please run database_init.py first.")
-        # Don't exit in production, try to continue
+        print("❌ Database not found! Please run fix_database.py first.")
+        exit(1)
 
-    # Get configuration from environment
-    debug_mode = os.getenv('DEBUG', 'True').lower() == 'true'
-    host = os.getenv('HOST', '0.0.0.0')
-    port = int(os.getenv('PORT', 8050))
+    app = create_app()
 
     print("✅ Application initialized")
-    print(f"📍 Access the portal at: http://{host}:{port}")
-    print("🔑 Default admin login: admin@usc.edu.tt / admin123")
+    print("📍 Access the portal at: http://localhost:8050")
+    print("🔑 Default admin login: ir@usc.edu.tt / admin123!USC")
     print("🗂️  Application now uses organized file structure")
 
-    app.run_server(debug=debug_mode, host=host, port=port)
+    app.run_server(debug=True, host='0.0.0.0', port=8050)
