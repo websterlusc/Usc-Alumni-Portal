@@ -5,13 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f6f93d84-f206-4ef2-8de4-7f980a01f4aa" name="Changes" comment="First Commit">
-      <change afterPath="$PROJECT_DIR$/auth_components.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/auth_utils.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/admin_management.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/auth_callbacks.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/auth_database.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/auth_system.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -355,7 +350,15 @@
       <option name="project" value="LOCAL" />
       <updated>1757424650555</updated>
     </task>
-    <option name="localTasksCounter" value="28" />
+    <task id="LOCAL-00028" summary="First Commit">
+      <option name="closed" value="true" />
+      <created>1757425449306</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1757425449306</updated>
+    </task>
+    <option name="localTasksCounter" value="29" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
