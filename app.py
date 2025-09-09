@@ -1,27 +1,21 @@
 """
-USC Institutional Research Portal - Fixed Login Button
-All your existing design with working authentication gd';flg'fd;
+USC Institutional Research Portal - Clean Working Version
+Your exact design with properly working authentication
 """
 
 import dash
 from dash import html, dcc, Input, Output, State, callback
 import dash_bootstrap_components as dbc
-import plotly.graph_objects as go
-import plotly.express as px
-import pandas as pd
 import sqlite3
-import secrets
 import os
-from datetime import datetime, timedelta
-import json
+from datetime import datetime
 
 # Load environment variables
 try:
     from dotenv import load_dotenv
     load_dotenv()
-    print("✅ Environment variables loaded")
 except ImportError:
-    print("⚠️ python-dotenv not installed")
+    pass
 
 # Import your existing pages
 try:
@@ -30,8 +24,7 @@ try:
     from pages.contact_page import create_contact_page
     from pages.governance_page import create_governance_page
     PAGES_AVAILABLE = True
-except ImportError as e:
-    print(f"⚠️ Page imports failed: {e}")
+except ImportError:
     PAGES_AVAILABLE = False
 
 # USC Brand Colors
@@ -57,7 +50,7 @@ app = dash.Dash(
     ],
     meta_tags=[
         {"name": "viewport", "content": "width=device-width, initial-scale=1.0"},
-        {"name": "description", "content": "USC Institutional Research Portal - Data-driven insights and analytics"}
+        {"name": "description", "content": "USC Institutional Research Portal"}
     ],
     suppress_callback_exceptions=True
 )
@@ -66,7 +59,7 @@ app.title = "USC Institutional Research Portal"
 server = app.server
 
 # ============================================================================
-# AUTHENTICATION SETUP
+# DATABASE AND AUTHENTICATION SETUP
 # ============================================================================
 
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
@@ -83,11 +76,7 @@ def init_database():
             email TEXT UNIQUE NOT NULL,
             full_name TEXT,
             role TEXT DEFAULT 'employee',
-            access_tier INTEGER DEFAULT 2,
-            google_id TEXT,
-            profile_picture TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            last_login TIMESTAMP
+            access_tier INTEGER DEFAULT 2
         )
     ''')
 
@@ -107,9 +96,8 @@ def init_database():
 
     conn.commit()
     conn.close()
-    print("✅ Database initialized with demo users")
 
-# Add OAuth routes
+# Add OAuth routes if available
 if OAUTH_READY:
     @server.route('/auth/login')
     def oauth_login():
@@ -138,11 +126,11 @@ if OAUTH_READY:
             return redirect('/?login=oauth_error')
 
 # ============================================================================
-# NAVBAR WITH WORKING AUTH DROPDOWN
+# NAVBAR WITH AUTHENTICATION
 # ============================================================================
 
 def create_auth_section(user_data=None):
-    """Create the authentication section of navbar"""
+    """Create authentication section of navbar"""
     if not user_data or not user_data.get('authenticated'):
         return dbc.NavItem(dbc.Button(
             [html.I(className="fab fa-google me-2"), "Sign In"],
@@ -174,13 +162,13 @@ def create_auth_section(user_data=None):
             dbc.DropdownMenuItem(divider=True),
             dbc.DropdownMenuItem([
                 html.I(className="fas fa-user me-2"), "Profile"
-            ], id="profile-link"),
+            ]),
             dbc.DropdownMenuItem([
                 html.I(className="fas fa-key me-2"), "Request Access"
-            ], id="access-link") if user_tier < 3 else None,
+            ]) if user_tier < 3 else None,
             dbc.DropdownMenuItem([
                 html.I(className="fas fa-cog me-2"), "Admin Panel"
-            ], id="admin-link") if user_tier >= 3 else None,
+            ]) if user_tier >= 3 else None,
             dbc.DropdownMenuItem(divider=True),
             dbc.DropdownMenuItem([
                 html.I(className="fas fa-sign-out-alt me-2"), "Sign Out"
@@ -205,12 +193,12 @@ def create_auth_section(user_data=None):
     ])
 
 def create_modern_navbar(user_data=None):
-    """Your exact navbar design with working authentication"""
+    """Your exact navbar design with authentication"""
     user_access_tier = user_data.get('access_tier', 1) if user_data else 1
 
-    # Dynamic factbook menu based on access
+    # Dynamic factbook menu
     factbook_items = []
-    if user_access_tier >= 2:  # Employee access
+    if user_access_tier >= 2:
         factbook_items = [
             dbc.DropdownMenuItem("Factbook Overview", href="/factbook"),
             dbc.DropdownMenuItem("Enrollment Data", href="/enrollment"),
@@ -219,7 +207,7 @@ def create_modern_navbar(user_data=None):
             dbc.DropdownMenuItem("HR Analytics", href="/hr-data")
         ]
 
-        if user_access_tier >= 3:  # Admin access
+        if user_access_tier >= 3:
             factbook_items.extend([
                 dbc.DropdownMenuItem(divider=True),
                 dbc.DropdownMenuItem("Financial Reports", href="/financial"),
@@ -249,11 +237,11 @@ def create_modern_navbar(user_data=None):
                 html.Div([
                     html.Div("Institutional Research", style={
                         'fontSize': '1.2rem', 'fontWeight': '700',
-                        'color': '#FDD835', 'lineHeight': '1.1'  # GOLD
+                        'color': '#FDD835', 'lineHeight': '1.1'
                     }),
                     html.Div("University of the Southern Caribbean", style={
                         'fontSize': '0.8rem', 'color': '#FFFFFF',
-                        'lineHeight': '1.1'  # WHITE
+                        'lineHeight': '1.1'
                     })
                 ])
             ], href="/"),
@@ -301,7 +289,7 @@ def create_modern_navbar(user_data=None):
     )
 
 # ============================================================================
-# ALL YOUR EXISTING COMPONENTS (unchanged)
+# YOUR EXISTING COMPONENTS (unchanged)
 # ============================================================================
 
 def create_hero_section():
@@ -327,10 +315,7 @@ def create_hero_section():
                         dbc.Button("Explore Factbook", color="warning", size="lg", className="me-3", href="/factbook"),
                         dbc.Button("Request Report", color="outline-light", size="lg", href="/request-report")
                     ])
-                ], md=8),
-                dbc.Col([
-                    # Empty column for spacing
-                ], md=4)
+                ], md=8)
             ])
         ], fluid=True, style={'position': 'relative', 'zIndex': '2'})
     ], style={
@@ -542,7 +527,7 @@ def create_modern_footer():
     ], style={'background': 'linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%)', 'color': 'white', 'padding': '60px 0 30px'})
 
 def create_home_layout(user_data=None):
-    """Your complete home page layout"""
+    """Complete home page layout"""
     return html.Div([
         create_hero_section(),
         create_stats_overview(),
@@ -553,17 +538,62 @@ def create_home_layout(user_data=None):
     ])
 
 # ============================================================================
-# SIMPLE LOGIN MODAL THAT WORKS
+# ACCESS CONTROL AND HELPER PAGES
 # ============================================================================
 
-def create_working_login_modal():
-    """Simple, working login modal"""
+def require_access(content, required_tier, user_data=None):
+    """Check access and show appropriate content"""
+    if not user_data or not user_data.get('authenticated'):
+        return create_access_denied_page("Sign In Required", f"Please sign in to access this content (Tier {required_tier} required).")
+
+    user_tier = user_data.get('access_tier', 1)
+    if user_tier < required_tier:
+        return create_access_denied_page("Access Restricted", f"This page requires Tier {required_tier} access. You have Tier {user_tier} access.")
+
+    return content
+
+def create_access_denied_page(title, message):
+    """Access denied page"""
+    return dbc.Container([
+        dbc.Row([
+            dbc.Col([
+                html.Div([
+                    html.I(className="fas fa-lock fa-4x mb-4", style={'color': USC_COLORS['primary_green']}),
+                    html.H1(title, style={'color': USC_COLORS['primary_green']}),
+                    html.P(message, className="lead mb-4"),
+                    dbc.Alert([
+                        html.I(className="fas fa-info-circle me-2"),
+                        "Contact ir@usc.edu.tt for access assistance."
+                    ], color="info"),
+                    html.Div([
+                        dbc.Button("Return Home", href="/", color="primary", className="me-3"),
+                        dbc.Button("Sign In", id="access-signin-btn", color="success")
+                    ], className="mt-4")
+                ], className="text-center")
+            ], width=12, lg=8)
+        ], justify="center")
+    ], className="py-5")
+
+def create_placeholder_page(title, description):
+    """Placeholder for development pages"""
+    return dbc.Container([
+        html.H1(title, className="display-4 fw-bold mb-4 text-center", style={'color': '#1B5E20'}),
+        dbc.Alert([
+            html.H4("Coming Soon!", className="alert-heading"),
+            html.P(description),
+            html.Hr(),
+            html.P("This feature is under development and will be available soon.")
+        ], color="info", className="text-center"),
+        dbc.Button("Return Home", href="/", color="primary", className="d-block mx-auto mt-4")
+    ], className="mt-5")
+
+def create_login_modal():
+    """Working login modal"""
     return dbc.Modal([
         dbc.ModalHeader("Sign In to USC IR Portal"),
         dbc.ModalBody([
-            html.Div(id="login-alerts-display"),
+            html.Div(id="login-alerts"),
 
-            # Google OAuth option (if available)
             html.Div([
                 dbc.Button([
                     html.I(className="fab fa-google me-2"),
@@ -574,7 +604,6 @@ def create_working_login_modal():
                 html.P("Choose a demo user:", className="text-center text-muted mb-3")
             ]),
 
-            # Demo login options
             dbc.Form([
                 dbc.Label("Demo Users", className="fw-bold mb-2"),
                 dbc.RadioItems(
@@ -591,73 +620,7 @@ def create_working_login_modal():
                 dbc.Button("Sign In", id="demo-signin-btn", color="success", className="w-100")
             ])
         ]),
-        dbc.ModalFooter([
-            dbc.Button("Cancel", id="cancel-login-btn", color="secondary"),
-            html.Small("Contact ir@usc.edu.tt for access issues", className="text-muted ms-auto")
-        ])
-    ], id="login-modal-main", is_open=False, size="md")
-
-# ============================================================================
-# ACCESS CONTROL FUNCTIONS
-# ============================================================================
-
-def require_access(content, required_tier, user_data=None):
-    """Check access and show appropriate content"""
-    if not user_data or not user_data.get('authenticated'):
-        return create_access_denied_page("Sign In Required", f"Please sign in to access this content (Tier {required_tier} required).")
-
-    user_tier = user_data.get('access_tier', 1)
-    if user_tier < required_tier:
-        return create_access_denied_page("Access Restricted", f"This page requires Tier {required_tier} access. You have Tier {user_tier} access.")
-
-    return content
-
-
-def create_access_denied_page(title, message):
-    """Complete access denied page"""
-    return dbc.Container([
-        dbc.Row([
-            dbc.Col([
-                html.Div([
-                    # Lock icon
-                    html.I(className="fas fa-lock fa-4x mb-4",
-                           style={'color': USC_COLORS['primary_green']}),
-
-                    # Title
-                    html.H1(title, style={'color': USC_COLORS['primary_green']}),
-
-                    # Message
-                    html.P(message, className="lead mb-4"),
-
-                    # Info alert
-                    dbc.Alert([
-                        html.I(className="fas fa-info-circle me-2"),
-                        "Contact ir@usc.edu.tt for access assistance..."
-                    ], color="info"),
-
-                    # Action buttons
-                    html.Div([
-                        dbc.Button("Return Home", href="/", color="primary", className="me-3"),
-                        dbc.Button("Sign In", id="access-denied-signin", color="success")
-                    ], className="mt-4")
-
-                ], className="text-center")
-            ], width=12, lg=8)
-        ], justify="center")
-    ], className="py-5")
-
-def create_placeholder_page(title, description):
-    """Simple placeholder for development pages"""
-    return dbc.Container([
-        html.H1(title, className="display-4 fw-bold mb-4 text-center", style={'color': '#1B5E20'}),
-        dbc.Alert([
-            html.H4("Coming Soon!", className="alert-heading"),
-            html.P(description),
-            html.Hr(),
-            html.P("This feature is under development and will be available soon.")
-        ], color="info", className="text-center"),
-        dbc.Button("Return Home", href="/", color="primary", className="d-block mx-auto mt-4")
-    ], className="mt-5")
+    ], id="login-modal", is_open=False, size="md")
 
 # ============================================================================
 # APPLICATION LAYOUT
@@ -665,21 +628,21 @@ def create_placeholder_page(title, description):
 
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
-    dcc.Store(id='user-session-store', storage_type='session', data={'authenticated': False}),
-    html.Div(id='page-content-main'),
-    create_working_login_modal()
+    dcc.Store(id='user-session', storage_type='session', data={'authenticated': False}),
+    html.Div(id='page-content'),
+    create_login_modal()
 ])
 
 # ============================================================================
-# FIXED CALLBACKS - NO CONFLICTS
+# CALLBACKS - CLEAN AND WORKING
 # ============================================================================
 
 @callback(
-    Output('page-content-main', 'children'),
+    Output('page-content', 'children'),
     Input('url', 'pathname'),
-    State('user-session-store', 'data')
+    State('user-session', 'data')
 )
-def display_page_main(pathname, session_data):
+def display_page(pathname, session_data):
     """Main page routing with access control"""
 
     # Get user data
@@ -771,24 +734,24 @@ def display_page_main(pathname, session_data):
 
     return html.Div([navbar, content])
 
-# SINGLE CALLBACK FOR ALL AUTHENTICATION
+# MAIN AUTHENTICATION CALLBACK
 @callback(
-    [Output('user-session-store', 'data'),
-     Output('login-modal-main', 'is_open'),
-     Output('login-alerts-display', 'children')],
+    [Output('user-session', 'data'),
+     Output('login-modal', 'is_open'),
+     Output('login-alerts', 'children')],
     [Input('main-login-btn', 'n_clicks'),
      Input('demo-signin-btn', 'n_clicks'),
      Input('google-oauth-btn', 'n_clicks'),
      Input('cancel-login-btn', 'n_clicks'),
-     Input('access-denied-signin', 'n_clicks')],
+     Input('access-signin-btn', 'n_clicks')],
     [State('demo-user-select', 'value'),
-     State('user-session-store', 'data'),
-     State('login-modal-main', 'is_open')],
+     State('user-session', 'data'),
+     State('login-modal', 'is_open')],
     prevent_initial_call=True
 )
-def handle_all_authentication(main_login, demo_signin, google_login, cancel,
-                             access_signin, selected_user, session_data, modal_open):
-    """Handle all authentication actions in one callback"""
+def handle_authentication(main_login, demo_signin, google_login, cancel, access_signin,
+                         selected_user, session_data, modal_open):
+    """Handle all authentication actions"""
     ctx = dash.callback_context
     if not ctx.triggered:
         return session_data or {'authenticated': False}, False, ""
@@ -796,7 +759,7 @@ def handle_all_authentication(main_login, demo_signin, google_login, cancel,
     button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
     # Open login modal
-    if button_id in ['main-login-btn', 'access-denied-signin']:
+    if button_id in ['main-login-btn', 'access-signin-btn']:
         return session_data or {'authenticated': False}, True, ""
 
     # Close login modal
@@ -833,24 +796,23 @@ def handle_all_authentication(main_login, demo_signin, google_login, cancel,
 
     # Google OAuth
     if button_id == 'google-oauth-btn' and google_login and OAUTH_READY:
-        # Client-side redirect will be handled separately
         return session_data or {'authenticated': False}, False, ""
 
     return session_data or {'authenticated': False}, modal_open, ""
 
-# SEPARATE CALLBACK FOR LOGOUT (only when user dropdown exists)
+# LOGOUT CALLBACK
 @callback(
-    Output('user-session-store', 'data', allow_duplicate=True),
+    Output('user-session', 'data', allow_duplicate=True),
     Input('main-logout-btn', 'n_clicks'),
     prevent_initial_call=True
 )
 def handle_logout(logout_clicks):
-    """Handle logout separately to avoid callback conflicts"""
+    """Handle logout"""
     if logout_clicks:
         return {'authenticated': False}
     return dash.no_update
 
-# Client-side callback for Google OAuth redirect
+# CLIENT-SIDE CALLBACKS
 if OAUTH_READY:
     app.clientside_callback(
         """
@@ -874,9 +836,9 @@ if __name__ == '__main__':
     init_database()
 
     print("🚀 Starting USC Institutional Research Portal...")
-    print("📊 Your complete design with working authentication!")
+    print("📊 Clean version with working authentication!")
     print("✅ Features:")
-    print("   • All your existing styling preserved")
+    print("   • Your complete existing design preserved")
     print("   • Working login button and modal")
     print("   • 3-tier access control system")
     print("   • Dynamic navbar based on user permissions")
