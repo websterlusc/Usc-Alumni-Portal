@@ -18,6 +18,7 @@ from pages.about_usc_page import create_about_usc_page
 from pages.vision_mission_page import create_vision_mission_page
 from pages.contact_page import create_contact_page
 from pages.governance_page import create_governance_page
+
 # USC Brand Colors
 USC_COLORS = {
     'primary_green': '#1B5E20',

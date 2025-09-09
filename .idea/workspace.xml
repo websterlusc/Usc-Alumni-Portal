@@ -5,6 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f6f93d84-f206-4ef2-8de4-7f980a01f4aa" name="Changes" comment="First Commit">
+      <change afterPath="$PROJECT_DIR$/pages/request_report_page.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
     </list>
@@ -32,13 +33,13 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "master",
-    "last_opened_file_path": "C:/Users/savio/PycharmProjects/USCirPortalV4"
+    "last_opened_file_path": "C:/Users/savio/PycharmProjects/USCirPortalV4/pages"
   }
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
-      <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4" />
       <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\pages" />
+      <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4" />
       <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\components" />
       <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\assets" />
       <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\data" />
@@ -374,7 +375,23 @@
       <option name="project" value="LOCAL" />
       <updated>1757427805762</updated>
     </task>
-    <option name="localTasksCounter" value="31" />
+    <task id="LOCAL-00031" summary="First Commit">
+      <option name="closed" value="true" />
+      <created>1757429483603</created>
+      <option name="number" value="00031" />
+      <option name="presentableId" value="LOCAL-00031" />
+      <option name="project" value="LOCAL" />
+      <updated>1757429483603</updated>
+    </task>
+    <task id="LOCAL-00032" summary="First Commit">
+      <option name="closed" value="true" />
+      <created>1757430999647</created>
+      <option name="number" value="00032" />
+      <option name="presentableId" value="LOCAL-00032" />
+      <option name="project" value="LOCAL" />
+      <updated>1757430999647</updated>
+    </task>
+    <option name="localTasksCounter" value="33" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
