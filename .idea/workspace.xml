@@ -5,7 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f6f93d84-f206-4ef2-8de4-7f980a01f4aa" name="Changes" comment="First Commit">
-      <change afterPath="$PROJECT_DIR$/pages/request_report_page.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/custom_styles.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/auth/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/auth/auth_routes.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/auth/google_auth.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/components/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/components/auth_components.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" afterPath="$PROJECT_DIR$/.env" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
     </list>
@@ -33,16 +39,19 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "master",
-    "last_opened_file_path": "C:/Users/savio/PycharmProjects/USCirPortalV4/pages"
+    "last_opened_file_path": "C:/Users/savio/PycharmProjects/USCirPortalV4/components"
   }
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
-      <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\pages" />
-      <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4" />
       <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\components" />
+      <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\auth" />
+      <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4" />
       <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\assets" />
-      <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\data" />
+      <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\pages" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\components" />
     </key>
   </component>
   <component name="RunManager" selected="Python.database_fix">
@@ -391,7 +400,15 @@
       <option name="project" value="LOCAL" />
       <updated>1757430999647</updated>
     </task>
-    <option name="localTasksCounter" value="33" />
+    <task id="LOCAL-00033" summary="First Commit">
+      <option name="closed" value="true" />
+      <created>1757432759904</created>
+      <option name="number" value="00033" />
+      <option name="presentableId" value="LOCAL-00033" />
+      <option name="project" value="LOCAL" />
+      <updated>1757432759904</updated>
+    </task>
+    <option name="localTasksCounter" value="34" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
