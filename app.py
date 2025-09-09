@@ -1,7 +1,6 @@
-# app.py - USC Institutional Research Portal with Authentication
 """
-USC Institutional Research Portal - Complete Application
-Integrated Google OAuth authentication with tier-based access control
+USC Institutional Research Portal - Complete Working Version
+With all requested changes: gold/white navbar text, employees stat, alumni portal & yearly reports services
 """
 
 import dash
@@ -10,19 +9,15 @@ import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
+import sqlite3
+import secrets
 import os
-from datetime import datetime
-import requests
-
-# Import authentication components
-from auth.auth_routes import register_auth_routes
-from auth.google_auth import init_database
-from components.auth_components import (
-    create_auth_status_store, create_auth_interval, create_access_request_modal,
-    create_logout_confirmation_modal, get_user_navbar_content,
-    require_auth_wrapper, register_auth_callbacks, create_session_timeout_warning
-)
-
+from datetime import datetime, timedelta
+import json
+from pages.about_usc_page import create_about_usc_page
+from pages.vision_mission_page import create_vision_mission_page
+from pages.contact_page import create_contact_page
+from pages.governance_page import create_governance_page
 # USC Brand Colors
 USC_COLORS = {
     'primary_green': '#1B5E20',
@@ -47,517 +42,484 @@ app = dash.Dash(
     meta_tags=[
         {"name": "viewport", "content": "width=device-width, initial-scale=1.0"},
         {"name": "description", "content": "USC Institutional Research Portal - Data-driven insights and analytics"}
-    ],
-    suppress_callback_exceptions=True
+    ]
 )
 
 app.title = "USC Institutional Research Portal"
 server = app.server
 
-# Register authentication routes
-register_auth_routes(server)
+# ============================================================================
+# DATABASE & SESSION MANAGEMENT
+# ============================================================================
 
-def create_navbar(auth_status=None):
-    """Create responsive navigation bar with authentication"""
+def init_database():
+    """Initialize SQLite database for users and sessions"""
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
 
-    # Get navigation items based on access tier
-    nav_items = get_navigation_items(auth_status.get('access_tier', 1) if auth_status else 1)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY,
+            email TEXT UNIQUE NOT NULL,
+            full_name TEXT,
+            role TEXT DEFAULT 'employee',
+            access_tier INTEGER DEFAULT 2,
+            google_id TEXT,
+            profile_picture TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_login TIMESTAMP
+        )
+    ''')
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS user_sessions (
+            id INTEGER PRIMARY KEY,
+            session_token TEXT UNIQUE,
+            user_id INTEGER,
+            expires_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    conn.commit()
+    conn.close()
+
+def get_user_access_tier(user_email=None):
+    """Determine user access tier - simplified for demo"""
+    if not user_email:
+        return 1  # Public access
+
+    if user_email.endswith('@usc.edu.tt'):
+        if user_email.startswith('admin') or user_email in ['nrobinson@usc.edu.tt', 'websterl@usc.edu.tt']:
+            return 3  # Financial access
+        return 2  # Factbook access
+
+    return 1  # Public access
+
+def load_sample_data():
+    """Load sample data for dashboard"""
+    return {
+        'current_students': 3110,
+        'graduates_2025': 847,
+        'employment_rate': 98,
+        'student_faculty_ratio': '15:1',
+        'last_updated': datetime.now().strftime('%B %d, %Y')
+    }
+
+# ============================================================================
+# NAVBAR - GOLD/WHITE TEXT, RIGHT ALIGNED
+# ============================================================================
+
+def create_modern_navbar(user_email=None):
+    """Navbar with gold title, white subtitle, green nav items, right aligned"""
 
     return dbc.Navbar(
         dbc.Container([
-            # Brand
+            # Brand (stays left)
             dbc.NavbarBrand([
-                html.Img(
-                    src="/assets/usc-logo.png",
-                    height="40px",
-                    className="me-2"
+                html.Img(src="/assets/usc-logo.png", height="45", className="me-3"),
+                html.Div([
+                    html.Div("Institutional Research", style={
+                        'fontSize': '1.2rem', 'fontWeight': '700',
+                        'color': '#FDD835', 'lineHeight': '1.1'  # GOLD
+                    }),
+                    html.Div("University of the Southern Caribbean", style={
+                        'fontSize': '0.8rem', 'color': '#FFFFFF',
+                        'lineHeight': '1.1'  # WHITE
+                    })
+                ])
+            ], href="/"),
+
+            # Spacer to push everything right
+            html.Div(style={'flex': '1'}),
+
+            # Right-aligned navigation
+            dbc.Nav([
+                dbc.NavItem(dbc.NavLink(
+                    "Home", href="/",
+                    style={'color': '#1B5E20', 'fontWeight': '600'}
+                )),
+                dbc.DropdownMenu([
+                    dbc.DropdownMenuItem("About USC", href="about-usc"),
+                    dbc.DropdownMenuItem("Vision & Mission", href="vision-mission"),
+                    dbc.DropdownMenuItem("Governance", href="governance"),
+                    dbc.DropdownMenuItem("Contact", href="contact")
+                ],
+                label="About USC", nav=True,
+                toggle_style={'color': '#1B5E20', 'fontWeight': '600', 'border': 'none', 'background': 'transparent'}
                 ),
-                html.Span("Institutional Research", className="fw-bold")
-            ], href="/", className="text-white"),
-
-            # Toggle button for mobile
-            dbc.NavbarToggler(id="navbar-toggler", n_clicks=0),
-
-            # Collapsible content
-            dbc.Collapse([
-                dbc.Nav([
-                    # Navigation items
-                    *[dbc.NavItem(
-                        dbc.NavLink(
-                            item["name"],
-                            href=item["url"],
-                            className="text-white-50"
-                        )
-                    ) for item in nav_items],
-
-                    # User authentication section
-                    dbc.NavItem([
-                        html.Div(
-                            id="navbar-auth-content",
-                            children=get_user_navbar_content(auth_status)
-                        )
-                    ], className="ms-auto")
-                ], className="w-100 justify-content-between")
-            ], id="navbar-collapse", is_open=False, navbar=True)
-        ], fluid=True),
-        color=USC_COLORS['primary_green'],
-        dark=True,
-        className="mb-0",
-        style={'minHeight': '60px'}
+                dbc.NavItem(dbc.NavLink(
+                    "Alumni Portal", href="/alumni",
+                    style={'color': '#1B5E20', 'fontWeight': '600'}
+                )),
+                dbc.DropdownMenu([
+                    dbc.DropdownMenuItem("Factbook Overview", href="#"),
+                    dbc.DropdownMenuItem("Enrollment Data", href="#"),
+                    dbc.DropdownMenuItem("Graduation Stats", href="#"),
+                    dbc.DropdownMenuItem("Student Employment", href="#"),
+                    dbc.DropdownMenuItem("HR Analytics", href="#")
+                ],
+                label="Factbook", nav=True,
+                toggle_style={'color': '#1B5E20', 'fontWeight': '600', 'border': 'none', 'background': 'transparent'}
+                ),
+                dbc.DropdownMenu([
+                    dbc.DropdownMenuItem("Request Report", href="#"),
+                    dbc.DropdownMenuItem("Help", href="#"),
+                    dbc.DropdownMenuItem("Contact IR", href="#")
+                ],
+                label="Services", nav=True,
+                toggle_style={'color': '#1B5E20', 'fontWeight': '600', 'border': 'none', 'background': 'transparent'}
+                ),
+                dbc.NavItem(dbc.Button(
+                    "Login", color="outline-success",
+                    size="sm", id="login-btn", className="ms-2"
+                ))
+            ])
+        ], fluid=True, style={'display': 'flex', 'alignItems': 'center'}),
+        color="white",
+        className="shadow-sm sticky-top",
+        style={'borderBottom': '3px solid #1B5E20', 'minHeight': '75px'}
     )
 
-def get_navigation_items(access_tier):
-    """Get navigation items based on user access tier"""
-    base_items = [
-        {"name": "Home", "url": "/", "tier": 1},
-        {"name": "About USC", "url": "/about", "tier": 1},
-        {"name": "Vision & Mission", "url": "/vision-mission", "tier": 1},
-        {"name": "Governance", "url": "/governance", "tier": 1}
-    ]
+# ============================================================================
+# HOME PAGE COMPONENTS
+# ============================================================================
 
-    factbook_items = [
-        {"name": "Factbook", "url": "/factbook", "tier": 2},
-        {"name": "Enrollment", "url": "/enrollment", "tier": 2},
-        {"name": "Graduation", "url": "/graduation", "tier": 2},
-        {"name": "HR Data", "url": "/hr-data", "tier": 2},
-        {"name": "Student Employment", "url": "/student-employment", "tier": 2}
-    ]
-
-    financial_items = [
-        {"name": "Financial Reports", "url": "/financial", "tier": 3},
-        {"name": "Budget Analysis", "url": "/budget", "tier": 3},
-        {"name": "Endowments", "url": "/endowments", "tier": 3}
-    ]
-
-    all_items = base_items + factbook_items + financial_items
-    return [item for item in all_items if item["tier"] <= access_tier]
-
-def create_home_page(auth_status=None):
-    """Create enhanced home page with authentication-aware content"""
-    is_authenticated = auth_status and auth_status.get('authenticated', False)
-    user = auth_status.get('user') if is_authenticated else None
-    access_tier = auth_status.get('access_tier', 1) if auth_status else 1
-
-    # Welcome message based on authentication status
-    if is_authenticated and user:
-        welcome_msg = f"Welcome back, {user.get('full_name', 'User').split()[0]}!"
-        subtitle = "Access your institutional research dashboard below."
-    else:
-        welcome_msg = "Welcome to USC Institutional Research"
-        subtitle = "Data-driven insights for informed decision making. Sign in to access detailed analytics."
-
-    # Feature cards based on access tier
-    feature_cards = []
-
-    # Public features
-    public_features = [
-        {
-            "title": "About USC",
-            "description": "Learn about our history, mission, and organizational structure.",
-            "icon": "fas fa-university",
-            "link": "/about",
-            "color": "primary"
-        },
-        {
-            "title": "Vision & Mission",
-            "description": "Discover our institutional vision, mission, and core values.",
-            "icon": "fas fa-eye",
-            "link": "/vision-mission",
-            "color": "success"
-        },
-        {
-            "title": "Governance",
-            "description": "Explore our governance structure and organizational chart.",
-            "icon": "fas fa-sitemap",
-            "link": "/governance",
-            "color": "info"
-        }
-    ]
-
-    # Employee features (Tier 2+)
-    employee_features = [
-        {
-            "title": "Interactive Factbook",
-            "description": "Comprehensive institutional data with interactive visualizations.",
-            "icon": "fas fa-chart-bar",
-            "link": "/factbook",
-            "color": "primary"
-        },
-        {
-            "title": "Enrollment Analytics",
-            "description": "Student enrollment trends and demographic analysis.",
-            "icon": "fas fa-users",
-            "link": "/enrollment",
-            "color": "success"
-        },
-        {
-            "title": "Graduation Data",
-            "description": "Graduation rates and outcomes tracking.",
-            "icon": "fas fa-graduation-cap",
-            "link": "/graduation",
-            "color": "warning"
-        },
-        {
-            "title": "HR Analytics",
-            "description": "Human resources data and faculty information.",
-            "icon": "fas fa-user-tie",
-            "link": "/hr-data",
-            "color": "info"
-        }
-    ]
-
-    # Financial features (Tier 3)
-    financial_features = [
-        {
-            "title": "Financial Reports",
-            "description": "Comprehensive financial analysis and reporting.",
-            "icon": "fas fa-dollar-sign",
-            "link": "/financial",
-            "color": "warning"
-        },
-        {
-            "title": "Budget Analysis",
-            "description": "Budget tracking and variance analysis.",
-            "icon": "fas fa-calculator",
-            "link": "/budget",
-            "color": "danger"
-        },
-        {
-            "title": "Endowment Funds",
-            "description": "Endowment fund performance and allocation.",
-            "icon": "fas fa-piggy-bank",
-            "link": "/endowments",
-            "color": "success"
-        }
-    ]
-
-    # Add features based on access tier
-    feature_cards.extend(public_features)
-    if access_tier >= 2:
-        feature_cards.extend(employee_features)
-    if access_tier >= 3:
-        feature_cards.extend(financial_features)
-
-    # Quick stats (dummy data for demo)
-    stats_cards = [
-        {"title": "Total Students", "value": "3,110", "icon": "fas fa-users", "color": "primary"},
-        {"title": "Graduates (2025)", "value": "612", "icon": "fas fa-graduation-cap", "color": "success"},
-        {"title": "Faculty Members", "value": "156", "icon": "fas fa-chalkboard-teacher", "color": "info"},
-        {"title": "Programs Offered", "value": "45", "icon": "fas fa-book-open", "color": "warning"}
-    ]
-
-    return html.Div([
-        # Hero section
+def create_hero_section():
+    """Modern hero section with banner as translucent background"""
+    return html.Section([
         dbc.Container([
             dbc.Row([
                 dbc.Col([
-                    html.H1(welcome_msg, className="display-4 fw-bold mb-3",
-                           style={'color': USC_COLORS['primary_green']}),
-                    html.P(subtitle, className="lead mb-4",
-                           style={'color': USC_COLORS['dark_gray']}),
-
-                    # Call-to-action based on auth status
+                    html.H1([
+                        "Institutional Research & ",
+                        html.Span("Analytics", style={
+                            'background': 'linear-gradient(45deg, #FDD835, #FFEB3B)',
+                            'WebkitBackgroundClip': 'text',
+                            'WebkitTextFillColor': 'transparent'
+                        })
+                    ], style={'fontSize': '3.5rem', 'fontWeight': '700', 'marginBottom': '1.5rem'}),
+                    html.P(
+                        "Empowering data-driven decisions through comprehensive institutional analytics, "
+                        "enrollment insights, and strategic planning support for USC's continued excellence.",
+                        style={'fontSize': '1.25rem', 'opacity': '0.9', 'marginBottom': '2rem'}
+                    ),
                     html.Div([
-                        dbc.Button(
-                            [html.I(className="fab fa-google me-2"), "Sign in with Google"],
-                            id="home-login-btn",
-                            color="success",
-                            size="lg",
-                            className="me-3"
-                        ) if not is_authenticated else html.Div(),
-
-                        dbc.Button(
-                            [html.I(className="fas fa-chart-line me-2"), "View Factbook"],
-                            href="/factbook",
-                            color="outline-primary",
-                            size="lg"
-                        ) if access_tier >= 2 else dbc.Button(
-                            [html.I(className="fas fa-info-circle me-2"), "Learn More"],
-                            href="/about",
-                            color="outline-primary",
-                            size="lg"
-                        )
+                        dbc.Button("Explore Factbook", color="warning", size="lg", className="me-3"),
+                        dbc.Button("Request Report", color="outline-light", size="lg")
                     ])
-                ], width=12, lg=8)
-            ], justify="center", className="text-center py-5")
-        ], fluid=True, className="bg-light"),
-
-        # Quick stats section
-        dbc.Container([
-            html.H2("Quick Stats", className="text-center mb-4",
-                   style={'color': USC_COLORS['primary_green']}),
-            dbc.Row([
+                ], md=8),
                 dbc.Col([
-                    dbc.Card([
-                        dbc.CardBody([
-                            html.Div([
-                                html.I(className=f"{stat['icon']} fa-2x mb-3",
-                                      style={'color': f"var(--bs-{stat['color']})"})
-                            ], className="text-center"),
-                            html.H3(stat["value"], className="text-center fw-bold"),
-                            html.P(stat["title"], className="text-center text-muted mb-0")
-                        ])
-                    ], className="h-100 shadow-sm border-0")
-                ], width=6, lg=3) for stat in stats_cards
-            ], className="g-4")
-        ], className="py-5"),
-
-        # Features section
-        dbc.Container([
-            html.H2("Available Features", className="text-center mb-4",
-                   style={'color': USC_COLORS['primary_green']}),
-            html.P("Explore the tools and resources available based on your access level.",
-                   className="text-center text-muted mb-5"),
-
-            dbc.Row([
-                dbc.Col([
-                    dbc.Card([
-                        dbc.CardBody([
-                            html.Div([
-                                html.I(className=f"{card['icon']} fa-2x mb-3",
-                                      style={'color': f"var(--bs-{card['color']})"})
-                            ], className="text-center"),
-                            html.H5(card["title"], className="card-title text-center"),
-                            html.P(card["description"], className="card-text text-center text-muted"),
-                            html.Div([
-                                dbc.Button(
-                                    "Access",
-                                    href=card["link"],
-                                    color=card["color"],
-                                    size="sm",
-                                    className="w-100"
-                                )
-                            ], className="text-center")
-                        ])
-                    ], className="h-100 shadow-sm border-0 hover-card")
-                ], width=12, md=6, lg=4, className="mb-4") for card in feature_cards
+                    # Empty column for spacing
+                ], md=4)
             ])
-        ], className="py-5"),
+        ], fluid=True, style={'position': 'relative', 'zIndex': '2'})
+    ], style={
+        'background': f'''
+            linear-gradient(135deg, rgba(27, 94, 32, 0.85) 0%, rgba(46, 125, 50, 0.85) 50%, rgba(76, 175, 80, 0.85) 100%),
+            url('/assets/banner.png')
+        ''',
+        'backgroundSize': 'cover',
+        'backgroundPosition': 'center',
+        'backgroundRepeat': 'no-repeat',
+        'color': 'white',
+        'padding': '100px 0',
+        'position': 'relative'
+    })
 
-        # Access tier information (if authenticated)
-        html.Div([
-            dbc.Container([
-                dbc.Alert([
-                    html.H5([
-                        html.I(className="fas fa-info-circle me-2"),
-                        "Your Access Level"
-                    ]),
+def create_stats_overview():
+    """At a Glance - Updated with EMPLOYEES instead of Years of Data"""
+    stats = [
+        {'title': '3,110', 'subtitle': 'Total Enrollment', 'icon': 'fas fa-users', 'color': '#1B5E20'},
+        {'title': '5', 'subtitle': 'Academic Divisions', 'icon': 'fas fa-building', 'color': '#4CAF50'},
+        {'title': '250+', 'subtitle': 'Employees', 'icon': 'fas fa-user-tie', 'color': '#FDD835'},  # CHANGED
+        {'title': '100%', 'subtitle': 'Data Transparency', 'icon': 'fas fa-eye', 'color': '#28A745'}
+    ]
+
+    cards = []
+    for stat in stats:
+        cards.append(
+            dbc.Col([
+                dbc.Card([
+                    dbc.CardBody([
+                        html.Div([
+                            html.I(className=stat['icon'], style={
+                                'fontSize': '2.5rem', 'color': stat['color'], 'marginRight': '20px'
+                            }),
+                            html.Div([
+                                html.H3(stat['title'], style={'fontSize': '2.2rem', 'fontWeight': '700', 'color': '#1B5E20', 'margin': '0'}),
+                                html.P(stat['subtitle'], style={'color': '#666', 'margin': '5px 0'})
+                            ])
+                        ], style={'display': 'flex', 'alignItems': 'center'})
+                    ])
+                ], style={'boxShadow': '0 4px 15px rgba(0,0,0,0.1)', 'border': 'none'})
+            ], md=3, className="mb-4")
+        )
+
+    return html.Section([
+        dbc.Container([
+            html.H2("At a Glance", style={
+                'color': '#1B5E20', 'fontWeight': '700', 'fontSize': '2.5rem',
+                'textAlign': 'center', 'marginBottom': '3rem'
+            }),
+            dbc.Row(cards)
+        ])
+    ], style={'padding': '80px 0', 'background': '#F8F9FA'})
+
+def create_feature_showcase():
+    """Our Services - Updated with ALUMNI PORTAL and YEARLY REPORTS"""
+    features = [
+        {'title': 'Interactive Factbook', 'desc': 'Comprehensive institutional data with interactive visualizations.', 'icon': 'fas fa-chart-line'},
+        {'title': 'Alumni Portal', 'desc': 'Connect with USC alumni and access alumni services and networks.', 'icon': 'fas fa-graduation-cap'},  # CHANGED
+        {'title': 'Yearly Reports', 'desc': 'Annual institutional reports and comprehensive data analysis.', 'icon': 'fas fa-calendar-alt'},  # CHANGED
+        {'title': 'Custom Reports', 'desc': 'Request tailored analytical reports for your specific needs.', 'icon': 'fas fa-file-alt'}
+    ]
+
+    cards = []
+    for feature in features:
+        cards.append(
+            dbc.Col([
+                dbc.Card([
+                    dbc.CardBody([
+                        html.I(className=feature['icon'], style={'fontSize': '2.2rem', 'color': '#1B5E20', 'marginBottom': '15px'}),
+                        html.H4(feature['title'], style={'color': '#1B5E20', 'fontWeight': '600'}),
+                        html.P(feature['desc'], style={'color': '#666', 'marginBottom': '20px'}),
+                        dbc.Button("Explore", color="outline-primary", size="sm")
+                    ])
+                ], style={'boxShadow': '0 4px 15px rgba(0,0,0,0.1)', 'border': 'none', 'height': '100%'})
+            ], md=3, className="mb-4")
+        )
+
+    return html.Section([
+        dbc.Container([
+            html.H2("Our Services", style={
+                'color': '#1B5E20', 'fontWeight': '700', 'fontSize': '2.5rem',
+                'textAlign': 'center', 'marginBottom': '3rem'
+            }),
+            dbc.Row(cards)
+        ])
+    ], style={'padding': '80px 0'})
+
+# ============================================================================
+# IR DIRECTOR'S MESSAGE
+# ============================================================================
+
+def create_director_message():
+    """IR Director's message section with full text"""
+    return html.Section([
+        dbc.Container([
+            dbc.Card([
+                dbc.CardBody([
+                    dbc.Row([
+                        dbc.Col([
+                            html.Img(
+                                src="/assets/DirectorIR.jpg",
+                                style={
+                                    'width': '120px', 'height': '120px', 'objectFit': 'cover',
+                                    'border': '4px solid #1B5E20', 'boxShadow': '0 4px 15px rgba(0,0,0,0.2)'
+                                }
+                            )
+                        ], md=3, className="text-center"),
+                        dbc.Col([
+                            html.H3("Director's Message", style={'color': '#1B5E20', 'fontWeight': '600', 'marginBottom': '20px'}),
+                            html.P([
+                                "The Department of Institutional Research (IR) takes great pride in presenting the third instalment of the ",
+                                "University of the Southern Caribbean Factbook for 2024. This University Factbook is a comprehensive report ",
+                                "providing a three-year data trend for key performance metrics related to graduation, finances, enrolment, ",
+                                "and spiritual development at the University of the Southern Caribbean."
+                            ], style={'color': '#555', 'lineHeight': '1.7', 'marginBottom': '15px'}),
+                            html.P("The report is organized to include information from the Office of the President and the five divisions of the university:",
+                                   style={'color': '#555', 'lineHeight': '1.7', 'marginBottom': '10px'}),
+                            html.Ul([
+                                html.Li("The Division of the Provost"),
+                                html.Li("The Division of Administration, Advancement and Planning"),
+                                html.Li("The Division of Financial Administration"),
+                                html.Li("The Division of Student Services and Enrolment Management"),
+                                html.Li("The Division of Spiritual Development")
+                            ], style={'color': '#555', 'marginBottom': '15px'}),
+                            html.P([
+                                "Within each division, the factbook covers a range of topics such as program offerings, teaching loads, ",
+                                "graduation data, undergraduate and graduate student enrolment, faculty and staff demographics, financial ",
+                                "statements and spiritual development activities. This data-rich report is designed to provide university ",
+                                "leadership, faculty, staff, and stakeholders with detailed insights into the institution's performance, ",
+                                "trends, and areas for potential improvement or strategic focus."
+                            ], style={'color': '#555', 'lineHeight': '1.7', 'marginBottom': '15px'}),
+                            html.P([
+                                "By consolidating three years – 2021-2022, 2022-2023 and 2023-2024 of key metrics into a single reference, ",
+                                "this factbook aims to facilitate data-driven decision-making and support the University of the Southern ",
+                                "Caribbean's ongoing commitment to excellence. In addition, this factbook presents a preview of the University ",
+                                "Data for the 1st Semester of 2024-2025. This preview of this academic school year, gives an insight of the ",
+                                "current standing of the university as it relates to employee data and student enrolment."
+                            ], style={'color': '#555', 'lineHeight': '1.7', 'marginBottom': '20px'}),
+                            html.Div([
+                                html.P("Yours In Service", style={'color': '#1B5E20', 'fontWeight': '600', 'fontStyle': 'italic', 'marginBottom': '5px'}),
+                                html.P("Nordian C. Swaby Robinson", style={'color': '#1B5E20', 'fontWeight': '600', 'marginBottom': '1px'}),
+                                html.P("Director, Institutional Research", style={'color': '#666', 'fontSize': '0.9rem', 'marginBottom': '5px'}),
+                                html.P("Publication: November 2024", style={'color': '#666', 'fontSize': '0.8rem', 'fontStyle': 'italic'})
+                            ], style={'marginTop': '25px', 'paddingTop': '20px', 'borderTop': '2px solid #e9ecef'})
+                        ], md=9)
+                    ])
+                ])
+            ], style={'boxShadow': '0 8px 30px rgba(0,0,0,0.1)', 'border': 'none'})
+        ])
+    ], style={'padding': '80px 0', 'background': 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)'})
+
+def create_quick_links():
+    """Quick access links - Fixed Aerion URL"""
+    links = [
+        {'title': 'USC Main Website', 'url': 'https://www.usc.edu.tt', 'icon': 'fas fa-globe'},
+        {'title': 'USC eLearn', 'url': 'https://elearn.usc.edu.tt', 'icon': 'fas fa-laptop'},
+        {'title': 'Aerion Portal', 'url': 'https://aerion.usc.edu.tt', 'icon': 'fas fa-door-open'},  # FIXED URL
+        {'title': 'Email Support', 'url': 'mailto:ir@usc.edu.tt', 'icon': 'fas fa-envelope'}
+    ]
+
+    link_items = []
+    for link in links:
+        link_items.append(
+            dbc.Col([
+                html.A([
+                    html.I(className=link['icon'], style={'fontSize': '1.5rem', 'marginRight': '15px'}),
+                    html.Span(link['title'])
+                ], href=link['url'], target="_blank", style={
+                    'display': 'flex', 'alignItems': 'center', 'padding': '20px',
+                    'background': '#f8f9fa', 'textDecoration': 'none', 'color': '#495057'
+                })
+            ], sm=6, md=3, className="mb-3")
+        )
+
+    return html.Section([
+        dbc.Container([
+            html.H3("Quick Links", className="text-center mb-4"),
+            dbc.Row(link_items)
+        ])
+    ], style={'padding': '60px 0'})
+
+def create_modern_footer():
+    """Modern footer"""
+    return html.Footer([
+        dbc.Container([
+            dbc.Row([
+                dbc.Col([
+                    html.H5("Institutional Research", style={'color': '#FDD835', 'fontWeight': '600'}),
+                    html.P("Supporting USC's mission through comprehensive data analysis and strategic insights.",
+                           style={'opacity': '0.9'})
+                ], md=4),
+                dbc.Col([
+                    html.H6("Contact Information", style={'color': '#FDD835', 'fontWeight': '600'}),
                     html.P([
-                        f"You currently have ",
-                        html.Strong(f"Tier {access_tier}"),
-                        " access. ",
-                        "Contact the Institutional Research office to request higher access levels." if access_tier < 3 else "You have full access to all features."
-                    ], className="mb-0")
-                ], color="info", className="border-0")
-            ])
-        ], className="py-3") if is_authenticated else html.Div()
-    ])
+                        html.Strong("Director: "), "Nordian C. Swaby Robinson", html.Br(),
+                        html.Strong("Email: "), html.A("ir@usc.edu.tt", href="mailto:ir@usc.edu.tt", style={'color': '#FDD835'}), html.Br(),
+                        html.Strong("Phone: "), "868-645-3265 ext. 2150"
+                    ], style={'opacity': '0.9'})
+                ], md=4),
+                dbc.Col([
+                    html.H6("Development Team", style={'color': '#FDD835', 'fontWeight': '600'}),
+                    html.P([
+                        html.Strong("Web Developer: "), "Liam Webster", html.Br(),
+                        html.Strong("Email: "), html.A("websterl@usc.edu.tt", href="mailto:websterl@usc.edu.tt", style={'color': '#FDD835'})
+                    ], style={'opacity': '0.9'})
+                ], md=4)
+            ]),
+            html.Hr(style={'borderColor': 'rgba(255,255,255,0.2)', 'margin': '40px 0 20px'}),
+            html.P("© 2025 University of the Southern Caribbean - Institutional Research Department",
+                   className="text-center", style={'opacity': '0.8'})
+        ])
+    ], style={'background': 'linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%)', 'color': 'white', 'padding': '60px 0 30px'})
 
-def create_page_layout(content, auth_status=None, required_tier=1):
-    """Create page layout with authentication wrapper"""
-    navbar = create_navbar(auth_status)
-
-    # Check access requirements
-    if required_tier > 1:
-        content = require_auth_wrapper(content, required_tier, auth_status)
-
+def create_home_layout(user_email=None):
+    """Complete home page layout"""
     return html.Div([
-        navbar,
-        content,
-
-        # Authentication modals and components
-        create_access_request_modal(),
-        create_logout_confirmation_modal(),
-        create_session_timeout_warning(),
-        html.Div(id="access-request-feedback"),
-
-        # Hidden components for callbacks
-        create_auth_status_store(),
-        create_auth_interval()
+        create_hero_section(),
+        create_stats_overview(),
+        create_feature_showcase(),
+        create_director_message(),
+        create_quick_links(),
+        create_modern_footer()
     ])
 
-# Application layout
-app.layout = html.Div([
-    dcc.Location(id='url', refresh=False),
-    html.Div(id='page-content')
-])
+# ============================================================================
+# PLACEHOLDER PAGES
+# ============================================================================
 
-# Main page routing callback
+def create_placeholder_page(title, description, tier_required=1):
+    """Create placeholder page"""
+    return dbc.Container([
+        html.H1(title, className="display-4 fw-bold mb-4 text-center", style={'color': '#1B5E20'}),
+        dbc.Alert([
+            html.H4("Coming Soon!", className="alert-heading"),
+            html.P(description)
+        ], color="info", className="text-center"),
+        dbc.Button("Return Home", href="/", color="primary", className="d-block mx-auto mt-4")
+    ], className="mt-5")
+
+# ============================================================================
+# MAIN APPLICATION LAYOUT
+# ============================================================================
+
+def serve_layout():
+    """Main application layout"""
+    return html.Div([
+        dcc.Location(id='url', refresh=False),
+        dcc.Store(id='user-session', storage_type='session'),
+        html.Div(id='page-content')
+    ])
+
+app.layout = serve_layout
+
+# ============================================================================
+# CALLBACKS
+# ============================================================================
+
+# REPLACE your display_page callback with this fixed version:
+
 @callback(
     Output('page-content', 'children'),
     Input('url', 'pathname'),
-    State('auth-status-store', 'data')
+    State('user-session', 'data')
 )
-def display_page(pathname, auth_status):
-    """Route pages based on URL and authentication status"""
+def display_page(pathname, session_data):
+    """Main routing callback"""
 
-    # Handle query parameters for login/logout feedback
-    if pathname == '/' and hasattr(display_page, 'search'):
-        # This would handle ?login=success or ?error=... parameters
-        pass
+    user_email = session_data.get('user_email') if session_data else None
+    if not user_email:
+        user_email = "demo@usc.edu.tt"  # Demo for now
 
-    # Route to appropriate page
-    if pathname == '/':
-        content = create_home_page(auth_status)
-        return create_page_layout(content, auth_status)
+    navbar = create_modern_navbar(user_email)
 
-    elif pathname == '/about':
-        content = create_placeholder_page("About USC", "Learn about our rich history and academic excellence.", 1)
-        return create_page_layout(content, auth_status)
-
+    if pathname == '/' or pathname is None:
+        content = create_home_layout(user_email)
+    elif pathname == '/about-usc':
+        content = create_about_usc_page()  # CHANGED: removed 'return', made it 'content ='
     elif pathname == '/vision-mission':
-        content = create_placeholder_page("Vision & Mission", "Our institutional vision, mission, and core values.", 1)
-        return create_page_layout(content, auth_status)
-
+        content = create_vision_mission_page()  # CHANGED: removed 'return', made it 'content ='
     elif pathname == '/governance':
-        content = create_placeholder_page("Governance", "Organizational structure and leadership.", 1)
-        return create_page_layout(content, auth_status)
-
-    # Factbook pages (Tier 2)
-    elif pathname == '/factbook':
-        content = create_placeholder_page("Interactive Factbook", "Comprehensive institutional data and analytics.", 2)
-        return create_page_layout(content, auth_status, required_tier=2)
-
-    elif pathname == '/enrollment':
-        content = create_placeholder_page("Enrollment Data", "Student enrollment trends and analysis.", 2)
-        return create_page_layout(content, auth_status, required_tier=2)
-
-    elif pathname == '/graduation':
-        content = create_placeholder_page("Graduation Data", "Graduation rates and outcomes.", 2)
-        return create_page_layout(content, auth_status, required_tier=2)
-
-    elif pathname == '/hr-data':
-        content = create_placeholder_page("HR Analytics", "Human resources and faculty data.", 2)
-        return create_page_layout(content, auth_status, required_tier=2)
-
-    elif pathname == '/student-employment':
-        content = create_placeholder_page("Student Employment", "Student employment analytics and trends.", 2)
-        return create_page_layout(content, auth_status, required_tier=2)
-
-    # Financial pages (Tier 3)
-    elif pathname == '/financial':
-        content = create_placeholder_page("Financial Reports", "Comprehensive financial analysis.", 3)
-        return create_page_layout(content, auth_status, required_tier=3)
-
-    elif pathname == '/budget':
-        content = create_placeholder_page("Budget Analysis", "Budget tracking and variance analysis.", 3)
-        return create_page_layout(content, auth_status, required_tier=3)
-
-    elif pathname == '/endowments':
-        content = create_placeholder_page("Endowment Funds", "Endowment performance and allocation.", 3)
-        return create_page_layout(content, auth_status, required_tier=3)
-
-    # User pages
-    elif pathname == '/profile':
-        content = create_placeholder_page("User Profile", "Manage your account and access requests.", 2)
-        return create_page_layout(content, auth_status, required_tier=1)
-
-    elif pathname == '/request-access':
-        content = create_placeholder_page("Request Access", "Submit access level upgrade requests.", 2)
-        return create_page_layout(content, auth_status, required_tier=1)
-
-    elif pathname == '/admin':
-        content = create_placeholder_page("Admin Dashboard", "Manage users and access requests.", 3)
-        return create_page_layout(content, auth_status, required_tier=3)
-
+        content = create_governance_page()  # CHANGED: removed 'return', made it 'content ='
+    elif pathname == '/contact':
+        content = create_contact_page()  # CHANGED: removed 'return', made it 'content ='
+    elif pathname == '/alumni':
+        content = create_placeholder_page("Alumni Portal", "Connect with USC alumni and access alumni services.", 1)
     else:
-        content = create_placeholder_page("Page Not Found", "The requested page could not be found.", 1)
-        return create_page_layout(content, auth_status)
+        content = create_placeholder_page("Page Under Development", f"The page '{pathname}' is being developed.", 1)
 
-def create_placeholder_page(title, description, tier):
-    """Create placeholder page content"""
-    tier_badges = {
-        1: {"text": "Public", "color": "secondary"},
-        2: {"text": "Employee Access", "color": "success"},
-        3: {"text": "Financial Access", "color": "warning"}
-    }
+    return html.Div([navbar, content])  # This line wraps ALL pages with navbar
 
-    badge_info = tier_badges.get(tier, tier_badges[1])
-
-    return dbc.Container([
-        dbc.Row([
-            dbc.Col([
-                html.Div([
-                    dbc.Badge(badge_info["text"], color=badge_info["color"], className="mb-3"),
-                    html.H1(title, className="mb-3", style={'color': USC_COLORS['primary_green']}),
-                    html.P(description, className="lead mb-4"),
-                    html.Hr(),
-                    html.P("This page is currently under development and will be available soon.",
-                           className="text-muted")
-                ])
-            ], width=12, lg=8)
-        ], justify="center")
-    ], className="py-5")
-
-# Register authentication callbacks
-register_auth_callbacks(app)
-
-# Additional callbacks for mobile navigation
 @callback(
-    Output('navbar-collapse', 'is_open'),
-    Input('navbar-toggler', 'n_clicks'),
-    State('navbar-collapse', 'is_open'),
+    Output('user-session', 'data'),
+    Input('login-btn', 'n_clicks'),
     prevent_initial_call=True
 )
-def toggle_navbar_collapse(n_clicks, is_open):
-    """Toggle mobile navigation menu"""
+def handle_login(n_clicks):
+    """Handle login"""
     if n_clicks:
-        return not is_open
-    return is_open
+        return {'user_email': 'demo@usc.edu.tt', 'user_name': 'Demo User'}
+    return {}
 
-# Callback to update navbar auth content based on auth status
-@callback(
-    Output('navbar-auth-content', 'children'),
-    Input('auth-status-store', 'data'),
-    prevent_initial_call=False
-)
-def update_navbar_auth_content(auth_status):
-    """Update navbar authentication content"""
-    return get_user_navbar_content(auth_status)
-
-# Client-side callback for home page login button
-app.clientside_callback(
-    """
-    function(n_clicks) {
-        if (n_clicks > 0) {
-            window.location.href = '/auth/login';
-        }
-        return window.dash_clientside.no_update;
-    }
-    """,
-    Output('home-login-btn', 'id'),
-    Input('home-login-btn', 'n_clicks'),
-    prevent_initial_call=True
-)
+# ============================================================================
+# RUN APPLICATION
+# ============================================================================
 
 if __name__ == '__main__':
-    # Initialize database
     init_database()
-
-    # Load environment variables
-    from dotenv import load_dotenv
-    load_dotenv()
-
     print("🚀 Starting USC Institutional Research Portal...")
-    print("📊 Features enabled:")
-    print("   ✅ Google OAuth Authentication")
-    print("   ✅ 3-Tier Access Control")
-    print("   ✅ Modern responsive design")
-    print("   ✅ USC brand compliance")
-    print("   ✅ Session management")
-    print("   ✅ Interactive dashboard")
-    print(f"🌐 Visit: http://localhost:8050")
-    print("🔐 Authentication endpoints:")
-    print("   • /auth/login - Google OAuth login")
-    print("   • /auth/status - Check auth status")
-    print("   • /auth/logout - Logout")
-    print("   • /auth/request-access - Request higher access")
-
-    # Run the application
-    app.run_server(
-        debug=True,
-        host='0.0.0.0',
-        port=8050,
-        dev_tools_ui=True,
-        dev_tools_props_check=True
-    )
+    print("🌐 Visit: http://localhost:8050")
+    app.run_server(debug=True, host='0.0.0.0', port=8050)
