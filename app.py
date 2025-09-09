@@ -1,6 +1,6 @@
 """
 USC Institutional Research Portal - Complete Working Version
-With all requested changes: gold/white navbar text, employees stat, alumni portal & yearly reports services
+With all requested changes: gold/white navbar text, employees stat, alumni portal & yearly reports servicesfdf
 """
 
 import dash
