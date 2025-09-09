@@ -1,13 +1,14 @@
 """
-USC Institutional Research Portal - Final Working Version
-Self-contained app that avoids all callback conflicts
+USC Institutional Research Portal - Standard Login System
+Username/password authentication with user registration
 """
 
 import dash
-from dash import html, dcc, Input, Output, State, callback, clientside_callback
+from dash import html, dcc, Input, Output, State, callback
 import dash_bootstrap_components as dbc
 import sqlite3
-import os
+import hashlib
+import secrets
 from datetime import datetime
 
 # USC Colors
@@ -19,7 +20,7 @@ USC_COLORS = {
     'light_gray': '#F8F9FA'
 }
 
-# Initialize app with unique server name to avoid conflicts
+# Initialize app
 app = dash.Dash(
     __name__,
     external_stylesheets=[
@@ -33,50 +34,155 @@ app = dash.Dash(
 app.title = "USC Institutional Research Portal"
 server = app.server
 
-# Import your existing pages with error handling
+# Import your existing pages
 try:
     from pages.about_usc_page import create_about_usc_page
     from pages.vision_mission_page import create_vision_mission_page
     from pages.contact_page import create_contact_page
     from pages.governance_page import create_governance_page
     PAGES_AVAILABLE = True
-    print("✅ Page modules loaded successfully")
-except ImportError as e:
-    print(f"⚠️ Page modules not found: {e}")
+except ImportError:
     PAGES_AVAILABLE = False
 
-# Database setup
+# Database setup with password hashing
+def hash_password(password):
+    """Hash password with salt"""
+    salt = secrets.token_hex(16)
+    password_hash = hashlib.sha256((password + salt).encode()).hexdigest()
+    return f"{salt}:{password_hash}"
+
+def verify_password(password, stored_hash):
+    """Verify password against stored hash"""
+    try:
+        salt, password_hash = stored_hash.split(':')
+        return hashlib.sha256((password + salt).encode()).hexdigest() == password_hash
+    except:
+        return False
+
 def init_database():
     conn = sqlite3.connect('usc_ir.db')
     cursor = conn.cursor()
+
+    # Users table with password hash
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY,
-            email TEXT UNIQUE,
-            full_name TEXT,
-            access_tier INTEGER DEFAULT 2
+            username TEXT UNIQUE NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            full_name TEXT NOT NULL,
+            password_hash TEXT NOT NULL,
+            access_tier INTEGER DEFAULT 1,
+            is_active BOOLEAN DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_login TIMESTAMP
         )
     ''')
 
-    users = [
-        ('demo@usc.edu.tt', 'Demo Employee', 2),
-        ('admin@usc.edu.tt', 'Admin User', 3),
-        ('nrobinson@usc.edu.tt', 'Nordian Robinson', 3),
-        ('websterl@usc.edu.tt', 'Liam Webster', 3)
+    # Sessions table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS user_sessions (
+            id INTEGER PRIMARY KEY,
+            user_id INTEGER,
+            session_token TEXT UNIQUE,
+            expires_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    ''')
+
+    # Create default admin user if not exists
+    admin_password = hash_password("admin123")
+    cursor.execute('''
+        INSERT OR IGNORE INTO users (username, email, full_name, password_hash, access_tier)
+        VALUES (?, ?, ?, ?, ?)
+    ''', ('admin', 'admin@usc.edu.tt', 'System Administrator', admin_password, 3))
+
+    # Create demo users
+    demo_users = [
+        ('nrobinson', 'nrobinson@usc.edu.tt', 'Nordian Robinson', hash_password('password123'), 3),
+        ('websterl', 'websterl@usc.edu.tt', 'Liam Webster', hash_password('password123'), 3),
+        ('employee1', 'employee1@usc.edu.tt', 'Demo Employee', hash_password('password123'), 2),
+        ('student1', 'student1@usc.edu.tt', 'Demo Student', hash_password('password123'), 1)
     ]
 
-    for email, name, tier in users:
-        cursor.execute('INSERT OR IGNORE INTO users (email, full_name, access_tier) VALUES (?, ?, ?)',
-                      (email, name, tier))
+    for username, email, name, password_hash, tier in demo_users:
+        cursor.execute('''
+            INSERT OR IGNORE INTO users (username, email, full_name, password_hash, access_tier)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (username, email, name, password_hash, tier))
 
     conn.commit()
     conn.close()
+    print("Database initialized with demo accounts:")
+    print("  admin / admin123 (Tier 3)")
+    print("  nrobinson / password123 (Tier 3)")
+    print("  websterl / password123 (Tier 3)")
+    print("  employee1 / password123 (Tier 2)")
+    print("  student1 / password123 (Tier 1)")
 
-# Your exact navbar with unique IDs to avoid conflicts
+def authenticate_user(username, password):
+    """Authenticate user credentials"""
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    cursor.execute('''
+        SELECT id, username, email, full_name, password_hash, access_tier, is_active
+        FROM users WHERE username = ? AND is_active = 1
+    ''', (username,))
+
+    user = cursor.fetchone()
+    conn.close()
+
+    if user and verify_password(password, user[4]):
+        return {
+            'id': user[0],
+            'username': user[1],
+            'email': user[2],
+            'full_name': user[3],
+            'access_tier': user[5]
+        }
+    return None
+
+def register_user(username, email, full_name, password):
+    """Register new user"""
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    try:
+        password_hash = hash_password(password)
+        cursor.execute('''
+            INSERT INTO users (username, email, full_name, password_hash, access_tier)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (username, email, full_name, password_hash, 1))  # Default tier 1
+
+        conn.commit()
+        user_id = cursor.lastrowid
+        conn.close()
+
+        return {
+            'id': user_id,
+            'username': username,
+            'email': email,
+            'full_name': full_name,
+            'access_tier': 1
+        }
+    except sqlite3.IntegrityError as e:
+        conn.close()
+        if 'username' in str(e):
+            return {'error': 'Username already exists'}
+        elif 'email' in str(e):
+            return {'error': 'Email already exists'}
+        else:
+            return {'error': 'Registration failed'}
+    except Exception as e:
+        conn.close()
+        return {'error': 'Registration failed'}
+
+# Your exact navbar
 def create_navbar(user_data=None):
     user_tier = user_data.get('access_tier', 1) if user_data else 1
 
-    # Factbook menu items based on tier
+    # Dynamic factbook menu
     factbook_items = []
     if user_tier >= 2:
         factbook_items = [
@@ -93,7 +199,7 @@ def create_navbar(user_data=None):
                 dbc.DropdownMenuItem("Budget Analysis", href="/budget")
             ])
     else:
-        factbook_items = [dbc.DropdownMenuItem("Sign in to access", disabled=True)]
+        factbook_items = [dbc.DropdownMenuItem("Login to access factbook", disabled=True)]
 
     # Services menu
     services_items = [
@@ -104,22 +210,26 @@ def create_navbar(user_data=None):
     ]
     services_items = [item for item in services_items if item is not None]
 
-    # Auth section with unique IDs
+    # Auth section
     if not user_data:
-        auth_section = dbc.Button("Sign In", id="main-signin-btn", color="outline-success", size="sm")
+        auth_section = dbc.ButtonGroup([
+            dbc.Button("Login", id="login-btn", color="outline-success", size="sm"),
+            dbc.Button("Register", id="register-btn", color="success", size="sm")
+        ])
     else:
         auth_section = dbc.DropdownMenu([
             dbc.DropdownMenuItem([
                 html.Strong(user_data.get('full_name', 'User')),
                 html.Br(),
-                html.Small(user_data.get('email', '')),
+                html.Small(f"@{user_data.get('username', '')}", className="text-muted"),
                 html.Br(),
-                dbc.Badge(f"Tier {user_tier}", color="success")
+                dbc.Badge(f"Tier {user_tier}", color="success", className="mt-1")
             ], header=True),
             dbc.DropdownMenuItem(divider=True),
-            dbc.DropdownMenuItem([
-                html.I(className="fas fa-sign-out-alt me-2"), "Sign Out"
-            ], id="main-signout-btn")
+            dbc.DropdownMenuItem([html.I(className="fas fa-user me-2"), "Profile"], href="/profile"),
+            dbc.DropdownMenuItem([html.I(className="fas fa-key me-2"), "Request Access"]) if user_tier < 3 else None,
+            dbc.DropdownMenuItem(divider=True),
+            dbc.DropdownMenuItem([html.I(className="fas fa-sign-out-alt me-2"), "Logout"], id="logout-btn")
         ], label=user_data.get('full_name', 'User').split()[0], direction="down", right=True)
 
     return dbc.Navbar(
@@ -158,7 +268,7 @@ def create_navbar(user_data=None):
         style={'borderBottom': '3px solid #1B5E20', 'minHeight': '75px'}
     )
 
-# Your exact home layout
+# Your exact home layout (simplified)
 def create_home_layout():
     return html.Div([
         # Hero section
@@ -253,63 +363,91 @@ def create_home_layout():
                     ], md=3, className="mb-4")
                 ])
             ])
-        ], style={'padding': '80px 0', 'background': '#F8F9FA'}),
-
-        # Director's message (simplified)
-        html.Section([
-            dbc.Container([
-                dbc.Card([
-                    dbc.CardBody([
-                        dbc.Row([
-                            dbc.Col([
-                                html.Img(src="/assets/DirectorIR.jpg", style={'width': '120px', 'height': '120px', 'objectFit': 'cover', 'border': '4px solid #1B5E20'})
-                            ], md=3, className="text-center"),
-                            dbc.Col([
-                                html.H3("Director's Message", style={'color': '#1B5E20', 'fontWeight': '600'}),
-                                html.P("The Department of Institutional Research takes great pride in presenting comprehensive data and analytics for informed decision-making at USC.", style={'color': '#555', 'lineHeight': '1.7'}),
-                                html.P("Nordian C. Swaby Robinson", style={'color': '#1B5E20', 'fontWeight': '600'}),
-                                html.P("Director, Institutional Research", style={'color': '#666', 'fontSize': '0.9rem'})
-                            ], md=9)
-                        ])
-                    ])
-                ])
-            ])
-        ], style={'padding': '60px 0'})
+        ], style={'padding': '80px 0', 'background': '#F8F9FA'})
     ])
 
-# Simple login modal with unique IDs
+# Login modal
 def create_login_modal():
     return dbc.Modal([
-        dbc.ModalHeader("USC IR Portal Login"),
+        dbc.ModalHeader("Login to USC IR Portal"),
         dbc.ModalBody([
-            html.P("Select a demo user to test different access levels:"),
-            dbc.RadioItems(
-                id="demo-user-choice",
-                options=[
-                    {"label": "Demo Employee (Tier 2 - Factbook Access)", "value": "demo@usc.edu.tt"},
-                    {"label": "Admin User (Tier 3 - Full Access)", "value": "admin@usc.edu.tt"},
-                    {"label": "Nordian Robinson (Director)", "value": "nrobinson@usc.edu.tt"},
-                    {"label": "Liam Webster (Developer)", "value": "websterl@usc.edu.tt"}
-                ],
-                value="demo@usc.edu.tt",
-                className="mb-3"
-            ),
-            html.Div(id="auth-feedback", className="mt-3")
+            html.Div(id="login-alerts"),
+            dbc.Form([
+                dbc.Row([
+                    dbc.Label("Username", width=3),
+                    dbc.Col([
+                        dbc.Input(id="login-username", type="text", placeholder="Enter username")
+                    ], width=9)
+                ], className="mb-3"),
+                dbc.Row([
+                    dbc.Label("Password", width=3),
+                    dbc.Col([
+                        dbc.Input(id="login-password", type="password", placeholder="Enter password")
+                    ], width=9)
+                ], className="mb-3"),
+                html.Small("Demo accounts: admin/admin123, employee1/password123, student1/password123", className="text-muted")
+            ])
         ]),
         dbc.ModalFooter([
-            dbc.Button("Sign In", id="modal-signin-btn", color="success"),
-            dbc.Button("Close", id="modal-close-btn", color="secondary", className="ms-2")
+            dbc.Button("Login", id="login-submit", color="success"),
+            dbc.Button("Close", id="login-close", color="secondary")
         ])
-    ], id="auth-modal", is_open=False)
+    ], id="login-modal", is_open=False)
 
-# Access control function
+# Register modal
+def create_register_modal():
+    return dbc.Modal([
+        dbc.ModalHeader("Register for USC IR Portal"),
+        dbc.ModalBody([
+            html.Div(id="register-alerts"),
+            dbc.Form([
+                dbc.Row([
+                    dbc.Label("Full Name", width=3),
+                    dbc.Col([
+                        dbc.Input(id="register-fullname", type="text", placeholder="Your full name")
+                    ], width=9)
+                ], className="mb-3"),
+                dbc.Row([
+                    dbc.Label("Username", width=3),
+                    dbc.Col([
+                        dbc.Input(id="register-username", type="text", placeholder="Choose a username")
+                    ], width=9)
+                ], className="mb-3"),
+                dbc.Row([
+                    dbc.Label("Email", width=3),
+                    dbc.Col([
+                        dbc.Input(id="register-email", type="email", placeholder="your.email@example.com")
+                    ], width=9)
+                ], className="mb-3"),
+                dbc.Row([
+                    dbc.Label("Password", width=3),
+                    dbc.Col([
+                        dbc.Input(id="register-password", type="password", placeholder="Choose a password")
+                    ], width=9)
+                ], className="mb-3"),
+                dbc.Row([
+                    dbc.Label("Confirm Password", width=3),
+                    dbc.Col([
+                        dbc.Input(id="register-confirm", type="password", placeholder="Confirm password")
+                    ], width=9)
+                ], className="mb-3"),
+                html.Small("New accounts start with Tier 1 (Public) access. Contact administrators for higher access.", className="text-muted")
+            ])
+        ]),
+        dbc.ModalFooter([
+            dbc.Button("Register", id="register-submit", color="success"),
+            dbc.Button("Close", id="register-close", color="secondary")
+        ])
+    ], id="register-modal", is_open=False)
+
+# Access control
 def require_access(content, tier, user_data):
     if not user_data:
         return dbc.Container([
             dbc.Alert([
-                html.H4([html.I(className="fas fa-lock me-2"), "Authentication Required"]),
-                html.P("Please sign in to access this content."),
-                dbc.Button("Sign In", id="access-signin-btn", color="success")
+                html.H4([html.I(className="fas fa-lock me-2"), "Login Required"]),
+                html.P("Please log in to access this content."),
+                dbc.Button("Login", id="access-login-btn", color="success")
             ], color="warning")
         ], className="mt-5")
 
@@ -318,7 +456,7 @@ def require_access(content, tier, user_data):
             dbc.Alert([
                 html.H4([html.I(className="fas fa-shield-alt me-2"), "Access Restricted"]),
                 html.P(f"This page requires Tier {tier} access. You have Tier {user_data.get('access_tier', 1)} access."),
-                html.P("Contact ir@usc.edu.tt to request higher access.")
+                html.P("Contact administrators to request higher access.")
             ], color="warning")
         ], className="mt-5")
 
@@ -334,17 +472,18 @@ def create_placeholder(title, description):
 
 # App layout
 app.layout = html.Div([
-    dcc.Location(id='main-url'),
-    dcc.Store(id='auth-store', data=None),
-    html.Div(id='main-content'),
-    create_login_modal()
+    dcc.Location(id='url'),
+    dcc.Store(id='user-store', data=None),
+    html.Div(id='content'),
+    create_login_modal(),
+    create_register_modal()
 ])
 
-# Main routing callback
+# Main routing
 @callback(
-    Output('main-content', 'children'),
-    Input('main-url', 'pathname'),
-    State('auth-store', 'data')
+    Output('content', 'children'),
+    Input('url', 'pathname'),
+    State('user-store', 'data')
 )
 def display_page(pathname, user_data):
     navbar = create_navbar(user_data)
@@ -360,7 +499,7 @@ def display_page(pathname, user_data):
         if PAGES_AVAILABLE:
             content = create_vision_mission_page()
         else:
-            content = create_placeholder("Vision & Mission", "Our institutional vision and mission")
+            content = create_placeholder("Vision & Mission", "Our institutional vision")
     elif pathname == '/governance':
         if PAGES_AVAILABLE:
             content = create_governance_page()
@@ -370,17 +509,17 @@ def display_page(pathname, user_data):
         if PAGES_AVAILABLE:
             content = create_contact_page()
         else:
-            content = create_placeholder("Contact", "Get in touch with our team")
+            content = create_placeholder("Contact", "Get in touch")
     elif pathname == '/alumni':
-        content = create_placeholder("Alumni Portal", "Connect with USC alumni network")
+        content = create_placeholder("Alumni Portal", "Connect with USC alumni")
     elif pathname == '/factbook':
-        content = require_access(create_placeholder("Interactive Factbook", "Institutional data and analytics"), 2, user_data)
+        content = require_access(create_placeholder("Interactive Factbook", "Institutional data"), 2, user_data)
     elif pathname == '/enrollment':
-        content = require_access(create_placeholder("Enrollment Data", "Student enrollment analytics"), 2, user_data)
+        content = require_access(create_placeholder("Enrollment Data", "Student enrollment"), 2, user_data)
     elif pathname == '/graduation':
-        content = require_access(create_placeholder("Graduation Statistics", "Graduation outcomes"), 2, user_data)
+        content = require_access(create_placeholder("Graduation Statistics", "Graduation data"), 2, user_data)
     elif pathname == '/student-employment':
-        content = require_access(create_placeholder("Student Employment", "Employment analytics"), 2, user_data)
+        content = require_access(create_placeholder("Student Employment", "Employment data"), 2, user_data)
     elif pathname == '/hr-data':
         content = require_access(create_placeholder("HR Analytics", "Faculty and staff data"), 2, user_data)
     elif pathname == '/financial':
@@ -398,78 +537,93 @@ def display_page(pathname, user_data):
 
     return html.Div([navbar, content])
 
-# Single authentication callback with unique IDs only
+# Authentication callbacks
 @callback(
-    [Output('auth-modal', 'is_open'),
-     Output('auth-store', 'data'),
-     Output('auth-feedback', 'children')],
-    [Input('main-signin-btn', 'n_clicks'),
-     Input('modal-signin-btn', 'n_clicks'),
-     Input('modal-close-btn', 'n_clicks'),
-     Input('access-signin-btn', 'n_clicks')],
-    [State('demo-user-choice', 'value'),
-     State('auth-modal', 'is_open'),
-     State('auth-store', 'data')],
+    [Output('login-modal', 'is_open'),
+     Output('register-modal', 'is_open'),
+     Output('user-store', 'data'),
+     Output('login-alerts', 'children'),
+     Output('register-alerts', 'children')],
+    [Input('login-btn', 'n_clicks'),
+     Input('register-btn', 'n_clicks'),
+     Input('login-submit', 'n_clicks'),
+     Input('register-submit', 'n_clicks'),
+     Input('login-close', 'n_clicks'),
+     Input('register-close', 'n_clicks'),
+     Input('logout-btn', 'n_clicks'),
+     Input('access-login-btn', 'n_clicks')],
+    [State('login-username', 'value'),
+     State('login-password', 'value'),
+     State('register-fullname', 'value'),
+     State('register-username', 'value'),
+     State('register-email', 'value'),
+     State('register-password', 'value'),
+     State('register-confirm', 'value'),
+     State('login-modal', 'is_open'),
+     State('register-modal', 'is_open'),
+     State('user-store', 'data')],
     prevent_initial_call=True
 )
-def handle_auth(main_signin, modal_signin, modal_close, access_signin,
-                selected_user, modal_open, current_user):
+def handle_auth(login_btn, register_btn, login_submit, register_submit,
+                login_close, register_close, logout_btn, access_login,
+                username, password, fullname, reg_username, email,
+                reg_password, confirm_password, login_open, register_open, current_user):
+
     ctx = dash.callback_context
     if not ctx.triggered:
-        return False, current_user, ""
+        return False, False, current_user, "", ""
 
     button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
-    # Open modal
-    if button_id in ['main-signin-btn', 'access-signin-btn']:
-        return True, current_user, ""
+    # Open modals
+    if button_id in ['login-btn', 'access-login-btn']:
+        return True, False, current_user, "", ""
+    if button_id == 'register-btn':
+        return False, True, current_user, "", ""
 
-    # Close modal
-    if button_id == 'modal-close-btn':
-        return False, current_user, ""
+    # Close modals
+    if button_id == 'login-close':
+        return False, register_open, current_user, "", ""
+    if button_id == 'register-close':
+        return login_open, False, current_user, "", ""
 
-    # Sign in
-    if button_id == 'modal-signin-btn':
-        conn = sqlite3.connect('usc_ir.db')
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM users WHERE email = ?', (selected_user,))
-        user = cursor.fetchone()
-        conn.close()
+    # Login
+    if button_id == 'login-submit':
+        if not username or not password:
+            return True, False, current_user, dbc.Alert("Please enter username and password", color="danger"), ""
 
+        user = authenticate_user(username, password)
         if user:
-            user_data = {
-                'email': user[1],
-                'full_name': user[2],
-                'access_tier': user[3]
-            }
-            return False, user_data, ""
-        return True, current_user, dbc.Alert("Login failed", color="danger")
+            return False, False, user, "", ""
+        else:
+            return True, False, current_user, dbc.Alert("Invalid username or password", color="danger"), ""
 
-    return modal_open, current_user, ""
+    # Register
+    if button_id == 'register-submit':
+        if not all([fullname, reg_username, email, reg_password, confirm_password]):
+            return False, True, current_user, "", dbc.Alert("Please fill in all fields", color="danger")
 
-# SEPARATE logout callback that only runs when the component exists
-@callback(
-    Output('auth-store', 'data', allow_duplicate=True),
-    Input('main-signout-btn', 'n_clicks'),
-    prevent_initial_call=True
-)
-def handle_logout(signout_clicks):
-    if signout_clicks:
-        return None
-    return dash.no_update
+        if reg_password != confirm_password:
+            return False, True, current_user, "", dbc.Alert("Passwords do not match", color="danger")
+
+        if len(reg_password) < 6:
+            return False, True, current_user, "", dbc.Alert("Password must be at least 6 characters", color="danger")
+
+        result = register_user(reg_username, email, fullname, reg_password)
+        if 'error' in result:
+            return False, True, current_user, "", dbc.Alert(result['error'], color="danger")
+        else:
+            return False, False, result, "", ""
+
+    # Logout
+    if button_id == 'logout-btn':
+        return False, False, None, "", ""
+
+    return login_open, register_open, current_user, "", ""
 
 if __name__ == '__main__':
     init_database()
-    print("🚀 USC Institutional Research Portal - Final Working Version")
-    print("✅ Self-contained with no callback conflicts")
-    print("✅ Your complete design preserved")
-    print("✅ Working authentication system")
-    print("✅ 3-tier access control")
-    print("🌐 Visit: http://localhost:8050")
-    print()
-    print("🎮 Authentication Test:")
-    print("   • Click 'Sign In' to open login modal")
-    print("   • Select demo user with different access tiers")
-    print("   • Test access control on different pages")
-
+    print("USC Institutional Research Portal - Standard Login System")
+    print("Your complete design with username/password authentication")
+    print("Visit: http://localhost:8050")
     app.run_server(debug=True, host='0.0.0.0', port=8050)
