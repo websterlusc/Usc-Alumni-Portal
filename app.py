@@ -14,7 +14,6 @@ import secrets
 import os
 from datetime import datetime, timedelta
 import json
-from auth_utils import auth_manager, get_user_access_tier
 from pages.about_usc_page import create_about_usc_page
 from pages.vision_mission_page import create_vision_mission_page
 from pages.contact_page import create_contact_page
@@ -43,7 +42,8 @@ app = dash.Dash(
     meta_tags=[
         {"name": "viewport", "content": "width=device-width, initial-scale=1.0"},
         {"name": "description", "content": "USC Institutional Research Portal - Data-driven insights and analytics"}
-    ]
+    ],
+    suppress_callback_exceptions=True  # ADD THIS LINE
 )
 
 app.title = "USC Institutional Research Portal"
@@ -465,22 +465,25 @@ def serve_layout():
         html.Div(id='page-content')
     ])
 
-
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
     dcc.Store(id='user-session', storage_type='session'),
     html.Div(id='page-content'),
 
-    # Simple login modal
+    # ADD this login modal:
     dbc.Modal([
-        dbc.ModalHeader("Login"),
+        dbc.ModalHeader("Login to USC IR Portal"),
         dbc.ModalBody([
-            dbc.Input(id="login-email", placeholder="Email", type="email", className="mb-2"),
-            dbc.Input(id="login-password", placeholder="Password", type="password", className="mb-2"),
-            html.Div(id="login-alerts"),
-            dbc.Button("Login", id="login-submit-btn", color="primary", className="w-100")
+            dbc.Form([
+                dbc.Label("Email", className="fw-bold"),
+                dbc.Input(id="login-email", type="email", placeholder="your.email@usc.edu.tt", className="mb-3"),
+                dbc.Label("Password", className="fw-bold"),
+                dbc.Input(id="login-password", type="password", placeholder="Enter password", className="mb-3"),
+                html.Div(id="login-alerts", className="mb-3"),
+                dbc.Button("Login", id="login-submit-btn", color="success", className="w-100")
+            ])
         ])
-    ], id="login-modal", is_open=False)
+    ], id="login-modal", is_open=False, size="md")
 ])
 
 # ============================================================================
@@ -534,15 +537,48 @@ def handle_login(n_clicks):
 # ============================================================================
 # RUN APPLICATION
 # ============================================================================
+# 3. ADD these authentication callbacks (before your if __name__ == '__main__':):
 @callback(
     Output('login-modal', 'is_open'),
     Input('login-btn', 'n_clicks'),
     prevent_initial_call=True
 )
 def toggle_login_modal(n_clicks):
+    return True if n_clicks else False
+
+
+@callback(
+    [Output('user-session', 'data', allow_duplicate=True),
+     Output('login-alerts', 'children'),
+     Output('login-modal', 'is_open', allow_duplicate=True)],
+    Input('login-submit-btn', 'n_clicks'),
+    [State('login-email', 'value'),
+     State('login-password', 'value')],
+    prevent_initial_call=True
+)
+def handle_login_attempt(n_clicks, email, password):
+    if not n_clicks:
+        return no_update, no_update, no_update
+
+    if email == "admin@usc.edu.tt" and password == "admin123":
+        return {'user_email': email, 'user_name': 'Admin'}, dbc.Alert("Success!", color="success"), False
+    elif email.endswith("@usc.edu.tt") and password == "test123":
+        return {'user_email': email, 'user_name': email.split('@')[0]}, dbc.Alert("Success!", color="success"), False
+
+    return no_update, dbc.Alert("Invalid login", color="danger"), no_update
+
+
+@callback(
+    Output('user-session', 'data', allow_duplicate=True),
+    Input('logout-btn', 'n_clicks'),
+    prevent_initial_call=True
+)
+def handle_logout(n_clicks):
     if n_clicks:
-        return True
-    return False
+        return {}
+    return no_update
+
+
 if __name__ == '__main__':
     init_database()
     print("🚀 Starting USC Institutional Research Portal...")
