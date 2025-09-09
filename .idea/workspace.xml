@@ -4,16 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f6f93d84-f206-4ef2-8de4-7f980a01f4aa" name="Changes" comment="First Commit">
-      <change afterPath="$PROJECT_DIR$/assets/custom_styles.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/auth/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/auth/auth_routes.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/auth/google_auth.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/components/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/components/auth_components.py" afterDir="false" />
+    <list default="true" id="f6f93d84-f206-4ef2-8de4-7f980a01f4aa" name="Changes" comment="google auth not working">
       <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" afterPath="$PROJECT_DIR$/.env" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -408,11 +401,77 @@
       <option name="project" value="LOCAL" />
       <updated>1757432759904</updated>
     </task>
-    <option name="localTasksCounter" value="34" />
+    <task id="LOCAL-00034" summary="First Commit">
+      <option name="closed" value="true" />
+      <created>1757441490661</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1757441490661</updated>
+    </task>
+    <task id="LOCAL-00035" summary="First Commit">
+      <option name="closed" value="true" />
+      <created>1757441956987</created>
+      <option name="number" value="00035" />
+      <option name="presentableId" value="LOCAL-00035" />
+      <option name="project" value="LOCAL" />
+      <updated>1757441956987</updated>
+    </task>
+    <task id="LOCAL-00036" summary="well hello">
+      <option name="closed" value="true" />
+      <created>1757442010642</created>
+      <option name="number" value="00036" />
+      <option name="presentableId" value="LOCAL-00036" />
+      <option name="project" value="LOCAL" />
+      <updated>1757442010642</updated>
+    </task>
+    <task id="LOCAL-00037" summary="well hello">
+      <option name="closed" value="true" />
+      <created>1757442024495</created>
+      <option name="number" value="00037" />
+      <option name="presentableId" value="LOCAL-00037" />
+      <option name="project" value="LOCAL" />
+      <updated>1757442024495</updated>
+    </task>
+    <task id="LOCAL-00038" summary="well hello">
+      <option name="closed" value="true" />
+      <created>1757444110891</created>
+      <option name="number" value="00038" />
+      <option name="presentableId" value="LOCAL-00038" />
+      <option name="project" value="LOCAL" />
+      <updated>1757444110891</updated>
+    </task>
+    <task id="LOCAL-00039" summary="google auth not working">
+      <option name="closed" value="true" />
+      <created>1757444146007</created>
+      <option name="number" value="00039" />
+      <option name="presentableId" value="LOCAL-00039" />
+      <option name="project" value="LOCAL" />
+      <updated>1757444146007</updated>
+    </task>
+    <task id="LOCAL-00040" summary="google auth not working">
+      <option name="closed" value="true" />
+      <created>1757444204270</created>
+      <option name="number" value="00040" />
+      <option name="presentableId" value="LOCAL-00040" />
+      <option name="project" value="LOCAL" />
+      <updated>1757444204270</updated>
+    </task>
+    <task id="LOCAL-00041" summary="google auth not working">
+      <option name="closed" value="true" />
+      <created>1757445309535</created>
+      <option name="number" value="00041" />
+      <option name="presentableId" value="LOCAL-00041" />
+      <option name="project" value="LOCAL" />
+      <updated>1757445309535</updated>
+    </task>
+    <option name="localTasksCounter" value="42" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="First Commit" />
-    <option name="LAST_COMMIT_MESSAGE" value="First Commit" />
+    <MESSAGE value="well hello" />
+    <MESSAGE value="google auth not working" />
+    <option name="LAST_COMMIT_MESSAGE" value="google auth not working" />
   </component>
 </project>
