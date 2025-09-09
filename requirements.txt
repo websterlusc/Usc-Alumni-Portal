@@ -10,3 +10,8 @@ python-dotenv==1.0.1
 werkzeug==3.0.4
 requests==2.32.3
 python-dateutil==2.9.0
+secrets
+hashlib
+sqlite3
+re
+json
