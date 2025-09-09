@@ -14,6 +14,7 @@ import secrets
 import os
 from datetime import datetime, timedelta
 import json
+from auth_utils import auth_manager, get_user_access_tier
 from pages.about_usc_page import create_about_usc_page
 from pages.vision_mission_page import create_vision_mission_page
 from pages.contact_page import create_contact_page
@@ -464,7 +465,23 @@ def serve_layout():
         html.Div(id='page-content')
     ])
 
-app.layout = serve_layout
+
+app.layout = html.Div([
+    dcc.Location(id='url', refresh=False),
+    dcc.Store(id='user-session', storage_type='session'),
+    html.Div(id='page-content'),
+
+    # Simple login modal
+    dbc.Modal([
+        dbc.ModalHeader("Login"),
+        dbc.ModalBody([
+            dbc.Input(id="login-email", placeholder="Email", type="email", className="mb-2"),
+            dbc.Input(id="login-password", placeholder="Password", type="password", className="mb-2"),
+            html.Div(id="login-alerts"),
+            dbc.Button("Login", id="login-submit-btn", color="primary", className="w-100")
+        ])
+    ], id="login-modal", is_open=False)
+])
 
 # ============================================================================
 # CALLBACKS
@@ -517,7 +534,15 @@ def handle_login(n_clicks):
 # ============================================================================
 # RUN APPLICATION
 # ============================================================================
-
+@callback(
+    Output('login-modal', 'is_open'),
+    Input('login-btn', 'n_clicks'),
+    prevent_initial_call=True
+)
+def toggle_login_modal(n_clicks):
+    if n_clicks:
+        return True
+    return False
 if __name__ == '__main__':
     init_database()
     print("🚀 Starting USC Institutional Research Portal...")
