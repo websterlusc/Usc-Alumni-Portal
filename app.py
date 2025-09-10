@@ -125,42 +125,45 @@ def authenticate_user(email, password):
     prevent_initial_call=False
 )
 def check_user_session(n_intervals):
-    # Your session checking logic
-    return {'authenticated': False}  # Simplified for now
-
-
+    # For now, maintain session state - don't automatically log out
+    return dash.no_update
 # Login form callback
 @callback(
-    [Output('login-alert', 'children'), Output('url', 'pathname', allow_duplicate=True)],
+    [Output('login-alert', 'children'),
+     Output('url', 'pathname', allow_duplicate=True),
+     Output('user-session', 'data', allow_duplicate=True)],
     Input('login-submit-btn', 'n_clicks'),
     [State('login-email', 'value'), State('login-password', 'value')],
     prevent_initial_call=True
 )
 def handle_login_form(n_clicks, email, password):
     if not n_clicks:
-        return "", dash.no_update
+        return "", dash.no_update, dash.no_update
 
     if not email or not password:
-        return dbc.Alert("Please enter both email and password", color="danger"), dash.no_update
+        return dbc.Alert("Please enter both email and password", color="danger"), dash.no_update, dash.no_update
 
     user = authenticate_user(email.strip().lower(), password)
     if user:
-        # Set session data and redirect
-        return "", "/"
+        # Store user data in session and redirect
+        user_session = {'authenticated': True, **user}
+        return "", "/", user_session
     else:
-        return dbc.Alert("Invalid email or password", color="danger"), dash.no_update
-
+        return dbc.Alert("Invalid email or password", color="danger"), dash.no_update, dash.no_update
 
 # Logout callback
 @callback(
-    Output('url', 'pathname', allow_duplicate=True),
+    [Output('url', 'pathname', allow_duplicate=True),
+     Output('user-session', 'data', allow_duplicate=True)],
     Input('navbar-logout-btn', 'n_clicks'),
     prevent_initial_call=True
 )
 def handle_navbar_logout(n_clicks):
     if n_clicks:
-        return "/login"
-    return dash.no_update
+        return "/login", {'authenticated': False}
+    return dash.no_update, dash.no_update
+
+
 def create_auth_section(user_data=None):
     """Create authentication section of navbar"""
     if not user_data or not user_data.get('authenticated'):
@@ -169,12 +172,31 @@ def create_auth_section(user_data=None):
             id="navbar-login-btn",
             color="outline-success",
             size="sm",
-            href="/login"  # This goes to login PAGE, not modal
+            href="/login"
         ))
 
-    # User dropdown (keep your existing dropdown code)
-    # ... rest of your dropdown code stays the same
+    # User is logged in - show dropdown
+    tier_info = {1: "Public", 2: "Employee", 3: "Admin"}
+    user_tier = user_data.get('access_tier', 1)
 
+    return dbc.NavItem([
+        dbc.DropdownMenu([
+            dbc.DropdownMenuItem([
+                html.Strong(user_data.get('full_name', 'User')),
+                html.Br(),
+                html.Small(user_data.get('email', ''), className="text-muted"),
+                html.Br(),
+                dbc.Badge(tier_info.get(user_tier, "Public"), color="success", className="mt-1")
+            ], header=True),
+            dbc.DropdownMenuItem(divider=True),
+            dbc.DropdownMenuItem([
+                html.I(className="fas fa-user me-2"), "Profile"
+            ], href="/profile"),
+            dbc.DropdownMenuItem([
+                html.I(className="fas fa-sign-out-alt me-2"), "Logout"
+            ], id="navbar-logout-btn")
+        ], label=user_data.get('email', 'User'), nav=True, align_end=True)
+    ])
 def create_modern_navbar(user_data=None):
     """Your exact navbar design with authentication"""
     user_access_tier = user_data.get('access_tier', 1) if user_data else 1
@@ -643,18 +665,16 @@ app.layout = html.Div([
 @callback(
     Output('page-content', 'children'),
     Input('url', 'pathname'),
-    State('user-session', 'data')
-)
+    State('user-session', 'data'))
 def display_page(pathname, user_session):
-    # Get user data
-    user_data = user_session if user_session.get('authenticated') else None
+    # Get user data - FIXED
+    user_data = user_session if user_session and user_session.get('authenticated') else None
 
-    # LOGIN PAGE ROUTE - ADD THIS
+    # LOGIN PAGE ROUTE
     if pathname == '/login':
         if user_data:
             return dcc.Location(pathname='/', id='redirect-home')
-        return create_login_page()
-    # Route pages
+        return create_login_page()    # Route pages
     if pathname == '/' or pathname is None:
         content = create_home_layout(user_data)
 
@@ -737,6 +757,7 @@ def display_page(pathname, user_session):
 
     navbar = create_modern_navbar(user_data)
 
+    return html.Div([navbar, content])
 
 
 
