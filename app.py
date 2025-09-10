@@ -60,6 +60,585 @@ app = dash.Dash(
 app.title = "USC Institutional Research Portal"
 server = app.server
 
+
+# Add these functions to your existing app.py
+
+# ============================================================================
+# ENHANCED DATABASE SETUP WITH PASSWORD HASHING
+# ============================================================================
+
+def init_enhanced_database():
+    """Initialize database with enhanced user management"""
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    # Enhanced users table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY,
+            email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            full_name TEXT,
+            role TEXT DEFAULT 'employee',
+            access_tier INTEGER DEFAULT 1,
+            is_active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_login TIMESTAMP,
+            registration_status TEXT DEFAULT 'pending'
+        )
+    ''')
+
+    # Access requests table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS access_requests (
+            id INTEGER PRIMARY KEY,
+            user_id INTEGER,
+            current_tier INTEGER,
+            requested_tier INTEGER,
+            justification TEXT,
+            status TEXT DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            reviewed_at TIMESTAMP,
+            reviewed_by INTEGER,
+            admin_notes TEXT,
+            FOREIGN KEY (user_id) REFERENCES users (id),
+            FOREIGN KEY (reviewed_by) REFERENCES users (id)
+        )
+    ''')
+
+    # Password reset tokens table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS password_reset_tokens (
+            id INTEGER PRIMARY KEY,
+            user_id INTEGER,
+            token TEXT UNIQUE,
+            expires_at TIMESTAMP,
+            used BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    ''')
+
+    # Enhanced demo users with hashed passwords
+    demo_users = [
+        ('admin@usc.edu.tt', 'admin123', 'USC Administrator', 'admin', 3, 'approved'),
+        ('employee@usc.edu.tt', 'emp123', 'USC Employee', 'employee', 2, 'approved'),
+        ('student@usc.edu.tt', 'student123', 'USC Student', 'student', 1, 'approved'),
+        ('demo@usc.edu.tt', 'demo123', 'Demo User', 'employee', 2, 'approved'),
+        ('nrobinson@usc.edu.tt', 'admin123', 'Nordian Robinson', 'admin', 3, 'approved'),
+        ('websterl@usc.edu.tt', 'admin123', 'Liam Webster', 'admin', 3, 'approved')
+    ]
+
+    for email, password, name, role, tier, status in demo_users:
+        password_hash = hash_password(password)
+        cursor.execute('''
+            INSERT OR REPLACE INTO users (email, password_hash, full_name, role, access_tier, registration_status)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (email, password_hash, name, role, tier, status))
+
+    conn.commit()
+    conn.close()
+    print("✅ Enhanced database initialized")
+
+
+def hash_password(password):
+    """Hash password using SHA-256"""
+    return hashlib.sha256(password.encode()).hexdigest()
+
+
+def verify_password(password, password_hash):
+    """Verify password against hash"""
+    return hashlib.sha256(password.encode()).hexdigest() == password_hash
+
+
+def create_user(email, password, full_name):
+    """Create a new user account"""
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    try:
+        # Check if user already exists
+        cursor.execute('SELECT email FROM users WHERE email = ?', (email,))
+        if cursor.fetchone():
+            return {"success": False, "message": "Email already registered"}
+
+        # Determine initial access tier based on email domain
+        if email.endswith('@usc.edu.tt'):
+            access_tier = 2  # Employee access for USC emails
+            status = 'approved'
+        else:
+            access_tier = 1  # General access for external emails
+            status = 'pending'
+
+        password_hash = hash_password(password)
+
+        cursor.execute('''
+            INSERT INTO users (email, password_hash, full_name, access_tier, registration_status)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (email, password_hash, full_name, access_tier, status))
+
+        conn.commit()
+        return {"success": True, "message": "Account created successfully", "access_tier": access_tier}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error creating account: {str(e)}"}
+    finally:
+        conn.close()
+
+
+def request_access_upgrade(user_id, requested_tier, justification):
+    """Submit an access tier upgrade request"""
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    try:
+        # Get current user tier
+        cursor.execute('SELECT access_tier FROM users WHERE id = ?', (user_id,))
+        current_tier = cursor.fetchone()[0]
+
+        # Check for existing pending request
+        cursor.execute('''
+            SELECT id FROM access_requests 
+            WHERE user_id = ? AND status = 'pending'
+        ''', (user_id,))
+
+        if cursor.fetchone():
+            return {"success": False, "message": "You already have a pending access request"}
+
+        cursor.execute('''
+            INSERT INTO access_requests (user_id, current_tier, requested_tier, justification)
+            VALUES (?, ?, ?, ?)
+        ''', (user_id, current_tier, requested_tier, justification))
+
+        conn.commit()
+        return {"success": True, "message": "Access request submitted successfully"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error submitting request: {str(e)}"}
+    finally:
+        conn.close()
+
+
+def change_password(user_id, current_password, new_password):
+    """Change user password"""
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    try:
+        # Verify current password
+        cursor.execute('SELECT password_hash FROM users WHERE id = ?', (user_id,))
+        stored_hash = cursor.fetchone()[0]
+
+        if not verify_password(current_password, stored_hash):
+            return {"success": False, "message": "Current password is incorrect"}
+
+        # Update password
+        new_hash = hash_password(new_password)
+        cursor.execute('UPDATE users SET password_hash = ? WHERE id = ?', (new_hash, user_id))
+
+        conn.commit()
+        return {"success": True, "message": "Password updated successfully"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error changing password: {str(e)}"}
+    finally:
+        conn.close()
+
+
+def get_user_by_id(user_id):
+    """Get user data by ID"""
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('''
+            SELECT id, email, full_name, role, access_tier, created_at, last_login
+            FROM users WHERE id = ?
+        ''', (user_id,))
+
+        result = cursor.fetchone()
+        if result:
+            return {
+                'id': result[0],
+                'email': result[1],
+                'full_name': result[2],
+                'role': result[3],
+                'access_tier': result[4],
+                'created_at': result[5],
+                'last_login': result[6]
+            }
+        return None
+    finally:
+        conn.close()
+
+
+def get_user_access_requests(user_id):
+    """Get user's access requests"""
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('''
+            SELECT requested_tier, justification, status, created_at, admin_notes
+            FROM access_requests WHERE user_id = ?
+            ORDER BY created_at DESC
+        ''', (user_id,))
+
+        return cursor.fetchall()
+    finally:
+        conn.close()
+
+
+# ============================================================================
+# SIGNUP PAGE
+# ============================================================================
+
+def create_signup_page():
+    """Create the signup page"""
+    return dbc.Container([
+        dbc.Row([
+            dbc.Col([
+                html.Div([
+                    html.Img(src="/assets/usc-logo.png", style={'height': '120px', 'marginBottom': '20px'},
+                             className="mx-auto d-block"),
+                    html.H2("Create USC IR Account", className="text-center mb-4",
+                            style={'color': USC_COLORS['primary_green']}),
+                    html.P("Join the USC Institutional Research portal", className="text-center text-muted mb-4")
+                ], className="text-center mb-4"),
+
+                dbc.Card([
+                    dbc.CardBody([
+                        html.H4("Sign Up", className="card-title text-center mb-4"),
+                        html.Div(id="signup-alert"),
+
+                        dbc.Form([
+                            dbc.Row([
+                                dbc.Label("Full Name", html_for="signup-name"),
+                                dbc.Input(type="text", id="signup-name", placeholder="Enter your full name",
+                                          className="mb-3")
+                            ]),
+                            dbc.Row([
+                                dbc.Label("Email Address", html_for="signup-email"),
+                                dbc.Input(type="email", id="signup-email", placeholder="Enter your email address",
+                                          className="mb-3")
+                            ]),
+                            dbc.Row([
+                                dbc.Label("Password", html_for="signup-password"),
+                                dbc.Input(type="password", id="signup-password", placeholder="Create a password",
+                                          className="mb-3")
+                            ]),
+                            dbc.Row([
+                                dbc.Label("Confirm Password", html_for="signup-confirm-password"),
+                                dbc.Input(type="password", id="signup-confirm-password",
+                                          placeholder="Confirm your password", className="mb-3")
+                            ]),
+                            dbc.Row([
+                                dbc.Button("Create Account", id="signup-submit-btn", color="success",
+                                           className="w-100 mb-3", size="lg")
+                            ])
+                        ])
+                    ])
+                ], className="shadow"),
+
+                dbc.Card([
+                    dbc.CardBody([
+                        html.H6("Access Tiers", className="card-title"),
+                        html.P([
+                            html.Strong("Tier 1 (General): "), "Basic access to public information", html.Br(),
+                            html.Strong("Tier 2 (Employee): "), "Factbook access (requires admin approval)", html.Br(),
+                            html.Strong("Tier 3 (Admin): "), "Full access including financial data"
+                        ], className="mb-2 small"),
+                        dbc.Alert([
+                            html.I(className="fas fa-info-circle me-2"),
+                            "All new accounts require manual approval by administrators."
+                        ], color="info", className="small")
+                    ])
+                ], className="mt-3", color="light")
+
+            ], width=12, md=6, lg=4)
+        ], justify="center", className="min-vh-100 d-flex align-items-center")
+    ], fluid=True, className="bg-light")
+
+
+# ============================================================================
+# PROFILE PAGE
+# ============================================================================
+
+def create_profile_page(user_data):
+    """Create user profile page"""
+    if not user_data:
+        return create_access_denied_page("Authentication Required", "Please sign in to view your profile.")
+
+    tier_info = {
+        1: {"name": "General Access", "description": "Basic access to public information", "color": "secondary"},
+        2: {"name": "Employee Access", "description": "Full factbook access and data analytics", "color": "success"},
+        3: {"name": "Administrative Access", "description": "Complete access including financial data",
+            "color": "warning"}
+    }
+
+    current_tier = user_data.get('access_tier', 1)
+    tier = tier_info.get(current_tier, tier_info[1])
+
+    return dbc.Container([
+        dbc.Row([
+            dbc.Col([
+                html.H1("User Profile", className="display-5 fw-bold mb-4",
+                        style={'color': USC_COLORS['primary_green']}),
+
+                # Profile Information Card
+                dbc.Card([
+                    dbc.CardHeader(html.H5("Profile Information", className="mb-0")),
+                    dbc.CardBody([
+                        dbc.Row([
+                            dbc.Col([
+                                html.P([html.Strong("Name: "), user_data.get('full_name', 'N/A')]),
+                                html.P([html.Strong("Email: "), user_data.get('email', 'N/A')]),
+                                html.P([html.Strong("Role: "), user_data.get('role', 'employee').title()]),
+                                html.P([html.Strong("Member Since: "),
+                                        user_data.get('created_at', 'N/A')[:10] if user_data.get(
+                                            'created_at') else 'N/A'])
+                            ], md=6),
+                            dbc.Col([
+                                html.Div([
+                                    html.H6("Current Access Tier"),
+                                    dbc.Badge(f"Tier {current_tier}: {tier['name']}",
+                                              color=tier['color'], className="mb-2 fs-6"),
+                                    html.P(tier['description'], className="text-muted small")
+                                ])
+                            ], md=6)
+                        ])
+                    ])
+                ], className="mb-4"),
+
+                # Access Management Card
+                dbc.Card([
+                    dbc.CardHeader(html.H5("Access Management", className="mb-0")),
+                    dbc.CardBody([
+                        html.Div(id="profile-alerts"),
+
+                        dbc.Row([
+                            dbc.Col([
+                                html.H6("Request Higher Access"),
+                                html.P("Need access to additional features? Request an upgrade:",
+                                       className="text-muted"),
+
+                                dbc.Form([
+                                    dbc.Label("Requested Access Tier"),
+                                    dbc.RadioItems(
+                                        id="access-tier-request",
+                                        options=[
+                                            {"label": "Tier 2: Employee Access (Factbook)", "value": 2,
+                                             "disabled": current_tier >= 2},
+                                            {"label": "Tier 3: Administrative Access (Financial)", "value": 3,
+                                             "disabled": current_tier >= 3}
+                                        ],
+                                        value=min(current_tier + 1, 3),
+                                        className="mb-3"
+                                    ),
+                                    dbc.Label("Justification"),
+                                    dbc.Textarea(
+                                        id="access-justification",
+                                        placeholder="Please explain why you need this access level...",
+                                        rows=4,
+                                        className="mb-3"
+                                    ),
+                                    dbc.Button("Submit Request", id="request-access-btn", color="primary",
+                                               disabled=current_tier >= 3)
+                                ]) if current_tier < 3 else html.Div([
+                                    dbc.Alert("You have the highest access level available.", color="success")
+                                ])
+                            ], md=6),
+
+                            dbc.Col([
+                                html.H6("Change Password"),
+                                html.P("Update your account password:", className="text-muted"),
+
+                                dbc.Form([
+                                    dbc.Label("Current Password"),
+                                    dbc.Input(type="password", id="current-password", className="mb-3"),
+                                    dbc.Label("New Password"),
+                                    dbc.Input(type="password", id="new-password", className="mb-3"),
+                                    dbc.Label("Confirm New Password"),
+                                    dbc.Input(type="password", id="confirm-new-password", className="mb-3"),
+                                    dbc.Button("Change Password", id="change-password-btn", color="secondary")
+                                ])
+                            ], md=6)
+                        ])
+                    ])
+                ], className="mb-4"),
+
+                # Recent Access Requests Card
+                dbc.Card([
+                    dbc.CardHeader(html.H5("Access Request History", className="mb-0")),
+                    dbc.CardBody([
+                        html.Div(id="access-requests-history")
+                    ])
+                ])
+
+            ], width=12, lg=10)
+        ], justify="center")
+    ], className="py-4")
+
+
+# ============================================================================
+# ADMIN DASHBOARD
+# ============================================================================
+
+def create_admin_dashboard(user_data):
+    """Create admin dashboard for managing users and requests"""
+    if not user_data or user_data.get('access_tier', 1) < 3:
+        return create_access_denied_page("Admin Access Required",
+                                         "You need administrative access to view this page.")
+
+    return dbc.Container([
+        html.H1("Admin Dashboard", className="display-5 fw-bold mb-4",
+                style={'color': USC_COLORS['primary_green']}),
+
+        dbc.Tabs([
+            dbc.Tab(label="Pending Requests", tab_id="requests"),
+            dbc.Tab(label="User Management", tab_id="users"),
+            dbc.Tab(label="System Stats", tab_id="stats")
+        ], id="admin-tabs", active_tab="requests"),
+
+        html.Div(id="admin-content", className="mt-4")
+    ], className="py-4")
+
+
+# ============================================================================
+# ENHANCED AUTHENTICATION FUNCTION
+# ============================================================================
+
+def authenticate_user_enhanced(email, password):
+    """Enhanced authentication with proper password hashing"""
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('''
+            SELECT id, email, password_hash, full_name, role, access_tier, registration_status
+            FROM users WHERE email = ? AND is_active = 1
+        ''', (email,))
+
+        user = cursor.fetchone()
+        if user and verify_password(password, user[2]):
+            # Check if account is approved
+            if user[6] == 'pending':
+                return {"error": "Account pending approval. Please contact ir@usc.edu.tt"}
+
+            # Update last login
+            cursor.execute('UPDATE users SET last_login = ? WHERE id = ?',
+                           (datetime.now(), user[0]))
+            conn.commit()
+
+            return {
+                'id': user[0],
+                'email': user[1],
+                'full_name': user[3],
+                'role': user[4],
+                'access_tier': user[5]
+            }
+        return None
+    finally:
+        conn.close()
+
+
+# ============================================================================
+# ADD THESE CALLBACKS TO YOUR EXISTING APP
+# ============================================================================
+
+# Signup callback
+@callback(
+    [Output('signup-alert', 'children'), Output('url', 'pathname', allow_duplicate=True)],
+    Input('signup-submit-btn', 'n_clicks'),
+    [State('signup-name', 'value'), State('signup-email', 'value'),
+     State('signup-password', 'value'), State('signup-confirm-password', 'value')],
+    prevent_initial_call=True
+)
+def handle_signup(n_clicks, name, email, password, confirm_password):
+    if not n_clicks:
+        return "", dash.no_update
+
+    # Validation
+    if not all([name, email, password, confirm_password]):
+        return dbc.Alert("Please fill in all fields", color="danger"), dash.no_update
+
+    if password != confirm_password:
+        return dbc.Alert("Passwords do not match", color="danger"), dash.no_update
+
+    if len(password) < 6:
+        return dbc.Alert("Password must be at least 6 characters", color="danger"), dash.no_update
+
+    # Create user
+    result = create_user(email.strip().lower(), password, name.strip())
+
+    if result["success"]:
+        if email.endswith('@usc.edu.tt'):
+            return dbc.Alert("Account created! You can now sign in.", color="success"), "/login"
+        else:
+            return dbc.Alert("Account created! Please wait for approval.", color="info"), "/login"
+    else:
+        return dbc.Alert(result["message"], color="danger"), dash.no_update
+
+
+# Profile page callbacks
+@callback(
+    Output('profile-alerts', 'children'),
+    Input('request-access-btn', 'n_clicks'),
+    [State('access-tier-request', 'value'), State('access-justification', 'value'),
+     State('user-session', 'data')],
+    prevent_initial_call=True
+)
+def handle_access_request(n_clicks, requested_tier, justification, user_session):
+    if not n_clicks or not user_session.get('authenticated'):
+        return ""
+
+    if not justification or len(justification.strip()) < 20:
+        return dbc.Alert("Please provide a detailed justification (at least 20 characters)", color="danger")
+
+    result = request_access_upgrade(user_session['id'], requested_tier, justification.strip())
+
+    if result["success"]:
+        return dbc.Alert(result["message"], color="success")
+    else:
+        return dbc.Alert(result["message"], color="danger")
+
+
+@callback(
+    Output('profile-alerts', 'children', allow_duplicate=True),
+    Input('change-password-btn', 'n_clicks'),
+    [State('current-password', 'value'), State('new-password', 'value'),
+     State('confirm-new-password', 'value'), State('user-session', 'data')],
+    prevent_initial_call=True
+)
+def handle_password_change(n_clicks, current_password, new_password, confirm_password, user_session):
+    if not n_clicks or not user_session.get('authenticated'):
+        return ""
+
+    if not all([current_password, new_password, confirm_password]):
+        return dbc.Alert("Please fill in all password fields", color="danger")
+
+    if new_password != confirm_password:
+        return dbc.Alert("New passwords do not match", color="danger")
+
+    if len(new_password) < 6:
+        return dbc.Alert("New password must be at least 6 characters", color="danger")
+
+    result = change_password(user_session['id'], current_password, new_password)
+
+    if result["success"]:
+        return dbc.Alert(result["message"], color="success")
+    else:
+        return dbc.Alert(result["message"], color="danger")
+
+
+# ============================================================================
+# UPDATE YOUR EXISTING FUNCTIONS
+# ============================================================================
+
+# Replace your authenticate_user function with authenticate_user_enhanced
+# Add /signup and /profile routes to your display_page callback
+# Update init_database() call to init_enhanced_database()
+# Add "Sign Up" link to your login page
 def init_database():
     """Initialize database with demo users"""
     conn = sqlite3.connect('usc_ir.db')
@@ -578,8 +1157,15 @@ def create_login_page():
                             html.Strong("Student: "), "student@usc.edu.tt / student123"
                         ], className="mb-0 small")
                     ])
-                ], className="mt-3", color="light")
-
+                ], className="mt-3", color="light"),
+                dbc.Card([
+                    dbc.CardBody([
+                        html.P([
+                            "Don't have an account? ",
+                            html.A("Sign up here", href="/signup", style={'color': USC_COLORS['primary_green']})
+                        ], className="text-center mb-0"),
+                    ])
+                ], className="mt-3")
             ], width=12, md=6, lg=4)
         ], justify="center", className="min-vh-100 d-flex align-items-center")
     ], fluid=True, className="bg-light")
@@ -767,7 +1353,7 @@ def display_page(pathname, user_session):
 # ============================================================================
 
 if __name__ == '__main__':
-    init_database()
+    init_enhanced_database()
 
     print("🚀 Starting USC Institutional Research Portal...")
     print("📊 Clean version with working authentication!")
