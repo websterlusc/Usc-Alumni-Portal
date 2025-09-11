@@ -177,7 +177,22 @@ def init_enhanced_database():
     conn.commit()
     conn.close()
     print("✅ Enhanced database initialized with migrations")
+TIER_INFO = {
+    1: {"name": "Basic Access", "description": "Public information only", "color": "secondary"},
+    2: {"name": "Limited Access", "description": "Basic factbook data", "color": "info"},
+    3: {"name": "Complete Access", "description": "Full factbook including financial", "color": "success"},
+    4: {"name": "Admin Access", "description": "System administration", "color": "warning"}
+}
 
+def get_tier_permissions(tier):
+    """Get what each tier can access"""
+    permissions = {
+        1: ["Public pages", "About USC", "Contact info"],
+        2: ["Basic factbook", "Enrollment data", "Student info"],
+        3: ["Complete factbook", "Financial data", "All reports"],
+        4: ["Everything", "Admin dashboard", "User management"]
+    }
+    return permissions.get(tier, [])
 def hash_password(password):
     """Hash password using SHA-256"""
     return hashlib.sha256(password.encode()).hexdigest()
@@ -398,27 +413,19 @@ def create_signup_page():
 # ============================================================================
 
 def create_profile_page(user_data):
-    """Create user profile page WITH navbar"""
+    """Updated profile page with 4-tier system"""
     if not user_data:
         return create_access_denied_page("Authentication Required", "Please sign in to view your profile.")
 
-    navbar = create_modern_navbar(user_data)  # Add this line!
-
-    tier_info = {
-        1: {"name": "General Access", "description": "Basic access to public information", "color": "secondary"},
-        2: {"name": "Employee Access", "description": "Full factbook access and data analytics", "color": "success"},
-        3: {"name": "Administrative Access", "description": "Complete access including financial data",
-            "color": "warning"}
-    }
-
+    navbar = create_modern_navbar(user_data)
     current_tier = user_data.get('access_tier', 1)
-    tier = tier_info.get(current_tier, tier_info[1])
+    tier = TIER_INFO.get(current_tier, TIER_INFO[1])
 
     content = dbc.Container([
         dbc.Row([
             dbc.Col([
                 html.H1("User Profile", className="display-5 fw-bold mb-4",
-                        style={'color': USC_COLORS['primary_green']}),
+                       style={'color': USC_COLORS['primary_green']}),
 
                 # Profile Information Card
                 dbc.Card([
@@ -430,15 +437,18 @@ def create_profile_page(user_data):
                                 html.P([html.Strong("Email: "), user_data.get('email', 'N/A')]),
                                 html.P([html.Strong("Role: "), user_data.get('role', 'employee').title()]),
                                 html.P([html.Strong("Member Since: "),
-                                        user_data.get('created_at', 'N/A')[:10] if user_data.get(
-                                            'created_at') else 'N/A'])
+                                       user_data.get('created_at', 'N/A')[:10] if user_data.get('created_at') else 'N/A'])
                             ], md=6),
                             dbc.Col([
                                 html.Div([
                                     html.H6("Current Access Tier"),
                                     dbc.Badge(f"Tier {current_tier}: {tier['name']}",
-                                              color=tier['color'], className="mb-2 fs-6"),
-                                    html.P(tier['description'], className="text-muted small")
+                                             color=tier['color'], className="mb-2 fs-6"),
+                                    html.P(tier['description'], className="text-muted small mb-2"),
+                                    html.P([
+                                        html.Strong("You can access: "), html.Br(),
+                                        ", ".join(get_tier_permissions(current_tier))
+                                    ], className="small text-success")
                                 ])
                             ], md=6)
                         ])
@@ -455,16 +465,17 @@ def create_profile_page(user_data):
                             dbc.Col([
                                 html.H6("Request Higher Access"),
                                 html.P("Need access to additional features? Request an upgrade:",
-                                       className="text-muted"),
+                                      className="text-muted"),
 
+                                # Only show if user can request higher access (not admin)
                                 dbc.Form([
                                     dbc.Label("Requested Access Tier"),
                                     dbc.RadioItems(
                                         id="access-tier-request",
                                         options=[
-                                            {"label": "Tier 2: Employee Access (Factbook)", "value": 2,
+                                            {"label": "Tier 2: Limited Access", "value": 2,
                                              "disabled": current_tier >= 2},
-                                            {"label": "Tier 3: Administrative Access (Financial)", "value": 3,
+                                            {"label": "Tier 3: Complete Access", "value": 3,
                                              "disabled": current_tier >= 3}
                                         ],
                                         value=min(current_tier + 1, 3),
@@ -478,8 +489,12 @@ def create_profile_page(user_data):
                                         className="mb-3"
                                     ),
                                     dbc.Button("Submit Request", id="request-access-btn", color="primary",
-                                               disabled=current_tier >= 3)
+                                              disabled=current_tier >= 3)
                                 ]) if current_tier < 3 else html.Div([
+                                    dbc.Alert([
+                                        "You have complete access. Admin access (Tier 4) can only be assigned by current administrators."
+                                    ], color="info")
+                                ]) if current_tier == 3 else html.Div([
                                     dbc.Alert("You have the highest access level available.", color="success")
                                 ])
                             ], md=6),
@@ -500,21 +515,13 @@ def create_profile_page(user_data):
                             ], md=6)
                         ])
                     ])
-                ], className="mb-4"),
-
-                # Recent Access Requests Card
-                dbc.Card([
-                    dbc.CardHeader(html.H5("Access Request History", className="mb-0")),
-                    dbc.CardBody([
-                        html.Div(id="access-requests-history")
-                    ])
-                ])
+                ], className="mb-4")
 
             ], width=12, lg=10)
         ], justify="center")
     ], className="py-4")
 
-    return html.Div([navbar, content])  # Return navbar + content
+    return html.Div([navbar, content])
 
 # ============================================================================
 # ADMIN DASHBOARD
@@ -1138,6 +1145,43 @@ def get_pending_users():
         conn.close()
 
 
+def get_pending_users_with_proper_ids():
+    """Get pending users with their actual database IDs"""
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('''
+            SELECT id, email, full_name, created_at, access_tier
+            FROM users WHERE registration_status = 'pending'
+            ORDER BY created_at ASC
+        ''')
+
+        results = cursor.fetchall()
+        return results
+    finally:
+        conn.close()
+
+
+def get_pending_access_requests_with_proper_ids():
+    """Get pending access requests with proper IDs"""
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('''
+            SELECT ar.id, u.email, u.full_name, ar.current_tier, ar.requested_tier, 
+                   ar.justification, ar.created_at, u.id as user_id
+            FROM access_requests ar
+            JOIN users u ON ar.user_id = u.id
+            WHERE ar.status = 'pending'
+            ORDER BY ar.created_at ASC
+        ''')
+
+        return cursor.fetchall()
+    finally:
+        conn.close()
+
 def get_pending_access_requests():
     """Get all pending access upgrade requests"""
     conn = sqlite3.connect('usc_ir.db')
@@ -1157,8 +1201,8 @@ def get_pending_access_requests():
     finally:
         conn.close()
 def create_user_registrations_tab():
-    """Create the user registrations management tab"""
-    pending_users = get_pending_users()
+    """Create user registrations tab with working approval buttons"""
+    pending_users = get_pending_users_with_proper_ids()
 
     if not pending_users:
         return dbc.Alert("No pending user registrations", color="info")
@@ -1169,29 +1213,33 @@ def create_user_registrations_tab():
             dbc.CardBody([
                 dbc.Row([
                     dbc.Col([
-                        html.H5(full_name, className="card-title"),
+                        html.H5(full_name or "N/A", className="card-title"),
                         html.P([
                             html.Strong("Email: "), email, html.Br(),
-                            html.Strong("Applied: "), created_at[:10] if created_at else 'N/A'
+                            html.Strong("Applied: "), created_at[:10] if created_at else 'N/A', html.Br(),
+                            html.Strong("Current Tier: "), f"Tier {current_tier}"
                         ], className="card-text")
                     ], md=6),
                     dbc.Col([
                         html.H6("Approve with access tier:"),
                         dbc.RadioItems(
-                            id=f"approve-tier-{user_id}",
+                            id={"type": "approve-tier", "user_id": user_id},
                             options=[
-                                {"label": "Tier 1: General Access", "value": 1},
-                                {"label": "Tier 2: Employee Access (Factbook)", "value": 2},
-                                {"label": "Tier 3: Administrative Access", "value": 3}
+                                {"label": "Tier 1: Basic Access", "value": 1},
+                                {"label": "Tier 2: Limited Access", "value": 2},
+                                {"label": "Tier 3: Complete Access", "value": 3},
+                                {"label": "Tier 4: Admin Access", "value": 4}
                             ],
-                            value=1,
+                            value=2,  # Default to limited access
                             className="mb-3"
                         ),
                         dbc.ButtonGroup([
-                            dbc.Button("Approve", id=f"approve-user-{user_id}",
-                                       color="success", size="sm"),
-                            dbc.Button("Deny", id=f"deny-user-{user_id}",
-                                       color="danger", size="sm")
+                            dbc.Button("Approve",
+                                     id={"type": "approve-user", "user_id": user_id},
+                                     color="success", size="sm"),
+                            dbc.Button("Deny",
+                                     id={"type": "deny-user", "user_id": user_id},
+                                     color="danger", size="sm")
                         ])
                     ], md=6)
                 ])
@@ -1201,47 +1249,55 @@ def create_user_registrations_tab():
 
     return html.Div([
         html.H4(f"Pending User Registrations ({len(pending_users)})", className="mb-3"),
+        html.P("Review and approve new user registrations. Note: Only admins can assign Tier 4 access.",
+               className="text-muted mb-3"),
         html.Div(user_cards)
     ])
 
 
 def create_access_requests_tab():
-    """Create the access requests management tab"""
-    pending_requests = get_pending_access_requests()
+    """Create access requests tab with working buttons"""
+    pending_requests = get_pending_access_requests_with_proper_ids()
 
     if not pending_requests:
         return dbc.Alert("No pending access requests", color="info")
 
     request_cards = []
-    for req_id, email, full_name, current_tier, requested_tier, justification, created_at in pending_requests:
+    for req_id, email, full_name, current_tier, requested_tier, justification, created_at, user_id in pending_requests:
+        # Don't allow requests for Tier 4 (Admin)
+        if requested_tier >= 4:
+            continue
+
         card = dbc.Card([
             dbc.CardBody([
                 dbc.Row([
                     dbc.Col([
                         html.H5(f"{full_name} ({email})", className="card-title"),
                         html.P([
-                            html.Strong("Current Tier: "), f"Tier {current_tier}", html.Br(),
-                            html.Strong("Requested Tier: "), f"Tier {requested_tier}", html.Br(),
+                            html.Strong("Current: "), f"Tier {current_tier} - {TIER_INFO[current_tier]['name']}", html.Br(),
+                            html.Strong("Requested: "), f"Tier {requested_tier} - {TIER_INFO[requested_tier]['name']}", html.Br(),
                             html.Strong("Requested: "), created_at[:10] if created_at else 'N/A'
                         ], className="card-text"),
                         html.P([
                             html.Strong("Justification: "), html.Br(),
                             justification
                         ], className="card-text",
-                            style={'backgroundColor': '#f8f9fa', 'padding': '10px', 'borderRadius': '5px'})
+                           style={'backgroundColor': '#f8f9fa', 'padding': '10px', 'borderRadius': '5px'})
                     ], md=8),
                     dbc.Col([
                         dbc.ButtonGroup([
-                            dbc.Button("Approve", id=f"approve-request-{req_id}",
-                                       color="success", size="sm", className="mb-2"),
-                            dbc.Button("Deny", id=f"deny-request-{req_id}",
-                                       color="danger", size="sm", className="mb-2")
+                            dbc.Button("Approve",
+                                     id={"type": "approve-access", "request_id": req_id},
+                                     color="success", size="sm", className="mb-2"),
+                            dbc.Button("Deny",
+                                     id={"type": "deny-access", "request_id": req_id},
+                                     color="danger", size="sm", className="mb-2")
                         ], vertical=True),
                         html.Div([
                             dbc.Label("Denial Reason (if denying):"),
-                            dbc.Textarea(id=f"deny-reason-{req_id}",
-                                         placeholder="Reason for denial...",
-                                         rows=3, size="sm")
+                            dbc.Textarea(id={"type": "deny-reason", "request_id": req_id},
+                                       placeholder="Reason for denial...",
+                                       rows=3, size="sm")
                         ], className="mt-3")
                     ], md=4)
                 ])
@@ -1249,49 +1305,123 @@ def create_access_requests_tab():
         ], className="mb-3")
         request_cards.append(card)
 
+    if not request_cards:
+        return dbc.Alert("No valid access requests (Tier 4 requests not allowed)", color="info")
+
     return html.Div([
-        html.H4(f"Pending Access Requests ({len(pending_requests)})", className="mb-3"),
+        html.H4(f"Pending Access Requests ({len(request_cards)})", className="mb-3"),
+        html.P("Users can only request up to Tier 3. Tier 4 (Admin) must be assigned manually.",
+               className="text-muted mb-3"),
         html.Div(request_cards)
     ])
 
 
 # Access request approval callbacks - FIXED
+# USER REGISTRATION APPROVAL - WORKING VERSION
 @callback(
-    [Output('admin-alerts', 'children', allow_duplicate=True),  # Add this
-     Output('admin-content', 'children', allow_duplicate=True)],  # Add this
-    [Input(f'approve-request-{i}', 'n_clicks') for i in range(1, 100)],
-    [State('user-session', 'data'), State('admin-tabs', 'active_tab')],
+    [Output('admin-alerts', 'children', allow_duplicate=True),
+     Output('admin-content', 'children', allow_duplicate=True)],
+    [Input({"type": "approve-user", "user_id": ALL}, 'n_clicks'),
+     Input({"type": "deny-user", "user_id": ALL}, 'n_clicks')],
+    [State({"type": "approve-tier", "user_id": ALL}, 'value'),
+     State('user-session', 'data'),
+     State('admin-tabs', 'active_tab')],
     prevent_initial_call=True
 )
-def handle_access_request_approvals(*args):
-    """Handle access request approvals"""
+def handle_user_registrations(approve_clicks, deny_clicks, tier_values, user_session, active_tab):
+    """Handle user registration approvals and denials"""
     ctx = dash.callback_context
-    if not ctx.triggered:
+    if not ctx.triggered or not user_session.get('authenticated'):
         return dash.no_update, dash.no_update
 
-    user_session = args[-2]
-    active_tab = args[-1]
+    admin_id = user_session.get('id')
+    triggered = ctx.triggered[0]
 
-    if not user_session.get('authenticated'):
+    # Parse the triggered component
+    import json
+    component_id = json.loads(triggered['prop_id'].split('.')[0])
+    user_id = component_id['user_id']
+    action_type = component_id['type']
+
+    if action_type == "approve-user":
+        # Find the corresponding tier value
+        pending_users = get_pending_users_with_proper_ids()
+        tier_index = None
+        for i, (uid, _, _, _, _) in enumerate(pending_users):
+            if uid == user_id:
+                tier_index = i
+                break
+
+        selected_tier = tier_values[tier_index] if tier_index is not None and tier_index < len(tier_values) else 2
+        result = approve_user_registration(user_id, selected_tier, admin_id)
+
+    elif action_type == "deny-user":
+        result = deny_user_registration(user_id, "Denied by admin", admin_id)
+    else:
         return dash.no_update, dash.no_update
 
-    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    alert = dbc.Alert(result["message"],
+                      color="success" if result["success"] else "danger",
+                      dismissable=True)
 
-    if 'approve-request-' in button_id:
-        request_id = int(button_id.replace('approve-request-', ''))
-        admin_id = user_session.get('id')
+    # Refresh the registrations tab
+    new_content = create_user_registrations_tab() if active_tab == "registrations" else dash.no_update
 
+    return alert, new_content
+
+
+# ACCESS REQUEST APPROVAL - WORKING VERSION
+@callback(
+    [Output('admin-alerts', 'children', allow_duplicate=True),
+     Output('admin-content', 'children', allow_duplicate=True)],
+    [Input({"type": "approve-access", "request_id": ALL}, 'n_clicks'),
+     Input({"type": "deny-access", "request_id": ALL}, 'n_clicks')],
+    [State({"type": "deny-reason", "request_id": ALL}, 'value'),
+     State('user-session', 'data'),
+     State('admin-tabs', 'active_tab')],
+    prevent_initial_call=True
+)
+def handle_access_requests(approve_clicks, deny_clicks, deny_reasons, user_session, active_tab):
+    """Handle access request approvals and denials"""
+    ctx = dash.callback_context
+    if not ctx.triggered or not user_session.get('authenticated'):
+        return dash.no_update, dash.no_update
+
+    admin_id = user_session.get('id')
+    triggered = ctx.triggered[0]
+
+    # Parse the triggered component
+    import json
+    component_id = json.loads(triggered['prop_id'].split('.')[0])
+    request_id = component_id['request_id']
+    action_type = component_id['type']
+
+    if action_type == "approve-access":
         result = approve_access_request(request_id, admin_id)
 
-        alert = dbc.Alert(result["message"],
-                          color="success" if result["success"] else "danger",
-                          dismissable=True)
+    elif action_type == "deny-access":
+        # Find the corresponding denial reason
+        pending_requests = get_pending_access_requests_with_proper_ids()
+        reason_index = None
+        for i, (rid, _, _, _, _, _, _, _) in enumerate(pending_requests):
+            if rid == request_id:
+                reason_index = i
+                break
 
-        new_content = create_access_requests_tab() if active_tab == "access-requests" else dash.no_update
+        reason = deny_reasons[reason_index] if reason_index is not None and reason_index < len(deny_reasons) and \
+                                               deny_reasons[reason_index] else "No reason provided"
+        result = deny_access_request(request_id, reason, admin_id)
+    else:
+        return dash.no_update, dash.no_update
 
-        return alert, new_content
+    alert = dbc.Alert(result["message"],
+                      color="success" if result["success"] else "danger",
+                      dismissable=True)
 
-    return dash.no_update, dash.no_update
+    # Refresh the access requests tab
+    new_content = create_access_requests_tab() if active_tab == "access-requests" else dash.no_update
+
+    return alert, new_content
 # ============================================================================
 # FIXED ADMIN CALLBACKS
 # ============================================================================
@@ -1302,18 +1432,19 @@ def handle_access_request_approvals(*args):
     prevent_initial_call=False
 )
 def render_admin_tab_content(active_tab):
-    """Render admin tab content with enhanced user management"""
+    """Render admin tab content with fixed functions"""
     if active_tab == "overview":
         return create_overview_tab()
     elif active_tab == "users":
-        return create_user_management_tab()  # Use enhanced version
+        return create_user_management_tab()
     elif active_tab == "registrations":
-        return create_user_registrations_tab()
+        return create_user_registrations_tab()  # Use fixed version
     elif active_tab == "access-requests":
-        return create_access_requests_tab()
+        return create_access_requests_tab()  # Use fixed version
     elif active_tab == "history":
         return create_request_history_tab()
     return html.Div("Select a tab")
+
 
 
 # Edit user modal callbacks
@@ -1528,87 +1659,61 @@ def handle_signup(n_clicks, name, email, password, confirm_password):
         return dbc.Alert(result["message"], color="danger"), dash.no_update
 
 
-@callback(
-    [Output('admin-alerts', 'children', allow_duplicate=True),  # Add this
-     Output('admin-content', 'children', allow_duplicate=True)],  # Add this
-    [Input(f'approve-user-{i}', 'n_clicks') for i in range(1, 100)],
-    [State(f'approve-tier-{i}', 'value') for i in range(1, 100)] +
-    [State('user-session', 'data'), State('admin-tabs', 'active_tab')],
-    prevent_initial_call=True
-)
-def handle_user_approvals(*args):
-    """Handle user registration approvals"""
-    ctx = dash.callback_context
-    if not ctx.triggered:
-        return dash.no_update, dash.no_update
-
-    # Get user session and active tab from the end of args
-    user_session = args[-2]
-    active_tab = args[-1]
-
-    if not user_session.get('authenticated'):
-        return dash.no_update, dash.no_update
-
-    # Find which button was clicked
-    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
-
-    if 'approve-user-' in button_id:
-        user_id = int(button_id.replace('approve-user-', ''))
-        admin_id = user_session.get('id')
-
-        # Find the corresponding tier value
-        tier_index = user_id - 1  # Assuming user IDs start from 1
-        tier_values = args[100:200]  # Tier values are in the middle of args
-        selected_tier = 1  # Default
-
-        # Try to get the selected tier from the form
-        try:
-            selected_tier = tier_values[tier_index] if tier_index < len(tier_values) and tier_values[tier_index] else 1
-        except:
-            selected_tier = 1
-
-        result = approve_user_registration(user_id, selected_tier, admin_id)
-
-        alert = dbc.Alert(result["message"],
-                          color="success" if result["success"] else "danger",
-                          dismissable=True)
-
-        # Refresh the registrations tab
-        new_content = create_user_registrations_tab() if active_tab == "registrations" else dash.no_update
-
-        return alert, new_content
 
     return dash.no_update, dash.no_update
 # Profile page callbacks
 # Profile access request callback - FIXED
 @callback(
-    Output('profile-alerts', 'children', allow_duplicate=True),
-    Input('request-access-btn', 'n_clicks'),
-    [State('access-tier-request', 'value'),
-     State('access-justification', 'value'),
-     State('user-session', 'data')],
+    [Output('admin-alerts', 'children', allow_duplicate=True),
+     Output('admin-content', 'children', allow_duplicate=True)],
+    [Input({"type": "approve-access", "request_id": ALL}, 'n_clicks'),
+     Input({"type": "deny-access", "request_id": ALL}, 'n_clicks')],
+    [State({"type": "deny-reason", "request_id": ALL}, 'value'),
+     State('user-session', 'data'),
+     State('admin-tabs', 'active_tab')],
     prevent_initial_call=True
 )
-def handle_access_request(n_clicks, requested_tier, justification, user_session):
-    """Handle access tier upgrade requests"""
-    if not n_clicks or not user_session.get('authenticated'):
-        return ""
+def handle_access_requests(approve_clicks, deny_clicks, deny_reasons, user_session, active_tab):
+    """Handle access request approvals and denials"""
+    ctx = dash.callback_context
+    if not ctx.triggered or not user_session.get('authenticated'):
+        return dash.no_update, dash.no_update
 
-    if not justification or len(justification.strip()) < 20:
-        return dbc.Alert("Please provide a detailed justification (at least 20 characters)", color="danger")
+    admin_id = user_session.get('id')
+    triggered = ctx.triggered[0]
 
-    # Get user ID from session
-    user_id = user_session.get('id')
-    if not user_id:
-        return dbc.Alert("User ID not found in session", color="danger")
+    # Parse the triggered component
+    import json
+    component_id = json.loads(triggered['prop_id'].split('.')[0])
+    request_id = component_id['request_id']
+    action_type = component_id['type']
 
-    result = request_access_upgrade(user_id, requested_tier, justification.strip())
+    if action_type == "approve-access":
+        result = approve_access_request(request_id, admin_id)
 
-    if result["success"]:
-        return dbc.Alert(result["message"], color="success")
+    elif action_type == "deny-access":
+        # Find the corresponding denial reason
+        pending_requests = get_pending_access_requests_with_proper_ids()
+        reason_index = None
+        for i, (rid, _, _, _, _, _, _, _) in enumerate(pending_requests):
+            if rid == request_id:
+                reason_index = i
+                break
+
+        reason = deny_reasons[reason_index] if reason_index is not None and reason_index < len(deny_reasons) and \
+                                               deny_reasons[reason_index] else "No reason provided"
+        result = deny_access_request(request_id, reason, admin_id)
     else:
-        return dbc.Alert(result["message"], color="danger")
+        return dash.no_update, dash.no_update
 
+    alert = dbc.Alert(result["message"],
+                      color="success" if result["success"] else "danger",
+                      dismissable=True)
+
+    # Refresh the access requests tab
+    new_content = create_access_requests_tab() if active_tab == "access-requests" else dash.no_update
+
+    return alert, new_content
 
 @callback(
     Output('profile-alerts', 'children', allow_duplicate=True),
@@ -1734,7 +1839,7 @@ def handle_navbar_logout(n_clicks):
 
 
 def create_auth_section(user_data=None):
-    """Enhanced authentication section with admin button"""
+    """Enhanced authentication section with 4-tier display"""
     if not user_data or not user_data.get('authenticated'):
         return dbc.NavItem(dbc.Button(
             "Sign In",
@@ -1744,8 +1849,8 @@ def create_auth_section(user_data=None):
             href="/login"
         ))
 
-    tier_info = {1: "General", 2: "Employee", 3: "Admin"}
     user_tier = user_data.get('access_tier', 1)
+    tier_info = TIER_INFO.get(user_tier, TIER_INFO[1])
 
     # Build dropdown menu items
     dropdown_items = [
@@ -1754,8 +1859,8 @@ def create_auth_section(user_data=None):
             html.Br(),
             html.Small(user_data.get('email', ''), className="text-muted"),
             html.Br(),
-            dbc.Badge(f"Tier {user_tier}: {tier_info.get(user_tier, 'General')}",
-                      color="success" if user_tier >= 2 else "secondary", className="mt-1")
+            dbc.Badge(f"Tier {user_tier}: {tier_info['name']}",
+                      color=tier_info['color'], className="mt-1")
         ], header=True),
         dbc.DropdownMenuItem(divider=True),
         dbc.DropdownMenuItem([
@@ -1763,8 +1868,8 @@ def create_auth_section(user_data=None):
         ], href="/profile")
     ]
 
-    # Add Admin button for Tier 3 users
-    if user_tier >= 3:
+    # Add Admin button for Tier 4 users only
+    if user_tier >= 4:
         dropdown_items.append(
             dbc.DropdownMenuItem([
                 html.I(className="fas fa-cog me-2"), "Admin Dashboard"
@@ -1787,8 +1892,6 @@ def create_auth_section(user_data=None):
             align_end=True
         )
     ])
-
-
 def create_modern_navbar(user_data=None):
     """Your exact navbar design with authentication"""
     user_access_tier = user_data.get('access_tier', 1) if user_data else 1
@@ -2370,12 +2473,12 @@ def display_page(pathname, user_session):
 
 
 
+
 # ============================================================================
 # RUN APPLICATION
 # ============================================================================
 
 if __name__ == '__main__':
-    init_enhanced_database()
 
     print("🚀 Starting USC Institutional Research Portal...")
     print("📊 Clean version with working authentication!")
