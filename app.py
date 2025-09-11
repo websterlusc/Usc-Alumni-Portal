@@ -8,6 +8,7 @@ from dash import html, dcc, Input, Output, State, callback
 import dash_bootstrap_components as dbc
 import sqlite3
 import os
+from dash import ALL  # Add this line
 from datetime import datetime
 import hashlib
 import secrets
@@ -68,27 +69,48 @@ server = app.server
 # ============================================================================
 
 def init_enhanced_database():
-    """Initialize database with enhanced user management"""
+    """Initialize database with enhanced user management and handle migrations"""
     conn = sqlite3.connect('usc_ir.db')
     cursor = conn.cursor()
 
-    # Enhanced users table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY,
-            email TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            full_name TEXT,
-            role TEXT DEFAULT 'employee',
-            access_tier INTEGER DEFAULT 1,
-            is_active BOOLEAN DEFAULT TRUE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            last_login TIMESTAMP,
-            registration_status TEXT DEFAULT 'pending'
-        )
-    ''')
+    # Check if users table exists and what columns it has
+    cursor.execute("PRAGMA table_info(users)")
+    existing_columns = [column[1] for column in cursor.fetchall()]
 
-    # Access requests table
+    if not existing_columns:
+        # Create new users table if it doesn't exist
+        cursor.execute('''
+            CREATE TABLE users (
+                id INTEGER PRIMARY KEY,
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                full_name TEXT,
+                role TEXT DEFAULT 'employee',
+                access_tier INTEGER DEFAULT 1,
+                is_active BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_login TIMESTAMP,
+                registration_status TEXT DEFAULT 'pending'
+            )
+        ''')
+    else:
+        # Add missing columns to existing table
+        if 'password_hash' not in existing_columns:
+            cursor.execute('ALTER TABLE users ADD COLUMN password_hash TEXT')
+
+        if 'registration_status' not in existing_columns:
+            cursor.execute('ALTER TABLE users ADD COLUMN registration_status TEXT DEFAULT "approved"')
+
+        if 'is_active' not in existing_columns:
+            cursor.execute('ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT TRUE')
+
+        if 'created_at' not in existing_columns:
+            cursor.execute('ALTER TABLE users ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
+
+        if 'last_login' not in existing_columns:
+            cursor.execute('ALTER TABLE users ADD COLUMN last_login TIMESTAMP')
+
+    # Create access requests table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS access_requests (
             id INTEGER PRIMARY KEY,
@@ -106,7 +128,7 @@ def init_enhanced_database():
         )
     ''')
 
-    # Password reset tokens table
+    # Create password reset tokens table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS password_reset_tokens (
             id INTEGER PRIMARY KEY,
@@ -119,7 +141,7 @@ def init_enhanced_database():
         )
     ''')
 
-    # Enhanced demo users with hashed passwords
+    # Update existing demo users with password hashes if they don't have them
     demo_users = [
         ('admin@usc.edu.tt', 'admin123', 'USC Administrator', 'admin', 3, 'approved'),
         ('employee@usc.edu.tt', 'emp123', 'USC Employee', 'employee', 2, 'approved'),
@@ -130,16 +152,31 @@ def init_enhanced_database():
     ]
 
     for email, password, name, role, tier, status in demo_users:
-        password_hash = hash_password(password)
-        cursor.execute('''
-            INSERT OR REPLACE INTO users (email, password_hash, full_name, role, access_tier, registration_status)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (email, password_hash, name, role, tier, status))
+        # Check if user exists
+        cursor.execute('SELECT id, password_hash FROM users WHERE email = ?', (email,))
+        existing_user = cursor.fetchone()
+
+        if existing_user:
+            # Update existing user if they don't have a password hash
+            user_id, existing_hash = existing_user
+            if not existing_hash:
+                password_hash = hash_password(password)
+                cursor.execute('''
+                    UPDATE users 
+                    SET password_hash = ?, registration_status = ?, access_tier = ?
+                    WHERE id = ?
+                ''', (password_hash, status, tier, user_id))
+        else:
+            # Create new user
+            password_hash = hash_password(password)
+            cursor.execute('''
+                INSERT OR REPLACE INTO users (email, password_hash, full_name, role, access_tier, registration_status)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (email, password_hash, name, role, tier, status))
 
     conn.commit()
     conn.close()
-    print("✅ Enhanced database initialized")
-
+    print("✅ Enhanced database initialized with migrations")
 
 def hash_password(password):
     """Hash password using SHA-256"""
@@ -483,9 +520,155 @@ def create_profile_page(user_data):
 # ============================================================================
 # ADMIN DASHBOARD
 # ============================================================================
+# ============================================================================
+# ADMIN DASHBOARD FUNCTIONS - FIXED VERSION
+# ============================================================================
 
-def create_admin_dashboard(user_data):
-    """Create admin dashboard for managing users and requests"""
+def get_all_users():
+    """Get all users with their complete information"""
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('''
+            SELECT id, email, full_name, role, access_tier, registration_status, 
+                   is_active, created_at, last_login
+            FROM users
+            ORDER BY created_at DESC
+        ''')
+
+        return cursor.fetchall()
+    finally:
+        conn.close()
+
+
+def get_user_statistics():
+    """Get comprehensive user statistics"""
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    try:
+        stats = {}
+
+        # Total users by status
+        cursor.execute('SELECT registration_status, COUNT(*) FROM users GROUP BY registration_status')
+        stats['by_status'] = dict(cursor.fetchall())
+
+        # Users by access tier (only approved users)
+        cursor.execute(
+            'SELECT access_tier, COUNT(*) FROM users WHERE registration_status = "approved" GROUP BY access_tier')
+        stats['by_tier'] = dict(cursor.fetchall())
+
+        # Active vs inactive
+        cursor.execute('SELECT is_active, COUNT(*) FROM users GROUP BY is_active')
+        stats['by_activity'] = dict(cursor.fetchall())
+
+        # Recent registrations (last 30 days)
+        cursor.execute('''
+            SELECT COUNT(*) FROM users 
+            WHERE created_at > datetime('now', '-30 days')
+        ''')
+        stats['recent_registrations'] = cursor.fetchone()[0]
+
+        # Pending requests count
+        cursor.execute('SELECT COUNT(*) FROM access_requests WHERE status = "pending"')
+        stats['pending_requests'] = cursor.fetchone()[0]
+
+        return stats
+    finally:
+        conn.close()
+
+
+def update_user_info(user_id, email, full_name, role, access_tier, is_active, admin_id):
+    """Update user information"""
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('''
+            UPDATE users 
+            SET email = ?, full_name = ?, role = ?, access_tier = ?, is_active = ?
+            WHERE id = ?
+        ''', (email, full_name, role, access_tier, is_active, user_id))
+
+        conn.commit()
+        return {"success": True, "message": "User information updated successfully"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error updating user: {str(e)}"}
+    finally:
+        conn.close()
+
+
+def delete_user(user_id, admin_id):
+    """Delete a user account"""
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    try:
+        # Don't allow deletion of the admin performing the action
+        if user_id == admin_id:
+            return {"success": False, "message": "Cannot delete your own account"}
+
+        # Delete related records first
+        cursor.execute('DELETE FROM access_requests WHERE user_id = ?', (user_id,))
+        cursor.execute('DELETE FROM password_reset_tokens WHERE user_id = ?', (user_id,))
+        cursor.execute('DELETE FROM users WHERE id = ?', (user_id,))
+
+        conn.commit()
+        return {"success": True, "message": "User deleted successfully"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error deleting user: {str(e)}"}
+    finally:
+        conn.close()
+
+
+def reset_user_password(user_id, new_password, admin_id):
+    """Admin reset of user password"""
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    try:
+        password_hash = hash_password(new_password)
+        cursor.execute('UPDATE users SET password_hash = ? WHERE id = ?', (password_hash, user_id))
+
+        conn.commit()
+        return {"success": True, "message": "Password reset successfully"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error resetting password: {str(e)}"}
+    finally:
+        conn.close()
+
+
+def get_access_request_history():
+    """Get all access requests with history"""
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('''
+            SELECT ar.id, u.email, u.full_name, ar.current_tier, ar.requested_tier,
+                   ar.justification, ar.status, ar.created_at, ar.reviewed_at,
+                   reviewer.full_name as reviewer_name, ar.admin_notes
+            FROM access_requests ar
+            JOIN users u ON ar.user_id = u.id
+            LEFT JOIN users reviewer ON ar.reviewed_by = reviewer.id
+            ORDER BY ar.created_at DESC
+        ''')
+
+        return cursor.fetchall()
+    finally:
+        conn.close()
+
+
+# ============================================================================
+# ENHANCED ADMIN DASHBOARD COMPONENTS
+# ============================================================================
+
+def create_comprehensive_admin_dashboard(user_data):
+    """Create comprehensive admin dashboard"""
     if not user_data or user_data.get('access_tier', 1) < 3:
         return create_access_denied_page("Admin Access Required",
                                          "You need administrative access to view this page.")
@@ -494,14 +677,573 @@ def create_admin_dashboard(user_data):
         html.H1("Admin Dashboard", className="display-5 fw-bold mb-4",
                 style={'color': USC_COLORS['primary_green']}),
 
-        dbc.Tabs([
-            dbc.Tab(label="Pending Requests", tab_id="requests"),
-            dbc.Tab(label="User Management", tab_id="users"),
-            dbc.Tab(label="System Stats", tab_id="stats")
-        ], id="admin-tabs", active_tab="requests"),
+        html.Div(id="admin-alerts", className="mb-4"),
 
-        html.Div(id="admin-content", className="mt-4")
+        dbc.Tabs([
+            dbc.Tab(label="Overview", tab_id="overview"),
+            dbc.Tab(label="User Management", tab_id="users"),
+            dbc.Tab(label="Registration Requests", tab_id="registrations"),
+            dbc.Tab(label="Access Requests", tab_id="access-requests"),
+            dbc.Tab(label="Request History", tab_id="history")
+        ], id="admin-tabs", active_tab="overview"),
+
+        html.Div(id="admin-content", className="mt-4"),
+
+        # Edit User Modal
+        dbc.Modal([
+            dbc.ModalHeader("Edit User Information"),
+            dbc.ModalBody([
+                html.Div(id="edit-user-alerts"),
+                dbc.Form([
+                    dbc.Row([
+                        dbc.Col([
+                            dbc.Label("Full Name"),
+                            dbc.Input(id="edit-user-name", type="text", className="mb-3")
+                        ], md=6),
+                        dbc.Col([
+                            dbc.Label("Email Address"),
+                            dbc.Input(id="edit-user-email", type="email", className="mb-3")
+                        ], md=6)
+                    ]),
+                    dbc.Row([
+                        dbc.Col([
+                            dbc.Label("Role"),
+                            dbc.Select(
+                                id="edit-user-role",
+                                options=[
+                                    {"label": "Employee", "value": "employee"},
+                                    {"label": "Admin", "value": "admin"},
+                                    {"label": "Student", "value": "student"}
+                                ],
+                                className="mb-3"
+                            )
+                        ], md=4),
+                        dbc.Col([
+                            dbc.Label("Access Tier"),
+                            dbc.Select(
+                                id="edit-user-tier",
+                                options=[
+                                    {"label": "Tier 1: General", "value": 1},
+                                    {"label": "Tier 2: Employee", "value": 2},
+                                    {"label": "Tier 3: Admin", "value": 3}
+                                ],
+                                className="mb-3"
+                            )
+                        ], md=4),
+                        dbc.Col([
+                            dbc.Label("Account Status"),
+                            dbc.Select(
+                                id="edit-user-status",
+                                options=[
+                                    {"label": "Active", "value": "true"},
+                                    {"label": "Inactive", "value": "false"}
+                                ],
+                                className="mb-3"
+                            )
+                        ], md=4)
+                    ])
+                ]),
+                dcc.Store(id="edit-user-id")
+            ]),
+            dbc.ModalFooter([
+                dbc.Button("Cancel", id="cancel-edit-user", color="secondary"),
+                dbc.Button("Save Changes", id="save-edit-user", color="primary")
+            ])
+        ], id="edit-user-modal", size="lg", is_open=False),
+
+        # Password Reset Modal
+        dbc.Modal([
+            dbc.ModalHeader("Reset User Password"),
+            dbc.ModalBody([
+                html.Div(id="reset-password-alerts"),
+                dbc.Form([
+                    dbc.Label("New Password"),
+                    dbc.Input(id="new-password-input", type="password", className="mb-3"),
+                    dbc.Label("Confirm Password"),
+                    dbc.Input(id="confirm-password-input", type="password", className="mb-3")
+                ]),
+                dcc.Store(id="reset-password-user-id")
+            ]),
+            dbc.ModalFooter([
+                dbc.Button("Cancel", id="cancel-reset-password", color="secondary"),
+                dbc.Button("Reset Password", id="confirm-reset-password", color="warning")
+            ])
+        ], id="reset-password-modal", size="md", is_open=False)
+
     ], className="py-4")
+
+
+def create_overview_tab():
+    """Create admin overview dashboard"""
+    stats = get_user_statistics()
+
+    # Summary cards
+    summary_cards = dbc.Row([
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.H3(str(stats.get('by_status', {}).get('approved', 0)),
+                            className="text-success"),
+                    html.P("Active Users", className="mb-0")
+                ])
+            ], color="success", outline=True)
+        ], md=3),
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.H3(str(stats.get('by_status', {}).get('pending', 0)),
+                            className="text-warning"),
+                    html.P("Pending Approval", className="mb-0")
+                ])
+            ], color="warning", outline=True)
+        ], md=3),
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.H3(str(stats.get('pending_requests', 0)),
+                            className="text-info"),
+                    html.P("Access Requests", className="mb-0")
+                ])
+            ], color="info", outline=True)
+        ], md=3),
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.H3(str(stats.get('recent_registrations', 0)),
+                            className="text-primary"),
+                    html.P("New (30 days)", className="mb-0")
+                ])
+            ], color="primary", outline=True)
+        ], md=3)
+    ], className="mb-4")
+
+    # Access tier distribution
+    tier_stats = stats.get('by_tier', {})
+    tier_cards = dbc.Row([
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.H4(str(tier_stats.get(1, 0))),
+                    html.P("Tier 1: General", className="mb-0")
+                ])
+            ])
+        ], md=4),
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.H4(str(tier_stats.get(2, 0))),
+                    html.P("Tier 2: Employee", className="mb-0")
+                ])
+            ])
+        ], md=4),
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.H4(str(tier_stats.get(3, 0))),
+                    html.P("Tier 3: Admin", className="mb-0")
+                ])
+            ])
+        ], md=4)
+    ])
+
+    return html.Div([
+        html.H4("System Overview", className="mb-3"),
+        summary_cards,
+        html.H5("Access Tier Distribution", className="mb-3 mt-4"),
+        tier_cards
+    ])
+
+
+def create_user_management_tab():
+    """Create comprehensive user management tab"""
+    users = get_all_users()
+
+    if not users:
+        return dbc.Alert("No users found in the system", color="info")
+
+    # Create user cards instead of table for better mobile responsiveness
+    user_cards = []
+    for user_id, email, full_name, role, access_tier, reg_status, is_active, created_at, last_login in users:
+        # Status badge
+        if reg_status == 'approved':
+            status_badge = dbc.Badge("Active" if is_active else "Inactive",
+                                     color="success" if is_active else "secondary")
+        elif reg_status == 'pending':
+            status_badge = dbc.Badge("Pending", color="warning")
+        else:
+            status_badge = dbc.Badge("Denied", color="danger")
+
+        # Tier badge
+        tier_colors = {1: "secondary", 2: "success", 3: "warning"}
+        tier_badge = dbc.Badge(f"Tier {access_tier}", color=tier_colors.get(access_tier, "secondary"))
+
+        user_card = dbc.Card([
+            dbc.CardBody([
+                dbc.Row([
+                    dbc.Col([
+                        html.H5(full_name or "N/A", className="card-title"),
+                        html.P([
+                            html.Strong("Email: "), email, html.Br(),
+                            html.Strong("Role: "), role.title(), html.Br(),
+                            html.Strong("Last Login: "), last_login[:10] if last_login else "Never"
+                        ], className="card-text")
+                    ], md=6),
+                    dbc.Col([
+                        html.Div([
+                            tier_badge, " ", status_badge
+                        ], className="mb-3"),
+                        dbc.ButtonGroup([
+                            dbc.Button("Edit", id=f"edit-user-{user_id}", color="primary", size="sm"),
+                            dbc.Button("Reset Password", id=f"reset-pwd-{user_id}", color="warning", size="sm"),
+                            dbc.Button("Delete", id=f"delete-user-{user_id}", color="danger", size="sm")
+                        ])
+                    ], md=6)
+                ])
+            ])
+        ], className="mb-3")
+
+        user_cards.append(user_card)
+
+    return html.Div([
+        html.H4(f"User Management ({len(users)} total users)", className="mb-4"),
+        html.Div(user_cards)
+    ])
+
+
+def create_request_history_tab():
+    """Create access request history tab"""
+    requests = get_access_request_history()
+
+    if not requests:
+        return dbc.Alert("No access requests found", color="info")
+
+    # Create history cards
+    history_cards = []
+    for req_id, email, full_name, current_tier, requested_tier, justification, status, created_at, reviewed_at, reviewer_name, admin_notes in requests:
+        # Status badge
+        status_colors = {"pending": "warning", "approved": "success", "denied": "danger"}
+        status_badge = dbc.Badge(status.title(), color=status_colors.get(status, "secondary"))
+
+        history_card = dbc.Card([
+            dbc.CardBody([
+                dbc.Row([
+                    dbc.Col([
+                        html.H5(f"{full_name} ({email})", className="card-title"),
+                        html.P([
+                            html.Strong("Request: "), f"Tier {current_tier} → Tier {requested_tier}", html.Br(),
+                            html.Strong("Status: "), status_badge, html.Br(),
+                            html.Strong("Requested: "), created_at[:10] if created_at else "N/A", html.Br(),
+                            html.Strong("Reviewed by: "), reviewer_name or "N/A"
+                        ], className="card-text")
+                    ], md=8),
+                    dbc.Col([
+                        html.H6("Justification:"),
+                        html.P(justification[:100] + "..." if len(justification) > 100 else justification,
+                               className="small text-muted")
+                    ], md=4)
+                ])
+            ])
+        ], className="mb-3")
+
+        history_cards.append(history_card)
+
+    return html.Div([
+        html.H4(f"Access Request History ({len(requests)} total)", className="mb-4"),
+        html.Div(history_cards)
+    ])
+
+
+def get_pending_users():
+    """Get all users awaiting approval"""
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('''
+            SELECT id, email, full_name, created_at, access_tier
+            FROM users WHERE registration_status = 'pending'
+            ORDER BY created_at ASC
+        ''')
+
+        return cursor.fetchall()
+    finally:
+        conn.close()
+
+
+def get_pending_access_requests():
+    """Get all pending access upgrade requests"""
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('''
+            SELECT ar.id, u.email, u.full_name, ar.current_tier, ar.requested_tier, 
+                   ar.justification, ar.created_at
+            FROM access_requests ar
+            JOIN users u ON ar.user_id = u.id
+            WHERE ar.status = 'pending'
+            ORDER BY ar.created_at ASC
+        ''')
+
+        return cursor.fetchall()
+    finally:
+        conn.close()
+def create_user_registrations_tab():
+    """Create the user registrations management tab"""
+    pending_users = get_pending_users()
+
+    if not pending_users:
+        return dbc.Alert("No pending user registrations", color="info")
+
+    user_cards = []
+    for user_id, email, full_name, created_at, current_tier in pending_users:
+        card = dbc.Card([
+            dbc.CardBody([
+                dbc.Row([
+                    dbc.Col([
+                        html.H5(full_name, className="card-title"),
+                        html.P([
+                            html.Strong("Email: "), email, html.Br(),
+                            html.Strong("Applied: "), created_at[:10] if created_at else 'N/A'
+                        ], className="card-text")
+                    ], md=6),
+                    dbc.Col([
+                        html.H6("Approve with access tier:"),
+                        dbc.RadioItems(
+                            id=f"approve-tier-{user_id}",
+                            options=[
+                                {"label": "Tier 1: General Access", "value": 1},
+                                {"label": "Tier 2: Employee Access (Factbook)", "value": 2},
+                                {"label": "Tier 3: Administrative Access", "value": 3}
+                            ],
+                            value=1,
+                            className="mb-3"
+                        ),
+                        dbc.ButtonGroup([
+                            dbc.Button("Approve", id=f"approve-user-{user_id}",
+                                       color="success", size="sm"),
+                            dbc.Button("Deny", id=f"deny-user-{user_id}",
+                                       color="danger", size="sm")
+                        ])
+                    ], md=6)
+                ])
+            ])
+        ], className="mb-3")
+        user_cards.append(card)
+
+    return html.Div([
+        html.H4(f"Pending User Registrations ({len(pending_users)})", className="mb-3"),
+        html.Div(user_cards)
+    ])
+
+
+def create_access_requests_tab():
+    """Create the access requests management tab"""
+    pending_requests = get_pending_access_requests()
+
+    if not pending_requests:
+        return dbc.Alert("No pending access requests", color="info")
+
+    request_cards = []
+    for req_id, email, full_name, current_tier, requested_tier, justification, created_at in pending_requests:
+        card = dbc.Card([
+            dbc.CardBody([
+                dbc.Row([
+                    dbc.Col([
+                        html.H5(f"{full_name} ({email})", className="card-title"),
+                        html.P([
+                            html.Strong("Current Tier: "), f"Tier {current_tier}", html.Br(),
+                            html.Strong("Requested Tier: "), f"Tier {requested_tier}", html.Br(),
+                            html.Strong("Requested: "), created_at[:10] if created_at else 'N/A'
+                        ], className="card-text"),
+                        html.P([
+                            html.Strong("Justification: "), html.Br(),
+                            justification
+                        ], className="card-text",
+                            style={'backgroundColor': '#f8f9fa', 'padding': '10px', 'borderRadius': '5px'})
+                    ], md=8),
+                    dbc.Col([
+                        dbc.ButtonGroup([
+                            dbc.Button("Approve", id=f"approve-request-{req_id}",
+                                       color="success", size="sm", className="mb-2"),
+                            dbc.Button("Deny", id=f"deny-request-{req_id}",
+                                       color="danger", size="sm", className="mb-2")
+                        ], vertical=True),
+                        html.Div([
+                            dbc.Label("Denial Reason (if denying):"),
+                            dbc.Textarea(id=f"deny-reason-{req_id}",
+                                         placeholder="Reason for denial...",
+                                         rows=3, size="sm")
+                        ], className="mt-3")
+                    ], md=4)
+                ])
+            ])
+        ], className="mb-3")
+        request_cards.append(card)
+
+    return html.Div([
+        html.H4(f"Pending Access Requests ({len(pending_requests)})", className="mb-3"),
+        html.Div(request_cards)
+    ])
+
+# ============================================================================
+# FIXED ADMIN CALLBACKS
+# ============================================================================
+
+@callback(
+    Output('admin-content', 'children'),
+    Input('admin-tabs', 'active_tab'),
+    prevent_initial_call=False
+)
+def render_admin_tab_content(active_tab):
+    """Render admin tab content"""
+    if active_tab == "overview":
+        return create_overview_tab()
+    elif active_tab == "users":
+        return create_user_management_tab()
+    elif active_tab == "registrations":
+        return create_user_registrations_tab()
+    elif active_tab == "access-requests":
+        return create_access_requests_tab()
+    elif active_tab == "history":
+        return create_request_history_tab()
+    return html.Div("Select a tab")
+
+
+# Edit user modal callbacks
+@callback(
+    [Output('edit-user-modal', 'is_open'),
+     Output('edit-user-name', 'value'),
+     Output('edit-user-email', 'value'),
+     Output('edit-user-role', 'value'),
+     Output('edit-user-tier', 'value'),
+     Output('edit-user-status', 'value'),
+     Output('edit-user-id', 'data')],
+    [Input({'type': 'edit-user', 'index': ALL}, 'n_clicks')] +
+    [Input(f'edit-user-{i}', 'n_clicks') for i in range(1, 100)],  # Support up to 100 users
+    prevent_initial_call=True
+)
+def handle_edit_user_clicks(*args):
+    """Handle edit user button clicks"""
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return False, "", "", "", "", "", None
+
+    # Find which button was clicked
+    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if 'edit-user-' in button_id:
+        user_id = int(button_id.replace('edit-user-', ''))
+
+        # Get user data
+        conn = sqlite3.connect('usc_ir.db')
+        cursor = conn.cursor()
+        try:
+            cursor.execute('''
+                SELECT email, full_name, role, access_tier, is_active
+                FROM users WHERE id = ?
+            ''', (user_id,))
+
+            user_data = cursor.fetchone()
+            if user_data:
+                email, full_name, role, access_tier, is_active = user_data
+                return True, full_name, email, role, access_tier, str(is_active).lower(), user_id
+        finally:
+            conn.close()
+
+    return False, "", "", "", "", "", None
+
+
+@callback(
+    [Output('admin-alerts', 'children'),
+     Output('edit-user-modal', 'is_open', allow_duplicate=True),
+     Output('admin-content', 'children', allow_duplicate=True)],
+    Input('save-edit-user', 'n_clicks'),
+    [State('edit-user-id', 'data'),
+     State('edit-user-name', 'value'),
+     State('edit-user-email', 'value'),
+     State('edit-user-role', 'value'),
+     State('edit-user-tier', 'value'),
+     State('edit-user-status', 'value'),
+     State('user-session', 'data'),
+     State('admin-tabs', 'active_tab')],
+    prevent_initial_call=True
+)
+def save_user_changes(save_clicks, user_id, name, email, role, tier, status, user_session, active_tab):
+    """Save user changes"""
+    if not save_clicks or not user_session.get('authenticated'):
+        return dash.no_update, dash.no_update, dash.no_update
+
+    admin_id = user_session.get('id')
+    is_active = status == "true"
+
+    result = update_user_info(user_id, email, name, role, int(tier), is_active, admin_id)
+
+    alert = dbc.Alert(result["message"],
+                      color="success" if result["success"] else "danger",
+                      dismissable=True)
+
+    # Refresh the current tab
+    if active_tab == "users":
+        new_content = create_user_management_tab()
+    else:
+        new_content = dash.no_update
+
+    return alert, False, new_content
+
+
+@callback(
+    Output('edit-user-modal', 'is_open', allow_duplicate=True),
+    Input('cancel-edit-user', 'n_clicks'),
+    prevent_initial_call=True
+)
+def cancel_edit_user(cancel_clicks):
+    """Cancel edit user modal"""
+    if cancel_clicks:
+        return False
+    return dash.no_update
+
+
+# Delete user callbacks
+@callback(
+    [Output('admin-alerts', 'children', allow_duplicate=True),
+     Output('admin-content', 'children', allow_duplicate=True)],
+    [Input(f'delete-user-{i}', 'n_clicks') for i in range(1, 100)],
+    [State('user-session', 'data'),
+     State('admin-tabs', 'active_tab')],
+    prevent_initial_call=True
+)
+def handle_delete_user(*args):
+    """Handle delete user actions"""
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return dash.no_update, dash.no_update
+
+    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    user_session = args[-2]
+    active_tab = args[-1]
+
+    if not user_session.get('authenticated'):
+        return dash.no_update, dash.no_update
+
+    if 'delete-user-' in button_id:
+        user_id = int(button_id.replace('delete-user-', ''))
+        admin_id = user_session.get('id')
+
+        result = delete_user(user_id, admin_id)
+
+        alert = dbc.Alert(result["message"],
+                          color="success" if result["success"] else "danger",
+                          dismissable=True)
+
+        # Refresh user management tab
+        new_content = create_user_management_tab() if active_tab == "users" else dash.no_update
+
+        return alert, new_content
+
+    return dash.no_update, dash.no_update
+def create_admin_dashboard(user_data):
+    return create_comprehensive_admin_dashboard(user_data)
 
 
 # ============================================================================
@@ -639,37 +1381,6 @@ def handle_password_change(n_clicks, current_password, new_password, confirm_pas
 # Add /signup and /profile routes to your display_page callback
 # Update init_database() call to init_enhanced_database()
 # Add "Sign Up" link to your login page
-def init_database():
-    """Initialize database with demo users"""
-    conn = sqlite3.connect('usc_ir.db')
-    cursor = conn.cursor()
-
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY,
-            email TEXT UNIQUE NOT NULL,
-            full_name TEXT,
-            role TEXT DEFAULT 'employee',
-            access_tier INTEGER DEFAULT 2
-        )
-    ''')
-
-    # Add demo users
-    demo_users = [
-        ('demo@usc.edu.tt', 'Demo Employee', 'employee', 2),
-        ('admin@usc.edu.tt', 'Admin User', 'admin', 3),
-        ('nrobinson@usc.edu.tt', 'Nordian Robinson', 'admin', 3),
-        ('websterl@usc.edu.tt', 'Liam Webster', 'admin', 3)
-    ]
-
-    for email, name, role, tier in demo_users:
-        cursor.execute('''
-            INSERT OR IGNORE INTO users (email, full_name, role, access_tier)
-            VALUES (?, ?, ?, ?)
-        ''', (email, name, role, tier))
-
-    conn.commit()
-    conn.close()
 
 
 
@@ -1241,7 +1952,7 @@ app.layout = html.Div([
     dcc.Store(id='user-session', storage_type='session'),
     dcc.Interval(id='user-check-interval', interval=5000, n_intervals=0),
     html.Div(id='page-content')
-    # Remove: create_login_modal()
+    # Modal is now included in the admin dashboard itself
 ])
 
 # ============================================================================
@@ -1324,12 +2035,25 @@ def display_page(pathname, user_session):
     elif pathname == '/endowments':
         endowment_content = create_placeholder_page("Endowment Funds", "Endowment performance data")
         content = require_access(endowment_content, 3, user_data)
-
+    elif pathname == '/admin':
+        if not user_data or user_data.get('access_tier', 1) < 3:
+            content = create_access_denied_page("Admin Access Required",
+                                                "You need administrative access to view this page.")
+        else:
+            content = create_comprehensive_admin_dashboard(user_data)
     # Admin pages (Tier 3 required)
     elif pathname == '/admin':
         admin_content = create_placeholder_page("Admin Dashboard", "System administration and user management")
         content = require_access(admin_content, 3, user_data)
+    elif pathname == '/signup':
+        if user_data:
+            return dcc.Location(pathname='/', id='redirect-home')
+        return create_signup_page()
 
+    elif pathname == '/profile':
+        if not user_data:
+            return dcc.Location(pathname='/login', id='redirect-login')
+        return create_profile_page(user_data)
     # Service pages
     elif pathname == '/request-report':
         report_content = create_placeholder_page("Request Report", "Submit custom report requests")
