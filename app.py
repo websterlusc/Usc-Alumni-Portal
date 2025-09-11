@@ -189,7 +189,7 @@ def verify_password(password, password_hash):
 
 
 def create_user(email, password, full_name):
-    """Create a new user account"""
+    """Create a new user account - all require manual approval"""
     conn = sqlite3.connect('usc_ir.db')
     cursor = conn.cursor()
 
@@ -199,13 +199,9 @@ def create_user(email, password, full_name):
         if cursor.fetchone():
             return {"success": False, "message": "Email already registered"}
 
-        # Determine initial access tier based on email domain
-        if email.endswith('@usc.edu.tt'):
-            access_tier = 2  # Employee access for USC emails
-            status = 'approved'
-        else:
-            access_tier = 1  # General access for external emails
-            status = 'pending'
+        # All new users start with Tier 1 and pending status
+        access_tier = 1
+        status = 'pending'
 
         password_hash = hash_password(password)
 
@@ -215,13 +211,13 @@ def create_user(email, password, full_name):
         ''', (email, password_hash, full_name, access_tier, status))
 
         conn.commit()
-        return {"success": True, "message": "Account created successfully", "access_tier": access_tier}
+        return {"success": True, "message": "Account created successfully. Please wait for admin approval.",
+                "access_tier": access_tier}
 
     except Exception as e:
         return {"success": False, "message": f"Error creating account: {str(e)}"}
     finally:
         conn.close()
-
 
 def request_access_upgrade(user_id, requested_tier, justification):
     """Submit an access tier upgrade request"""
@@ -981,6 +977,107 @@ def filter_and_display_users(search_term="", tier_filter="all", status_filter="a
         html.H4(f"Users Found: {len(filtered_users)}", className="mb-3"),
         html.Div(user_cards)
     ])
+
+
+def approve_user_registration(user_id, approved_tier, admin_id):
+    """Approve a user's registration with specific tier"""
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('''
+            UPDATE users 
+            SET registration_status = 'approved', access_tier = ?
+            WHERE id = ?
+        ''', (approved_tier, user_id))
+
+        conn.commit()
+        return {"success": True, "message": f"User approved with Tier {approved_tier} access"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error approving user: {str(e)}"}
+    finally:
+        conn.close()
+
+
+def deny_user_registration(user_id, reason, admin_id):
+    """Deny a user's registration"""
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('''
+            UPDATE users 
+            SET registration_status = 'denied'
+            WHERE id = ?
+        ''', (user_id,))
+
+        conn.commit()
+        return {"success": True, "message": "User registration denied"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error denying user: {str(e)}"}
+    finally:
+        conn.close()
+
+
+def approve_access_request(request_id, admin_id):
+    """Approve an access tier upgrade request"""
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    try:
+        # Get request details
+        cursor.execute('''
+            SELECT user_id, requested_tier FROM access_requests WHERE id = ?
+        ''', (request_id,))
+
+        result = cursor.fetchone()
+        if not result:
+            return {"success": False, "message": "Request not found"}
+
+        user_id, requested_tier = result
+
+        # Update user's access tier
+        cursor.execute('''
+            UPDATE users SET access_tier = ? WHERE id = ?
+        ''', (requested_tier, user_id))
+
+        # Update request status
+        cursor.execute('''
+            UPDATE access_requests 
+            SET status = 'approved', reviewed_at = ?, reviewed_by = ?
+            WHERE id = ?
+        ''', (datetime.now(), admin_id, request_id))
+
+        conn.commit()
+        return {"success": True, "message": f"Access upgraded to Tier {requested_tier}"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error approving request: {str(e)}"}
+    finally:
+        conn.close()
+
+
+def deny_access_request(request_id, reason, admin_id):
+    """Deny an access tier upgrade request"""
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('''
+            UPDATE access_requests 
+            SET status = 'denied', reviewed_at = ?, reviewed_by = ?, admin_notes = ?
+            WHERE id = ?
+        ''', (datetime.now(), admin_id, reason, request_id))
+
+        conn.commit()
+        return {"success": True, "message": "Access request denied"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error denying request: {str(e)}"}
+    finally:
+        conn.close()
 def create_request_history_tab():
     """Create access request history tab"""
     requests = get_access_request_history()
@@ -1160,8 +1257,8 @@ def create_access_requests_tab():
 
 # Access request approval callbacks - FIXED
 @callback(
-    [Output('admin-alerts', 'children', allow_duplicate=True),
-     Output('admin-content', 'children', allow_duplicate=True)],
+    [Output('admin-alerts', 'children', allow_duplicate=True),  # Add this
+     Output('admin-content', 'children', allow_duplicate=True)],  # Add this
     [Input(f'approve-request-{i}', 'n_clicks') for i in range(1, 100)],
     [State('user-session', 'data'), State('admin-tabs', 'active_tab')],
     prevent_initial_call=True
@@ -1264,9 +1361,9 @@ def handle_edit_user_clicks(*args):
 
 
 @callback(
-    [Output('admin-alerts', 'children'),
+    [Output('admin-alerts', 'children', allow_duplicate=True),  # Add this
      Output('edit-user-modal', 'is_open', allow_duplicate=True),
-     Output('admin-content', 'children', allow_duplicate=True)],
+     Output('admin-content', 'children', allow_duplicate=True)],  # Add this
     Input('save-edit-user', 'n_clicks'),
     [State('edit-user-id', 'data'),
      State('edit-user-name', 'value'),
@@ -1315,8 +1412,8 @@ def cancel_edit_user(cancel_clicks):
 
 # Delete user callbacks
 @callback(
-    [Output('admin-alerts', 'children', allow_duplicate=True),
-     Output('admin-content', 'children', allow_duplicate=True)],
+    [Output('admin-alerts', 'children', allow_duplicate=True),  # Add this
+     Output('admin-content', 'children', allow_duplicate=True)],  # Add this
     [Input(f'delete-user-{i}', 'n_clicks') for i in range(1, 100)],
     [State('user-session', 'data'),
      State('admin-tabs', 'active_tab')],
@@ -1432,8 +1529,8 @@ def handle_signup(n_clicks, name, email, password, confirm_password):
 
 
 @callback(
-    [Output('admin-alerts', 'children'),
-     Output('admin-content', 'children', allow_duplicate=True)],
+    [Output('admin-alerts', 'children', allow_duplicate=True),  # Add this
+     Output('admin-content', 'children', allow_duplicate=True)],  # Add this
     [Input(f'approve-user-{i}', 'n_clicks') for i in range(1, 100)],
     [State(f'approve-tier-{i}', 'value') for i in range(1, 100)] +
     [State('user-session', 'data'), State('admin-tabs', 'active_tab')],
@@ -1485,7 +1582,7 @@ def handle_user_approvals(*args):
 # Profile page callbacks
 # Profile access request callback - FIXED
 @callback(
-    Output('profile-alerts', 'children'),
+    Output('profile-alerts', 'children', allow_duplicate=True),
     Input('request-access-btn', 'n_clicks'),
     [State('access-tier-request', 'value'),
      State('access-justification', 'value'),
@@ -1540,7 +1637,21 @@ def handle_password_change(n_clicks, current_password, new_password, confirm_pas
     else:
         return dbc.Alert(result["message"], color="danger")
 
-
+# User search and filter callback
+@callback(
+    Output('filtered-users-container', 'children'),
+    [Input('user-search-input', 'value'),
+     Input('tier-filter-select', 'value'),
+     Input('status-filter-select', 'value')],
+    prevent_initial_call=False
+)
+def update_user_list(search_term, tier_filter, status_filter):
+    """Update user list based on filters"""
+    return filter_and_display_users(
+        search_term or "",
+        tier_filter or "all",
+        status_filter or "all"
+    )
 # ============================================================================
 # UPDATE YOUR EXISTING FUNCTIONS
 # ============================================================================
@@ -2232,10 +2343,6 @@ def display_page(pathname, user_session):
                                                 "You need administrative access to view this page.")
         else:
             content = create_comprehensive_admin_dashboard(user_data)
-    # Admin pages (Tier 3 required)
-    elif pathname == '/admin':
-        admin_content = create_placeholder_page("Admin Dashboard", "System administration and user management")
-        content = require_access(admin_content, 3, user_data)
     elif pathname == '/signup':
         if user_data:
             return dcc.Location(pathname='/', id='redirect-home')

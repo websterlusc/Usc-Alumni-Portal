@@ -137,22 +137,6 @@
       <option name="presentableId" value="Default" />
       <updated>1756998738082</updated>
     </task>
-    <task id="LOCAL-00001" summary="First Commit">
-      <option name="closed" value="true" />
-      <created>1757079347505</created>
-      <option name="number" value="00001" />
-      <option name="presentableId" value="LOCAL-00001" />
-      <option name="project" value="LOCAL" />
-      <updated>1757079347505</updated>
-    </task>
-    <task id="LOCAL-00002" summary="First Commit">
-      <option name="closed" value="true" />
-      <created>1757084016620</created>
-      <option name="number" value="00002" />
-      <option name="presentableId" value="LOCAL-00002" />
-      <option name="project" value="LOCAL" />
-      <updated>1757084016620</updated>
-    </task>
     <task id="LOCAL-00003" summary="First Commit">
       <option name="closed" value="true" />
       <created>1757084418156</created>
@@ -529,7 +513,23 @@
       <option name="project" value="LOCAL" />
       <updated>1757535316727</updated>
     </task>
-    <option name="localTasksCounter" value="50" />
+    <task id="LOCAL-00050" summary="google auth not working">
+      <option name="closed" value="true" />
+      <created>1757598009144</created>
+      <option name="number" value="00050" />
+      <option name="presentableId" value="LOCAL-00050" />
+      <option name="project" value="LOCAL" />
+      <updated>1757598009144</updated>
+    </task>
+    <task id="LOCAL-00051" summary="google auth not working">
+      <option name="closed" value="true" />
+      <created>1757601894694</created>
+      <option name="number" value="00051" />
+      <option name="presentableId" value="LOCAL-00051" />
+      <option name="project" value="LOCAL" />
+      <updated>1757601894694</updated>
+    </task>
+    <option name="localTasksCounter" value="52" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
