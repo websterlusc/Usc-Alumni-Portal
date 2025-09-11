@@ -402,9 +402,11 @@ def create_signup_page():
 # ============================================================================
 
 def create_profile_page(user_data):
-    """Create user profile page"""
+    """Create user profile page WITH navbar"""
     if not user_data:
         return create_access_denied_page("Authentication Required", "Please sign in to view your profile.")
+
+    navbar = create_modern_navbar(user_data)  # Add this line!
 
     tier_info = {
         1: {"name": "General Access", "description": "Basic access to public information", "color": "secondary"},
@@ -416,7 +418,7 @@ def create_profile_page(user_data):
     current_tier = user_data.get('access_tier', 1)
     tier = tier_info.get(current_tier, tier_info[1])
 
-    return dbc.Container([
+    content = dbc.Container([
         dbc.Row([
             dbc.Col([
                 html.H1("User Profile", className="display-5 fw-bold mb-4",
@@ -516,6 +518,7 @@ def create_profile_page(user_data):
         ], justify="center")
     ], className="py-4")
 
+    return html.Div([navbar, content])  # Return navbar + content
 
 # ============================================================================
 # ADMIN DASHBOARD
@@ -855,15 +858,85 @@ def create_overview_tab():
 
 
 def create_user_management_tab():
-    """Create comprehensive user management tab"""
+    """Enhanced user management with search functionality"""
+    return html.Div([
+        # Search and Filter Controls
+        dbc.Row([
+            dbc.Col([
+                dbc.Input(
+                    id="user-search-input",
+                    placeholder="Search by name or email...",
+                    type="text",
+                    className="mb-3"
+                )
+            ], md=4),
+            dbc.Col([
+                dbc.Select(
+                    id="tier-filter-select",
+                    options=[
+                        {"label": "All Tiers", "value": "all"},
+                        {"label": "Tier 1 (General)", "value": "1"},
+                        {"label": "Tier 2 (Employee)", "value": "2"},
+                        {"label": "Tier 3 (Admin)", "value": "3"}
+                    ],
+                    value="all",
+                    className="mb-3"
+                )
+            ], md=3),
+            dbc.Col([
+                dbc.Select(
+                    id="status-filter-select",
+                    options=[
+                        {"label": "All Status", "value": "all"},
+                        {"label": "Active", "value": "approved"},
+                        {"label": "Pending", "value": "pending"},
+                        {"label": "Denied", "value": "denied"}
+                    ],
+                    value="all",
+                    className="mb-3"
+                )
+            ], md=3),
+            dbc.Col([
+                dbc.Button("Add New User", id="add-user-btn", color="success", className="w-100 mb-3")
+            ], md=2)
+        ]),
+
+        # User Results Container
+        html.Div(id="filtered-users-container")
+    ])
+
+
+def filter_and_display_users(search_term="", tier_filter="all", status_filter="all"):
+    """Filter users based on search criteria"""
     users = get_all_users()
 
-    if not users:
-        return dbc.Alert("No users found in the system", color="info")
+    # Apply filters
+    filtered_users = []
+    for user in users:
+        user_id, email, full_name, role, access_tier, reg_status, is_active, created_at, last_login = user
 
-    # Create user cards instead of table for better mobile responsiveness
+        # Search filter
+        if search_term:
+            if not (search_term.lower() in (full_name or "").lower() or
+                    search_term.lower() in email.lower()):
+                continue
+
+        # Tier filter
+        if tier_filter != "all" and str(access_tier) != tier_filter:
+            continue
+
+        # Status filter
+        if status_filter != "all" and reg_status != status_filter:
+            continue
+
+        filtered_users.append(user)
+
+    if not filtered_users:
+        return dbc.Alert("No users match your search criteria", color="info")
+
+    # Create user cards
     user_cards = []
-    for user_id, email, full_name, role, access_tier, reg_status, is_active, created_at, last_login in users:
+    for user_id, email, full_name, role, access_tier, reg_status, is_active, created_at, last_login in filtered_users:
         # Status badge
         if reg_status == 'approved':
             status_badge = dbc.Badge("Active" if is_active else "Inactive",
@@ -905,11 +978,9 @@ def create_user_management_tab():
         user_cards.append(user_card)
 
     return html.Div([
-        html.H4(f"User Management ({len(users)} total users)", className="mb-4"),
+        html.H4(f"Users Found: {len(filtered_users)}", className="mb-3"),
         html.Div(user_cards)
     ])
-
-
 def create_request_history_tab():
     """Create access request history tab"""
     requests = get_access_request_history()
@@ -1086,6 +1157,44 @@ def create_access_requests_tab():
         html.Div(request_cards)
     ])
 
+
+# Access request approval callbacks - FIXED
+@callback(
+    [Output('admin-alerts', 'children', allow_duplicate=True),
+     Output('admin-content', 'children', allow_duplicate=True)],
+    [Input(f'approve-request-{i}', 'n_clicks') for i in range(1, 100)],
+    [State('user-session', 'data'), State('admin-tabs', 'active_tab')],
+    prevent_initial_call=True
+)
+def handle_access_request_approvals(*args):
+    """Handle access request approvals"""
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return dash.no_update, dash.no_update
+
+    user_session = args[-2]
+    active_tab = args[-1]
+
+    if not user_session.get('authenticated'):
+        return dash.no_update, dash.no_update
+
+    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if 'approve-request-' in button_id:
+        request_id = int(button_id.replace('approve-request-', ''))
+        admin_id = user_session.get('id')
+
+        result = approve_access_request(request_id, admin_id)
+
+        alert = dbc.Alert(result["message"],
+                          color="success" if result["success"] else "danger",
+                          dismissable=True)
+
+        new_content = create_access_requests_tab() if active_tab == "access-requests" else dash.no_update
+
+        return alert, new_content
+
+    return dash.no_update, dash.no_update
 # ============================================================================
 # FIXED ADMIN CALLBACKS
 # ============================================================================
@@ -1096,11 +1205,11 @@ def create_access_requests_tab():
     prevent_initial_call=False
 )
 def render_admin_tab_content(active_tab):
-    """Render admin tab content"""
+    """Render admin tab content with enhanced user management"""
     if active_tab == "overview":
         return create_overview_tab()
     elif active_tab == "users":
-        return create_user_management_tab()
+        return create_user_management_tab()  # Use enhanced version
     elif active_tab == "registrations":
         return create_user_registrations_tab()
     elif active_tab == "access-requests":
@@ -1322,22 +1431,81 @@ def handle_signup(n_clicks, name, email, password, confirm_password):
         return dbc.Alert(result["message"], color="danger"), dash.no_update
 
 
+@callback(
+    [Output('admin-alerts', 'children'),
+     Output('admin-content', 'children', allow_duplicate=True)],
+    [Input(f'approve-user-{i}', 'n_clicks') for i in range(1, 100)],
+    [State(f'approve-tier-{i}', 'value') for i in range(1, 100)] +
+    [State('user-session', 'data'), State('admin-tabs', 'active_tab')],
+    prevent_initial_call=True
+)
+def handle_user_approvals(*args):
+    """Handle user registration approvals"""
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return dash.no_update, dash.no_update
+
+    # Get user session and active tab from the end of args
+    user_session = args[-2]
+    active_tab = args[-1]
+
+    if not user_session.get('authenticated'):
+        return dash.no_update, dash.no_update
+
+    # Find which button was clicked
+    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if 'approve-user-' in button_id:
+        user_id = int(button_id.replace('approve-user-', ''))
+        admin_id = user_session.get('id')
+
+        # Find the corresponding tier value
+        tier_index = user_id - 1  # Assuming user IDs start from 1
+        tier_values = args[100:200]  # Tier values are in the middle of args
+        selected_tier = 1  # Default
+
+        # Try to get the selected tier from the form
+        try:
+            selected_tier = tier_values[tier_index] if tier_index < len(tier_values) and tier_values[tier_index] else 1
+        except:
+            selected_tier = 1
+
+        result = approve_user_registration(user_id, selected_tier, admin_id)
+
+        alert = dbc.Alert(result["message"],
+                          color="success" if result["success"] else "danger",
+                          dismissable=True)
+
+        # Refresh the registrations tab
+        new_content = create_user_registrations_tab() if active_tab == "registrations" else dash.no_update
+
+        return alert, new_content
+
+    return dash.no_update, dash.no_update
 # Profile page callbacks
+# Profile access request callback - FIXED
 @callback(
     Output('profile-alerts', 'children'),
     Input('request-access-btn', 'n_clicks'),
-    [State('access-tier-request', 'value'), State('access-justification', 'value'),
+    [State('access-tier-request', 'value'),
+     State('access-justification', 'value'),
      State('user-session', 'data')],
     prevent_initial_call=True
 )
 def handle_access_request(n_clicks, requested_tier, justification, user_session):
+    """Handle access tier upgrade requests"""
     if not n_clicks or not user_session.get('authenticated'):
         return ""
 
     if not justification or len(justification.strip()) < 20:
         return dbc.Alert("Please provide a detailed justification (at least 20 characters)", color="danger")
 
-    result = request_access_upgrade(user_session['id'], requested_tier, justification.strip())
+    # Get user ID from session
+    user_id = user_session.get('id')
+    if not user_id:
+        return dbc.Alert("User ID not found in session", color="danger")
+
+    result = request_access_upgrade(user_id, requested_tier, justification.strip())
 
     if result["success"]:
         return dbc.Alert(result["message"], color="success")
@@ -1455,7 +1623,7 @@ def handle_navbar_logout(n_clicks):
 
 
 def create_auth_section(user_data=None):
-    """Create authentication section of navbar"""
+    """Enhanced authentication section with admin button"""
     if not user_data or not user_data.get('authenticated'):
         return dbc.NavItem(dbc.Button(
             "Sign In",
@@ -1465,28 +1633,51 @@ def create_auth_section(user_data=None):
             href="/login"
         ))
 
-    # User is logged in - show dropdown
-    tier_info = {1: "Public", 2: "Employee", 3: "Admin"}
+    tier_info = {1: "General", 2: "Employee", 3: "Admin"}
     user_tier = user_data.get('access_tier', 1)
 
-    return dbc.NavItem([
-        dbc.DropdownMenu([
+    # Build dropdown menu items
+    dropdown_items = [
+        dbc.DropdownMenuItem([
+            html.Strong(user_data.get('full_name', 'User')),
+            html.Br(),
+            html.Small(user_data.get('email', ''), className="text-muted"),
+            html.Br(),
+            dbc.Badge(f"Tier {user_tier}: {tier_info.get(user_tier, 'General')}",
+                      color="success" if user_tier >= 2 else "secondary", className="mt-1")
+        ], header=True),
+        dbc.DropdownMenuItem(divider=True),
+        dbc.DropdownMenuItem([
+            html.I(className="fas fa-user me-2"), "My Profile"
+        ], href="/profile")
+    ]
+
+    # Add Admin button for Tier 3 users
+    if user_tier >= 3:
+        dropdown_items.append(
             dbc.DropdownMenuItem([
-                html.Strong(user_data.get('full_name', 'User')),
-                html.Br(),
-                html.Small(user_data.get('email', ''), className="text-muted"),
-                html.Br(),
-                dbc.Badge(tier_info.get(user_tier, "Public"), color="success", className="mt-1")
-            ], header=True),
-            dbc.DropdownMenuItem(divider=True),
-            dbc.DropdownMenuItem([
-                html.I(className="fas fa-user me-2"), "Profile"
-            ], href="/profile"),
-            dbc.DropdownMenuItem([
-                html.I(className="fas fa-sign-out-alt me-2"), "Logout"
-            ], id="navbar-logout-btn")
-        ], label=user_data.get('email', 'User'), nav=True, align_end=True)
+                html.I(className="fas fa-cog me-2"), "Admin Dashboard"
+            ], href="/admin")
+        )
+
+    # Add logout
+    dropdown_items.extend([
+        dbc.DropdownMenuItem(divider=True),
+        dbc.DropdownMenuItem([
+            html.I(className="fas fa-sign-out-alt me-2"), "Logout"
+        ], id="navbar-logout-btn")
     ])
+
+    return dbc.NavItem([
+        dbc.DropdownMenu(
+            dropdown_items,
+            label=user_data.get('email', 'User'),
+            nav=True,
+            align_end=True
+        )
+    ])
+
+
 def create_modern_navbar(user_data=None):
     """Your exact navbar design with authentication"""
     user_access_tier = user_data.get('access_tier', 1) if user_data else 1
