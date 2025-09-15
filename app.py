@@ -489,10 +489,10 @@ def create_profile_page(user_data):
                                         className="mb-3"
                                     ),
                                     dbc.Button("Submit Request", id="request-access-btn", color="primary",
-                                              disabled=current_tier >= 3)
+                                               disabled=current_tier >= 3)
                                 ]) if current_tier < 3 else html.Div([
                                     dbc.Alert([
-                                        "You have complete access. Admin access (Tier 4) can only be assigned by current administrators."
+                                        "You have complete access. Super Admin access (Tier 4) can only be assigned by current administrators."
                                     ], color="info")
                                 ]) if current_tier == 3 else html.Div([
                                     dbc.Alert("You have the highest access level available.", color="success")
@@ -717,9 +717,10 @@ def create_comprehensive_admin_dashboard(user_data):
                             dbc.Select(
                                 id="edit-user-role",
                                 options=[
-                                    {"label": "Employee", "value": "employee"},
-                                    {"label": "Admin", "value": "admin"},
-                                    {"label": "Student", "value": "student"}
+                                    {"label": "Basic", "value": "basic"},
+                                    {"label": "Limited", "value": "limited"},
+                                    {"label": "Complete", "value": "complete"},
+                                    {"label": "Admin", "value": "Admin"}
                                 ],
                                 className="mb-3"
                             )
@@ -729,9 +730,10 @@ def create_comprehensive_admin_dashboard(user_data):
                             dbc.Select(
                                 id="edit-user-tier",
                                 options=[
-                                    {"label": "Tier 1: General", "value": 1},
-                                    {"label": "Tier 2: Employee", "value": 2},
-                                    {"label": "Tier 3: Admin", "value": 3}
+                                    {"label": "Tier 1: Basic", "value": 1},
+                                    {"label": "Tier 2: Limited", "value": 2},
+                                    {"label": "Tier 3: Complete", "value": 3},
+                                    {"label": "Tier 4: Admin", "value": 4}
                                 ],
                                 className="mb-3"
                             )
@@ -969,9 +971,12 @@ def filter_and_display_users(search_term="", tier_filter="all", status_filter="a
                             tier_badge, " ", status_badge
                         ], className="mb-3"),
                         dbc.ButtonGroup([
-                            dbc.Button("Edit", id=f"edit-user-{user_id}", color="primary", size="sm"),
-                            dbc.Button("Reset Password", id=f"reset-pwd-{user_id}", color="warning", size="sm"),
-                            dbc.Button("Delete", id=f"delete-user-{user_id}", color="danger", size="sm")
+                            dbc.Button("Edit", id={"type": "edit-user", "user_id": user_id}, color="primary",
+                                       size="sm"),
+                            dbc.Button("Reset Password", id={"type": "reset-pwd", "user_id": user_id}, color="warning",
+                                       size="sm"),
+                            dbc.Button("Delete", id={"type": "delete-user", "user_id": user_id}, color="danger",
+                                       size="sm")
                         ])
                     ], md=6)
                 ])
@@ -1318,16 +1323,7 @@ def create_access_requests_tab():
 
 # Access request approval callbacks - FIXED
 # USER REGISTRATION APPROVAL - WORKING VERSION
-@callback(
-    [Output('admin-alerts', 'children', allow_duplicate=True),
-     Output('admin-content', 'children', allow_duplicate=True)],
-    [Input({"type": "approve-user", "user_id": ALL}, 'n_clicks'),
-     Input({"type": "deny-user", "user_id": ALL}, 'n_clicks')],
-    [State({"type": "approve-tier", "user_id": ALL}, 'value'),
-     State('user-session', 'data'),
-     State('admin-tabs', 'active_tab')],
-    prevent_initial_call=True
-)
+
 def handle_user_registrations(approve_clicks, deny_clicks, tier_values, user_session, active_tab):
     """Handle user registration approvals and denials"""
     ctx = dash.callback_context
@@ -1370,13 +1366,122 @@ def handle_user_registrations(approve_clicks, deny_clicks, tier_values, user_ses
     return alert, new_content
 
 
+@callback(
+    Output('add-user-modal', 'is_open'),
+    [Input('add-user-btn', 'n_clicks'),
+     Input('cancel-add-user', 'n_clicks')],
+    [State('add-user-modal', 'is_open')],
+    prevent_initial_call=True
+)
+def toggle_add_user_modal(add_clicks, cancel_clicks, is_open):
+    """Toggle add user modal"""
+    if add_clicks or cancel_clicks:
+        return not is_open
+    return is_open
+
+
+@callback(
+    [Output('admin-alerts', 'children', allow_duplicate=True),
+     Output('add-user-modal', 'is_open', allow_duplicate=True),
+     Output('admin-content', 'children', allow_duplicate=True),
+     Output('add-user-name', 'value'),
+     Output('add-user-email', 'value'),
+     Output('add-user-password', 'value'),
+     Output('add-user-confirm-password', 'value')],
+    Input('save-add-user', 'n_clicks'),
+    [State('add-user-name', 'value'),
+     State('add-user-email', 'value'),
+     State('add-user-password', 'value'),
+     State('add-user-confirm-password', 'value'),
+     State('add-user-role', 'value'),
+     State('add-user-tier', 'value'),
+     State('add-user-status', 'value'),
+     State('user-session', 'data'),
+     State('admin-tabs', 'active_tab')],
+    prevent_initial_call=True
+)
+def create_new_user(save_clicks, name, email, password, confirm_password, role, tier, status, user_session, active_tab):
+    """Create new user"""
+    if not save_clicks or not user_session.get('authenticated'):
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+    # Validation
+    if not all([name, email, password, confirm_password]):
+        alert = dbc.Alert("Please fill in all fields", color="danger", dismissable=True)
+        return alert, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+    if password != confirm_password:
+        alert = dbc.Alert("Passwords do not match", color="danger", dismissable=True)
+        return alert, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+    if len(password) < 6:
+        alert = dbc.Alert("Password must be at least 6 characters", color="danger", dismissable=True)
+        return alert, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+    # Create user directly in database
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    try:
+        # Check if user already exists
+        cursor.execute('SELECT email FROM users WHERE email = ?', (email,))
+        if cursor.fetchone():
+            alert = dbc.Alert("Email already exists", color="danger", dismissable=True)
+            return alert, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+        # Create user
+        password_hash = hash_password(password)
+        cursor.execute('''
+            INSERT INTO users (email, password_hash, full_name, role, access_tier, registration_status, is_active)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (email, password_hash, name, role, int(tier), status, True))
+
+        conn.commit()
+        alert = dbc.Alert("User created successfully", color="success", dismissable=True)
+
+        # Refresh user management tab
+        new_content = create_user_management_tab() if active_tab == "users" else dash.no_update
+
+        # Clear form fields
+        return alert, False, new_content, "", "", "", ""
+
+    except Exception as e:
+        alert = dbc.Alert(f"Error creating user: {str(e)}", color="danger", dismissable=True)
+        return alert, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+    finally:
+        conn.close()
+
+@callback(
+    Output('profile-alerts', 'children'),
+    Input('request-access-btn', 'n_clicks'),
+    [State('access-tier-request', 'value'),
+     State('access-justification', 'value'),
+     State('user-session', 'data')],
+    prevent_initial_call=True
+)
+def handle_profile_access_request(n_clicks, requested_tier, justification, user_session):
+    if not n_clicks or not user_session.get('authenticated'):
+        return ""
+
+    if not justification or len(justification.strip()) < 10:
+        return dbc.Alert("Please provide a detailed justification (at least 10 characters)", color="danger")
+
+    result = request_access_upgrade(user_session['id'], requested_tier, justification)
+
+    return dbc.Alert(result["message"],
+                     color="success" if result["success"] else "danger",
+                     dismissable=True)
+
 # ACCESS REQUEST APPROVAL - WORKING VERSION
 @callback(
     [Output('admin-alerts', 'children', allow_duplicate=True),
      Output('admin-content', 'children', allow_duplicate=True)],
-    [Input({"type": "approve-access", "request_id": ALL}, 'n_clicks'),
+    [Input({"type": "approve-user", "user_id": ALL}, 'n_clicks'),
+     Input({"type": "deny-user", "user_id": ALL}, 'n_clicks'),
+     Input({"type": "approve-access", "request_id": ALL}, 'n_clicks'),
      Input({"type": "deny-access", "request_id": ALL}, 'n_clicks')],
-    [State({"type": "deny-reason", "request_id": ALL}, 'value'),
+    [State({"type": "approve-tier", "user_id": ALL}, 'value'),
+     State({"type": "deny-reason", "request_id": ALL}, 'value'),
      State('user-session', 'data'),
      State('admin-tabs', 'active_tab')],
     prevent_initial_call=True
@@ -1446,8 +1551,6 @@ def render_admin_tab_content(active_tab):
     return html.Div("Select a tab")
 
 
-
-# Edit user modal callbacks
 @callback(
     [Output('edit-user-modal', 'is_open'),
      Output('edit-user-name', 'value'),
@@ -1456,40 +1559,36 @@ def render_admin_tab_content(active_tab):
      Output('edit-user-tier', 'value'),
      Output('edit-user-status', 'value'),
      Output('edit-user-id', 'data')],
-    [Input({'type': 'edit-user', 'index': ALL}, 'n_clicks')] +
-    [Input(f'edit-user-{i}', 'n_clicks') for i in range(1, 100)],  # Support up to 100 users
+    [Input({"type": "edit-user", "user_id": ALL}, 'n_clicks')],
     prevent_initial_call=True
 )
-def handle_edit_user_clicks(*args):
-    """Handle edit user button clicks"""
+def handle_edit_user_clicks(edit_clicks):
     ctx = dash.callback_context
-    if not ctx.triggered:
+    if not ctx.triggered or not any(edit_clicks):
         return False, "", "", "", "", "", None
 
     # Find which button was clicked
-    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    button_id = ctx.triggered[0]['prop_id']
+    import json
+    user_id = json.loads(button_id.split('.')[0])['user_id']
 
-    if 'edit-user-' in button_id:
-        user_id = int(button_id.replace('edit-user-', ''))
+    # Get user data
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''
+            SELECT email, full_name, role, access_tier, is_active
+            FROM users WHERE id = ?
+        ''', (user_id,))
 
-        # Get user data
-        conn = sqlite3.connect('usc_ir.db')
-        cursor = conn.cursor()
-        try:
-            cursor.execute('''
-                SELECT email, full_name, role, access_tier, is_active
-                FROM users WHERE id = ?
-            ''', (user_id,))
-
-            user_data = cursor.fetchone()
-            if user_data:
-                email, full_name, role, access_tier, is_active = user_data
-                return True, full_name, email, role, access_tier, str(is_active).lower(), user_id
-        finally:
-            conn.close()
+        user_data = cursor.fetchone()
+        if user_data:
+            email, full_name, role, access_tier, is_active = user_data
+            return True, full_name, email, role, access_tier, str(is_active).lower(), user_id
+    finally:
+        conn.close()
 
     return False, "", "", "", "", "", None
-
 
 @callback(
     [Output('admin-alerts', 'children', allow_duplicate=True),  # Add this
@@ -1543,42 +1642,35 @@ def cancel_edit_user(cancel_clicks):
 
 # Delete user callbacks
 @callback(
-    [Output('admin-alerts', 'children', allow_duplicate=True),  # Add this
-     Output('admin-content', 'children', allow_duplicate=True)],  # Add this
-    [Input(f'delete-user-{i}', 'n_clicks') for i in range(1, 100)],
+    [Output('admin-alerts', 'children', allow_duplicate=True),
+     Output('admin-content', 'children', allow_duplicate=True)],
+    [Input({"type": "delete-user", "user_id": ALL}, 'n_clicks')],
     [State('user-session', 'data'),
      State('admin-tabs', 'active_tab')],
     prevent_initial_call=True
 )
-def handle_delete_user(*args):
-    """Handle delete user actions"""
+def handle_delete_user(delete_clicks, user_session, active_tab):
     ctx = dash.callback_context
-    if not ctx.triggered:
+    if not ctx.triggered or not any(delete_clicks):
         return dash.no_update, dash.no_update
-
-    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
-    user_session = args[-2]
-    active_tab = args[-1]
 
     if not user_session.get('authenticated'):
         return dash.no_update, dash.no_update
 
-    if 'delete-user-' in button_id:
-        user_id = int(button_id.replace('delete-user-', ''))
-        admin_id = user_session.get('id')
+    import json
+    button_id = ctx.triggered[0]['prop_id']
+    user_id = json.loads(button_id.split('.')[0])['user_id']
+    admin_id = user_session.get('id')
 
-        result = delete_user(user_id, admin_id)
+    result = delete_user(user_id, admin_id)
 
-        alert = dbc.Alert(result["message"],
-                          color="success" if result["success"] else "danger",
-                          dismissable=True)
+    alert = dbc.Alert(result["message"],
+                      color="success" if result["success"] else "danger",
+                      dismissable=True)
 
-        # Refresh user management tab
-        new_content = create_user_management_tab() if active_tab == "users" else dash.no_update
+    new_content = create_user_management_tab() if active_tab == "users" else dash.no_update
 
-        return alert, new_content
-
-    return dash.no_update, dash.no_update
+    return alert, new_content
 def create_admin_dashboard(user_data):
     return create_comprehensive_admin_dashboard(user_data)
 
@@ -1659,8 +1751,66 @@ def handle_signup(n_clicks, name, email, password, confirm_password):
         return dbc.Alert(result["message"], color="danger"), dash.no_update
 
 
+@callback(
+    [Output('reset-password-modal', 'is_open'),
+     Output('reset-password-user-id', 'data')],
+    [Input({"type": "reset-pwd", "user_id": ALL}, 'n_clicks')],
+    prevent_initial_call=True
+)
+def open_reset_password_modal(reset_clicks):
+    ctx = dash.callback_context
+    if not ctx.triggered or not any(reset_clicks):
+        return False, None
 
-    return dash.no_update, dash.no_update
+    import json
+    button_id = ctx.triggered[0]['prop_id']
+    user_id = json.loads(button_id.split('.')[0])['user_id']
+
+    return True, user_id
+
+
+@callback(
+    [Output('admin-alerts', 'children', allow_duplicate=True),
+     Output('reset-password-modal', 'is_open', allow_duplicate=True)],
+    Input('confirm-reset-password', 'n_clicks'),
+    [State('new-password-input', 'value'),
+     State('confirm-password-input', 'value'),
+     State('reset-password-user-id', 'data'),
+     State('user-session', 'data')],
+    prevent_initial_call=True
+)
+def confirm_password_reset(confirm_clicks, new_password, confirm_password, user_id, user_session):
+    if not confirm_clicks or not user_session.get('authenticated'):
+        return dash.no_update, dash.no_update
+
+    if not new_password or not confirm_password:
+        return dbc.Alert("Please fill in both password fields", color="danger"), dash.no_update
+
+    if new_password != confirm_password:
+        return dbc.Alert("Passwords do not match", color="danger"), dash.no_update
+
+    if len(new_password) < 6:
+        return dbc.Alert("Password must be at least 6 characters", color="danger"), dash.no_update
+
+    admin_id = user_session.get('id')
+    result = reset_user_password(user_id, new_password, admin_id)
+
+    alert = dbc.Alert(result["message"],
+                      color="success" if result["success"] else "danger",
+                      dismissable=True)
+
+    return alert, False
+
+
+@callback(
+    Output('reset-password-modal', 'is_open', allow_duplicate=True),
+    Input('cancel-reset-password', 'n_clicks'),
+    prevent_initial_call=True
+)
+def cancel_reset_password(cancel_clicks):
+    if cancel_clicks:
+        return False
+    return dash.no_update
 # Profile page callbacks
 # Profile access request callback - FIXED
 @callback(
@@ -1771,26 +1921,6 @@ def update_user_list(search_term, tier_filter, status_filter):
 # ============================================================================
 # NAVBAR WITH AUTHENTICATION
 # ============================================================================
-def authenticate_user(email, password):
-    """Authenticate user credentials"""
-    conn = sqlite3.connect('usc_ir.db')
-    cursor = conn.cursor()
-
-    # Simple demo - in real app you'd hash passwords
-    demo_users = {
-        'admin@usc.edu.tt': {'password': 'admin123', 'name': 'Admin User', 'tier': 3},
-        'employee@usc.edu.tt': {'password': 'emp123', 'name': 'USC Employee', 'tier': 2},
-        'student@usc.edu.tt': {'password': 'student123', 'name': 'USC Student', 'tier': 1}
-    }
-
-    if email in demo_users and demo_users[email]['password'] == password:
-        return {
-            'email': email,
-            'full_name': demo_users[email]['name'],
-            'access_tier': demo_users[email]['tier']
-        }
-    return None
-
 
 # Session check callback
 @callback(
@@ -1817,7 +1947,7 @@ def handle_login_form(n_clicks, email, password):
     if not email or not password:
         return dbc.Alert("Please enter both email and password", color="danger"), dash.no_update, dash.no_update
 
-    user = authenticate_user(email.strip().lower(), password)
+    user = authenticate_user_enhanced(email.strip().lower(), password)
     if user:
         # Store user data in session and redirect
         user_session = {'authenticated': True, **user}
@@ -1921,8 +2051,8 @@ def create_modern_navbar(user_data=None):
 
     # Dynamic services menu
     services_items = [
-        dbc.DropdownMenuItem("Request Report", href="/request-report") if user_access_tier >= 2 else None,
-        dbc.DropdownMenuItem("Admin Dashboard", href="/admin") if user_access_tier >= 3 else None,
+        dbc.DropdownMenuItem("Request Report", href="/request-report"),
+
         dbc.DropdownMenuItem(divider=True) if user_access_tier >= 2 else None,
         dbc.DropdownMenuItem("Help", href="/help"),
         dbc.DropdownMenuItem("Contact IR", href="/contact")
