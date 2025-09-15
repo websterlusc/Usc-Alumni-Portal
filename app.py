@@ -2129,8 +2129,7 @@ def create_hero_section():
             dbc.Row([
                 dbc.Col([
                     html.H1([
-                        "Institutional Research & ",
-                        html.Span("Analytics", style={
+                        html.Span("Institutional Research", style={
                             'background': 'linear-gradient(45deg, #FDD835, #FFEB3B)',
                             'WebkitBackgroundClip': 'text',
                             'WebkitTextFillColor': 'transparent'
@@ -2141,10 +2140,7 @@ def create_hero_section():
                         "enrollment insights, and strategic planning support for USC's continued excellence.",
                         style={'fontSize': '1.25rem', 'opacity': '0.9', 'marginBottom': '2rem'}
                     ),
-                    html.Div([
-                        dbc.Button("Explore Factbook", color="warning", size="lg", className="me-3", href="/factbook"),
-                        dbc.Button("Request Report", color="outline-light", size="lg", href="/request-report")
-                    ])
+
                 ], md=8)
             ])
         ], fluid=True, style={'position': 'relative', 'zIndex': '2'})
@@ -2157,7 +2153,7 @@ def create_hero_section():
         'backgroundPosition': 'center',
         'backgroundRepeat': 'no-repeat',
         'color': 'white',
-        'padding': '100px 0',
+        'padding': ' 50px 0',
         'position': 'relative'
     })
 
