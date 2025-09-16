@@ -150,25 +150,42 @@ def send_request_emails(data, request_id):
         msg['Reply-To'] = data['email']
         msg['Subject'] = f"New Data Request #{request_id}: {data['title']}"
 
-        body = f"""New Data Request #{request_id}
+        body = f"""USC INSTITUTIONAL RESEARCH - NEW DATA REQUEST
 
-From: {data['name']} ({data['email']})
-Organization: {data['organization'] or 'Not specified'}
+REQUEST ID: #{request_id}
+SUBMITTED: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+REQUESTER INFORMATION:
+Name: {data['name']}
+Email: {data['email']}
+Organization: {data.get('organization') or 'Not specified'}
+Position: {data.get('position') or 'Not specified'}
+
+REQUEST DETAILS:
 Category: {data['category']}
+Priority: {data['priority']}
 Title: {data['title']}
+Deadline: {data.get('deadline') or 'Standard processing'}
 
-Description:
+DESCRIPTION:
 {data['description']}
 
-Purpose:
+PURPOSE:
 {data['purpose']}
 
-Check the admin dashboard to manage this request.
+PREFERRED FORMATS:
+{data['formats']}
+
+ADDITIONAL NOTES:
+{data.get('notes') or 'None provided'}
+
+---
+Please log into the USC IR Portal admin dashboard to manage this request.
+Reply directly to {data['email']} when completed.
 """
 
         msg.attach(MIMEText(body, 'plain'))
 
-        # Try SSL port 465 instead of 587
         server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
         server.login(smtp_user, smtp_password)
         server.sendmail(smtp_user, 'ir@usc.edu.tt', msg.as_string())

@@ -5,10 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f6f93d84-f206-4ef2-8de4-7f980a01f4aa" name="Changes" comment="google auth not working">
-      <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" afterPath="$PROJECT_DIR$/.env" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data_requests.py" beforeDir="false" afterPath="$PROJECT_DIR$/data_requests.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/usc_ir.db" beforeDir="false" afterPath="$PROJECT_DIR$/usc_ir.db" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -164,30 +161,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1756998738082</updated>
-    </task>
-    <task id="LOCAL-00017" summary="First Commit">
-      <option name="closed" value="true" />
-      <created>1757087025738</created>
-      <option name="number" value="00017" />
-      <option name="presentableId" value="LOCAL-00017" />
-      <option name="project" value="LOCAL" />
-      <updated>1757087025738</updated>
-    </task>
-    <task id="LOCAL-00018" summary="First Commit">
-      <option name="closed" value="true" />
-      <created>1757087068220</created>
-      <option name="number" value="00018" />
-      <option name="presentableId" value="LOCAL-00018" />
-      <option name="project" value="LOCAL" />
-      <updated>1757087068220</updated>
-    </task>
-    <task id="LOCAL-00019" summary="First Commit">
-      <option name="closed" value="true" />
-      <created>1757087274681</created>
-      <option name="number" value="00019" />
-      <option name="presentableId" value="LOCAL-00019" />
-      <option name="project" value="LOCAL" />
-      <updated>1757087274681</updated>
     </task>
     <task id="LOCAL-00020" summary="First Commit">
       <option name="closed" value="true" />
@@ -557,7 +530,31 @@
       <option name="project" value="LOCAL" />
       <updated>1758030523773</updated>
     </task>
-    <option name="localTasksCounter" value="66" />
+    <task id="LOCAL-00066" summary="google auth not working">
+      <option name="closed" value="true" />
+      <created>1758054942001</created>
+      <option name="number" value="00066" />
+      <option name="presentableId" value="LOCAL-00066" />
+      <option name="project" value="LOCAL" />
+      <updated>1758054942002</updated>
+    </task>
+    <task id="LOCAL-00067" summary="google auth not working">
+      <option name="closed" value="true" />
+      <created>1758055778262</created>
+      <option name="number" value="00067" />
+      <option name="presentableId" value="LOCAL-00067" />
+      <option name="project" value="LOCAL" />
+      <updated>1758055778262</updated>
+    </task>
+    <task id="LOCAL-00068" summary="google auth not working">
+      <option name="closed" value="true" />
+      <created>1758055927555</created>
+      <option name="number" value="00068" />
+      <option name="presentableId" value="LOCAL-00068" />
+      <option name="project" value="LOCAL" />
+      <updated>1758055927555</updated>
+    </task>
+    <option name="localTasksCounter" value="69" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
