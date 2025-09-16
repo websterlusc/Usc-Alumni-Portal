@@ -2890,7 +2890,7 @@ def display_page(pathname, user_session):
 # ============================================================================
 
 if __name__ == '__main__':
-    #init_enhanced_database()
+    init_enhanced_database()
     print("🚀 Starting USC Institutional Research Portal...")
     print("📊 Clean version with working authentication!")
     print("✅ Features:")
