@@ -14,6 +14,11 @@ import hashlib
 import secrets
 from datetime import timedelta
 # Load environment variables
+from data_requests import (
+    init_data_requests_database,
+    create_data_request_page,
+    create_admin_data_requests_tab
+)
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -61,6 +66,33 @@ app = dash.Dash(
 app.title = "USC Institutional Research Portal"
 server = app.server
 
+# Add this CSS for hero link hover effects
+app.index_string = '''
+<!DOCTYPE html>
+<html>
+    <head>
+        {%metas%}
+        <title>{%title%}</title>
+        {%favicon%}
+        {%css%}
+        <style>
+            .hero-link:hover {
+                color: #FDD835 !important;
+                text-decoration-color: #FDD835 !important;
+            }
+        </style>
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+        </footer>
+    </body>
+</html>
+'''
+
 
 # Add these functions to your existing app.py
 
@@ -72,7 +104,9 @@ def init_enhanced_database():
     """Initialize database with enhanced user management and handle migrations"""
     conn = sqlite3.connect('usc_ir.db')
     cursor = conn.cursor()
+    init_data_requests_database()
 
+    print("✅ Enhanced database with data requests initialized")
     # Check if users table exists and what columns it has
     cursor.execute("PRAGMA table_info(users)")
     existing_columns = [column[1] for column in cursor.fetchall()]
@@ -690,6 +724,7 @@ def create_comprehensive_admin_dashboard(user_data):
             dbc.Tab(label="User Management", tab_id="users"),
             dbc.Tab(label="Registration Requests", tab_id="registrations"),
             dbc.Tab(label="Access Requests", tab_id="access-requests"),
+            dbc.Tab(label="Data Requests", tab_id="data-requests"),  # ADD THIS LINE
             dbc.Tab(label="Request History", tab_id="history")
         ], id="admin-tabs", active_tab="overview"),
 
@@ -1537,15 +1572,16 @@ def handle_access_requests(approve_clicks, deny_clicks, deny_reasons, user_sessi
     prevent_initial_call=False
 )
 def render_admin_tab_content(active_tab):
-    """Render admin tab content with fixed functions"""
     if active_tab == "overview":
         return create_overview_tab()
     elif active_tab == "users":
         return create_user_management_tab()
     elif active_tab == "registrations":
-        return create_user_registrations_tab()  # Use fixed version
+        return create_user_registrations_tab()
     elif active_tab == "access-requests":
-        return create_access_requests_tab()  # Use fixed version
+        return create_access_requests_tab()
+    elif active_tab == "data-requests":  # ADD THIS CASE
+        return create_admin_data_requests_tab()
     elif active_tab == "history":
         return create_request_history_tab()
     return html.Div("Select a tab")
@@ -2123,7 +2159,7 @@ def create_modern_navbar(user_data=None):
 # ============================================================================
 
 def create_hero_section():
-    """Your exact hero section"""
+    """Enhanced hero section with simple underlined navigation links"""
     return html.Section([
         dbc.Container([
             dbc.Row([
@@ -2138,10 +2174,69 @@ def create_hero_section():
                     html.P(
                         "Empowering data-driven decisions through comprehensive institutional analytics, "
                         "enrollment insights, and strategic planning support for USC's continued excellence.",
-                        style={'fontSize': '1.25rem', 'opacity': '0.9', 'marginBottom': '2rem'}
+                        style={'fontSize': '1.25rem', 'opacity': '0.9', 'marginBottom': '2.5rem'}
                     ),
 
-                ], md=8)
+                    # Simple Navigation Links
+                    html.Div([
+                        html.A("About IR",
+                               id="scroll-to-about",
+                               style={
+                                   'color': 'white',
+                                   'fontSize': '1.1rem',
+                                   'fontWeight': '500',
+                                   'textDecoration': 'underline',
+                                   'textUnderlineOffset': '4px',
+                                   'textDecorationThickness': '2px',
+                                   'marginRight': '30px',
+                                   'cursor': 'pointer',
+                                   'transition': 'all 0.3s ease'
+                               },
+                               className="hero-link"),
+                        html.A("View Stats",
+                               id="scroll-to-stats",
+                               style={
+                                   'color': 'white',
+                                   'fontSize': '1.1rem',
+                                   'fontWeight': '500',
+                                   'textDecoration': 'underline',
+                                   'textUnderlineOffset': '4px',
+                                   'textDecorationThickness': '2px',
+                                   'marginRight': '30px',
+                                   'cursor': 'pointer',
+                                   'transition': 'all 0.3s ease'
+                               },
+                               className="hero-link"),
+                        html.A("Our Services",
+                               id="scroll-to-services",
+                               style={
+                                   'color': 'white',
+                                   'fontSize': '1.1rem',
+                                   'fontWeight': '500',
+                                   'textDecoration': 'underline',
+                                   'textUnderlineOffset': '4px',
+                                   'textDecorationThickness': '2px',
+                                   'marginRight': '30px',
+                                   'cursor': 'pointer',
+                                   'transition': 'all 0.3s ease'
+                               },
+                               className="hero-link"),
+                        html.A("Meet Team",
+                               id="scroll-to-team",
+                               style={
+                                   'color': 'white',
+                                   'fontSize': '1.1rem',
+                                   'fontWeight': '500',
+                                   'textDecoration': 'underline',
+                                   'textUnderlineOffset': '4px',
+                                   'textDecorationThickness': '2px',
+                                   'cursor': 'pointer',
+                                   'transition': 'all 0.3s ease'
+                               },
+                               className="hero-link")
+                    ], style={'marginTop': '20px'})
+
+                ], md=10, lg=8)
             ])
         ], fluid=True, style={'position': 'relative', 'zIndex': '2'})
     ], style={
@@ -2153,9 +2248,116 @@ def create_hero_section():
         'backgroundPosition': 'center',
         'backgroundRepeat': 'no-repeat',
         'color': 'white',
-        'padding': ' 50px 0',
+        'padding': '50px 0',
         'position': 'relative'
     })
+
+def create_about_ir_section():
+    """New About Institutional Research section"""
+    return html.Section([
+        dbc.Container([
+            dbc.Row([
+                dbc.Col([
+                    html.H2("About Institutional Research", style={
+                        'color': '#1B5E20', 'fontWeight': '700', 'fontSize': '2.5rem',
+                        'textAlign': 'center', 'marginBottom': '3rem'
+                    }),
+
+                    dbc.Row([
+                        dbc.Col([
+                            dbc.Card([
+                                dbc.CardBody([
+                                    html.Div([
+                                        html.I(className="fas fa-bullseye fa-3x mb-3",
+                                               style={'color': '#1B5E20'}),
+                                        html.H4("Our Mission", style={'color': '#1B5E20', 'fontWeight': '600'}),
+                                        html.P(
+                                            "To provide comprehensive data analysis and strategic insights that drive informed decision-making across all levels of the university, supporting USC's commitment to academic excellence and institutional effectiveness.")
+                                    ], className="text-center")
+                                ])
+                            ], style={'boxShadow': '0 4px 15px rgba(0,0,0,0.1)', 'border': 'none', 'height': '100%'})
+                        ], md=4, className="mb-4"),
+
+                        dbc.Col([
+                            dbc.Card([
+                                dbc.CardBody([
+                                    html.Div([
+                                        html.I(className="fas fa-chart-line fa-3x mb-3",
+                                               style={'color': '#4CAF50'}),
+                                        html.H4("What We Do", style={'color': '#1B5E20', 'fontWeight': '600'}),
+                                        html.P(
+                                            "We collect, analyze, and report on institutional data including enrollment trends, graduation rates, financial performance, faculty metrics, and student outcomes to support strategic planning and accreditation efforts.")
+                                    ], className="text-center")
+                                ])
+                            ], style={'boxShadow': '0 4px 15px rgba(0,0,0,0.1)', 'border': 'none', 'height': '100%'})
+                        ], md=4, className="mb-4"),
+
+                        dbc.Col([
+                            dbc.Card([
+                                dbc.CardBody([
+                                    html.Div([
+                                        html.I(className="fas fa-users fa-3x mb-3",
+                                               style={'color': '#FDD835'}),
+                                        html.H4("Who We Serve", style={'color': '#1B5E20', 'fontWeight': '600'}),
+                                        html.P(
+                                            "University leadership, faculty, staff, students, and external stakeholders who require accurate, timely institutional data for planning, assessment, reporting, and continuous improvement initiatives.")
+                                    ], className="text-center")
+                                ])
+                            ], style={'boxShadow': '0 4px 15px rgba(0,0,0,0.1)', 'border': 'none', 'height': '100%'})
+                        ], md=4, className="mb-4")
+                    ])
+                ])
+            ])
+        ])
+    ], style={'padding': '80px 0', 'background': 'white'}, id="about-ir-section")
+
+
+
+
+# Add this function to create the scroll trigger div
+def create_scroll_trigger():
+    """Hidden div for scroll callback trigger"""
+    return html.Div(id='scroll-trigger', style={'display': 'none'})
+
+
+# Add this clientside callback after your other callbacks
+app.clientside_callback(
+    '''
+    function(about_clicks, stats_clicks, services_clicks, team_clicks) {
+        const ctx = window.dash_clientside.callback_context;
+        if (!ctx.triggered.length) {
+            return window.dash_clientside.no_update;
+        }
+
+        const triggered_id = ctx.triggered[0].prop_id.split('.')[0];
+
+        const scrollTargets = {
+            'scroll-to-about': 'about-ir-section',
+            'scroll-to-stats': 'stats-section',
+            'scroll-to-services': 'services-section',
+            'scroll-to-team': 'team-section'
+        };
+
+        const targetId = scrollTargets[triggered_id];
+        if (targetId) {
+            const element = document.getElementById(targetId);
+            if (element) {
+                element.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        }
+
+        return window.dash_clientside.no_update;
+    }
+    ''',
+    Output('scroll-trigger', 'children'),
+    [Input('scroll-to-about', 'n_clicks'),
+     Input('scroll-to-stats', 'n_clicks'),
+     Input('scroll-to-services', 'n_clicks'),
+     Input('scroll-to-team', 'n_clicks')]
+)
 
 def create_stats_overview():
     """Your exact stats section"""
@@ -2194,7 +2396,7 @@ def create_stats_overview():
             }),
             dbc.Row(cards)
         ])
-    ], style={'padding': '80px 0', 'background': '#F8F9FA'})
+    ], style={'padding': '80px 0', 'background': '#F8F9FA'}, id="stats-section")
 
 def create_feature_showcase():
     """Your exact feature showcase"""
@@ -2207,14 +2409,20 @@ def create_feature_showcase():
 
     cards = []
     for feature in features:
+        if feature['title'] == 'Custom Reports':
+            button = dbc.Button("Request Report", color="outline-primary", size="sm", href="/request-report")
+        else:
+            button = dbc.Button("Explore", color="outline-primary", size="sm")
+
         cards.append(
             dbc.Col([
                 dbc.Card([
                     dbc.CardBody([
-                        html.I(className=feature['icon'], style={'fontSize': '2.2rem', 'color': '#1B5E20', 'marginBottom': '15px'}),
+                        html.I(className=feature['icon'],
+                               style={'fontSize': '2.2rem', 'color': '#1B5E20', 'marginBottom': '15px'}),
                         html.H4(feature['title'], style={'color': '#1B5E20', 'fontWeight': '600'}),
                         html.P(feature['desc'], style={'color': '#666', 'marginBottom': '20px'}),
-                        dbc.Button("Explore", color="outline-primary", size="sm")
+                        button  # Use the conditional button
                     ])
                 ], style={'boxShadow': '0 4px 15px rgba(0,0,0,0.1)', 'border': 'none', 'height': '100%'})
             ], md=3, className="mb-4")
@@ -2228,97 +2436,176 @@ def create_feature_showcase():
             }),
             dbc.Row(cards)
         ])
-    ], style={'padding': '80px 0'})
+    ], style={'padding': '80px 0', 'background': 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)'}, id="services-section")
+
 
 def create_director_message():
-    """Your exact director's message"""
+    """Enhanced team section with Director and second team member"""
     return html.Section([
         dbc.Container([
-            dbc.Card([
-                dbc.CardBody([
-                    dbc.Row([
-                        dbc.Col([
-                            html.Img(
-                                src="/assets/DirectorIR.jpg",
-                                style={
-                                    'width': '120px', 'height': '120px', 'objectFit': 'cover',
-                                    'border': '4px solid #1B5E20', 'boxShadow': '0 4px 15px rgba(0,0,0,0.2)'
-                                }
-                            )
-                        ], md=3, className="text-center"),
-                        dbc.Col([
-                            html.H3("Director's Message", style={'color': '#1B5E20', 'fontWeight': '600', 'marginBottom': '20px'}),
-                            html.P([
-                                "The Department of Institutional Research (IR) takes great pride in presenting the third instalment of the ",
-                                "University of the Southern Caribbean Factbook for 2024. This University Factbook is a comprehensive report ",
-                                "providing a three-year data trend for key performance metrics related to graduation, finances, enrolment, ",
-                                "and spiritual development at the University of the Southern Caribbean."
-                            ], style={'color': '#555', 'lineHeight': '1.7', 'marginBottom': '15px'}),
-                            html.P("The report is organized to include information from the Office of the President and the five divisions of the university:",
-                                   style={'color': '#555', 'lineHeight': '1.7', 'marginBottom': '10px'}),
-                            html.Ul([
-                                html.Li("The Division of the Provost"),
-                                html.Li("The Division of Administration, Advancement and Planning"),
-                                html.Li("The Division of Financial Administration"),
-                                html.Li("The Division of Student Services and Enrolment Management"),
-                                html.Li("The Division of Spiritual Development")
-                            ], style={'color': '#555', 'marginBottom': '15px'}),
-                            html.P([
-                                "Within each division, the factbook covers a range of topics such as program offerings, teaching loads, ",
-                                "graduation data, undergraduate and graduate student enrolment, faculty and staff demographics, financial ",
-                                "statements and spiritual development activities. This data-rich report is designed to provide university ",
-                                "leadership, faculty, staff, and stakeholders with detailed insights into the institution's performance, ",
-                                "trends, and areas for potential improvement or strategic focus."
-                            ], style={'color': '#555', 'lineHeight': '1.7', 'marginBottom': '15px'}),
-                            html.P([
-                                "By consolidating three years — 2021-2022, 2022-2023 and 2023-2024 of key metrics into a single reference, ",
-                                "this factbook aims to facilitate data-driven decision-making and support the University of the Southern ",
-                                "Caribbean's ongoing commitment to excellence. In addition, this factbook presents a preview of the University ",
-                                "Data for the 1st Semester of 2024-2025. This preview of this academic school year, gives an insight of the ",
-                                "current standing of the university as it relates to employee data and student enrolment."
-                            ], style={'color': '#555', 'lineHeight': '1.7', 'marginBottom': '20px'}),
-                            html.Div([
-                                html.P("Yours In Service", style={'color': '#1B5E20', 'fontWeight': '600', 'fontStyle': 'italic', 'marginBottom': '5px'}),
-                                html.P("Nordian C. Swaby Robinson", style={'color': '#1B5E20', 'fontWeight': '600', 'marginBottom': '1px'}),
-                                html.P("Director, Institutional Research", style={'color': '#666', 'fontSize': '0.9rem', 'marginBottom': '5px'}),
-                                html.P("Publication: November 2024", style={'color': '#666', 'fontSize': '0.8rem', 'fontStyle': 'italic'})
-                            ], style={'marginTop': '25px', 'paddingTop': '20px', 'borderTop': '2px solid #e9ecef'})
-                        ], md=9)
-                    ])
-                ])
-            ], style={'boxShadow': '0 8px 30px rgba(0,0,0,0.1)', 'border': 'none'})
+            # Meet The Team Title
+            html.H2("Meet The Team", style={
+                'color': '#1B5E20', 'fontWeight': '700', 'fontSize': '2.5rem',
+                'textAlign': 'center', 'marginBottom': '3rem'
+            }),
+
+            # Team Cards Row
+            dbc.Row([
+                # Director Card (Left Side)
+                dbc.Col([
+                    dbc.Card([
+                        dbc.CardBody([
+                            dbc.Row([
+                                dbc.Col([
+                                    html.Img(
+                                        src="/assets/DirectorIR.jpg",
+                                        style={
+                                            'width': '120px', 'height': '120px', 'objectFit': 'cover',
+                                            'border': '4px solid #1B5E20', 'boxShadow': '0 4px 15px rgba(0,0,0,0.2)'
+                                        }
+                                    )
+                                ], md=12, className="text-center mb-3"),
+                                dbc.Col([
+                                    html.H3("Director",
+                                            style={'color': '#1B5E20', 'fontWeight': '600', 'marginBottom': '20px',
+                                                   'textAlign': 'center'}),
+                                    html.P([
+                                        "As Director of Institutional Research, I lead the strategic analysis and reporting that drives ",
+                                        "data-informed decision making across USC. Our department takes pride in delivering comprehensive ",
+                                        "institutional insights through detailed factbooks, enrollment analytics, and performance metrics."
+                                    ], style={'color': '#555', 'lineHeight': '1.7', 'marginBottom': '15px'}),
+                                    html.P([
+                                        "We collaborate closely with all five university divisions to provide leadership, faculty, and staff ",
+                                        "with the critical data needed to support USC's mission of educational excellence. Our reports cover ",
+                                        "graduation trends, financial analysis, student demographics, and institutional effectiveness measures."
+                                    ], style={'color': '#555', 'lineHeight': '1.7', 'marginBottom': '15px'}),
+                                    html.P([
+                                        "Through this new digital portal, we're making institutional research more accessible and actionable ",
+                                        "than ever before. Our commitment is to transform data into insights that support USC's continued ",
+                                        "growth and academic distinction."
+                                    ], style={'color': '#555', 'lineHeight': '1.7', 'marginBottom': '20px'}),
+                                    html.Div([
+                                        html.P("Yours In Service",
+                                               style={'color': '#1B5E20', 'fontWeight': '600', 'fontStyle': 'italic',
+                                                      'marginBottom': '5px'}),
+                                        html.P("Nordian C. Swaby Robinson",
+                                               style={'color': '#1B5E20', 'fontWeight': '600', 'marginBottom': '1px'}),
+                                        html.P("Director, Institutional Research",
+                                               style={'color': '#666', 'fontSize': '0.9rem', 'marginBottom': '5px'}),
+                                        html.P("Leading Data-Driven Excellence",
+                                               style={'color': '#666', 'fontSize': '0.8rem', 'fontStyle': 'italic'})
+                                    ], style={'marginTop': '25px', 'paddingTop': '20px',
+                                              'borderTop': '2px solid #e9ecef', 'textAlign': 'center'})
+                                ], md=12)
+                            ])
+                        ])
+                    ], style={'boxShadow': '0 8px 30px rgba(0,0,0,0.1)', 'border': 'none', 'height': '100%'})
+                ], md=6, className="mb-4"),
+
+                # Second Team Member Card (Right Side)
+                dbc.Col([
+                    dbc.Card([
+                        dbc.CardBody([
+                            dbc.Row([
+                                dbc.Col([
+                                    html.Img(
+                                        src="/assets/team-member-2.jpg",  # You'll need to add this image
+                                        style={
+                                            'width': '120px', 'height': '120px', 'objectFit': 'cover',
+                                            'border': '4px solid #1B5E20', 'boxShadow': '0 4px 15px rgba(0,0,0,0.2)'
+                                        }
+                                    )
+                                ], md=12, className="text-center mb-3"),
+                                dbc.Col([
+                                    html.H3("Web Developer",
+                                            style={'color': '#1B5E20', 'fontWeight': '600', 'marginBottom': '20px',
+                                                   'textAlign': 'center'}),
+                                    html.P([
+                                        "As the Web Developer for the Institutional Research department, I am responsible for creating ",
+                                        "and maintaining the digital infrastructure that powers our data-driven decision making processes. ",
+                                        "This portal represents the culmination of extensive collaboration between the IR team and our ",
+                                        "commitment to making institutional data accessible and actionable."
+                                    ], style={'color': '#555', 'lineHeight': '1.7', 'marginBottom': '15px'}),
+                                    html.P([
+                                        "The development of this platform focuses on user experience, data security, and scalable architecture ",
+                                        "to ensure that faculty, staff, and administrators can easily access the insights they need. Through ",
+                                        "interactive visualizations and comprehensive reporting tools, we're transforming how USC uses its data."
+                                    ], style={'color': '#555', 'lineHeight': '1.7', 'marginBottom': '15px'}),
+                                    html.P([
+                                        "I'm passionate about leveraging technology to support educational excellence and institutional growth. ",
+                                        "This portal is designed to evolve with the university's needs, providing a foundation for data-driven ",
+                                        "strategic planning and continuous improvement."
+                                    ], style={'color': '#555', 'lineHeight': '1.7', 'marginBottom': '20px'}),
+                                    html.Div([
+                                        html.P("In Development Excellence",
+                                               style={'color': '#1B5E20', 'fontWeight': '600', 'fontStyle': 'italic',
+                                                      'marginBottom': '5px'}),
+                                        html.P("Liam Webster",
+                                               style={'color': '#1B5E20', 'fontWeight': '600', 'marginBottom': '1px'}),
+                                        html.P("Web Developer, Institutional Research",
+                                               style={'color': '#666', 'fontSize': '0.9rem', 'marginBottom': '5px'}),
+                                        html.P("Portal Launch: 2025",
+                                               style={'color': '#666', 'fontSize': '0.8rem', 'fontStyle': 'italic'})
+                                    ], style={'marginTop': '25px', 'paddingTop': '20px',
+                                              'borderTop': '2px solid #e9ecef', 'textAlign': 'center'})
+                                ], md=12)
+                            ])
+                        ])
+                    ], style={'boxShadow': '0 8px 30px rgba(0,0,0,0.1)', 'border': 'none', 'height': '100%'})
+                ], md=6, className="mb-4")
+            ])
         ])
-    ], style={'padding': '80px 0', 'background': 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)'})
+    ], style={'padding': '80px 0', 'background': 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)'}, id="team-section")
 
 def create_quick_links():
-    """Your exact quick links"""
+    """Enhanced quick links with modern design - external links only"""
     links = [
-        {'title': 'USC Main Website', 'url': 'https://www.usc.edu.tt', 'icon': 'fas fa-globe'},
-        {'title': 'USC eLearn', 'url': 'https://elearn.usc.edu.tt', 'icon': 'fas fa-laptop'},
-        {'title': 'Aerion Portal', 'url': 'https://aerion.usc.edu.tt', 'icon': 'fas fa-door-open'},
-        {'title': 'Email Support', 'url': 'mailto:ir@usc.edu.tt', 'icon': 'fas fa-envelope'}
+        {'title': 'USC Main Website', 'url': 'https://www.usc.edu.tt', 'icon': 'fas fa-globe', 'color': '#1B5E20'},
+        {'title': 'USC eLearn', 'url': 'https://elearn.usc.edu.tt', 'icon': 'fas fa-laptop', 'color': '#4CAF50'},
+        {'title': 'Aerion Portal', 'url': 'https://aerion.usc.edu.tt', 'icon': 'fas fa-door-open', 'color': '#FDD835'},
+        {'title': 'Email Support', 'url': 'mailto:ir@usc.edu.tt', 'icon': 'fas fa-envelope', 'color': '#28A745'}
     ]
 
     link_items = []
     for link in links:
         link_items.append(
             dbc.Col([
-                html.A([
-                    html.I(className=link['icon'], style={'fontSize': '1.5rem', 'marginRight': '15px'}),
-                    html.Span(link['title'])
-                ], href=link['url'], target="_blank", style={
-                    'display': 'flex', 'alignItems': 'center', 'padding': '20px',
-                    'background': '#f8f9fa', 'textDecoration': 'none', 'color': '#495057'
-                })
-            ], sm=6, md=3, className="mb-3")
+                dbc.Card([
+                    dbc.CardBody([
+                        html.Div([
+                            html.I(className=link['icon'], style={
+                                'fontSize': '2.5rem', 'color': link['color'], 'marginBottom': '15px'
+                            }),
+                            html.H5(link['title'], style={
+                                'color': '#1B5E20', 'fontWeight': '600', 'marginBottom': '10px'
+                            }),
+                            html.A([
+                                "Visit ", html.I(className="fas fa-external-link-alt ms-1")
+                            ],
+                            href=link['url'],
+                            target="_blank",
+                            className="btn btn-outline-primary btn-sm",
+                            style={'borderRadius': '20px', 'textDecoration': 'none'})
+                        ], className="text-center")
+                    ])
+                ], style={
+                    'boxShadow': '0 4px 15px rgba(0,0,0,0.1)',
+                    'border': 'none',
+                    'height': '100%',
+                    'transition': 'transform 0.3s ease, box-shadow 0.3s ease'
+                }, className="h-100")
+            ], sm=6, md=3, className="mb-4")
         )
 
     return html.Section([
         dbc.Container([
-            html.H3("Quick Links", className="text-center mb-4"),
+            html.H2("Quick Links", style={
+                'color': '#1B5E20', 'fontWeight': '700', 'fontSize': '2.5rem',
+                'textAlign': 'center', 'marginBottom': '3rem'
+            }),
             dbc.Row(link_items)
         ])
-    ], style={'padding': '60px 0'})
+    ], style={'padding': '80px 0', 'background': '#F8F9FA'})
 
 def create_modern_footer():
     """Your exact footer"""
@@ -2392,12 +2679,7 @@ def create_login_page():
 
                 dbc.Card([
                     dbc.CardBody([
-                        html.H6("Demo Credentials", className="card-title"),
-                        html.P([
-                            html.Strong("Admin: "), "admin@usc.edu.tt / admin123", html.Br(),
-                            html.Strong("Employee: "), "employee@usc.edu.tt / emp123", html.Br(),
-                            html.Strong("Student: "), "student@usc.edu.tt / student123"
-                        ], className="mb-0 small")
+
                     ])
                 ], className="mt-3", color="light"),
                 dbc.Card([
@@ -2416,10 +2698,12 @@ def create_home_layout(user_data=None):
     return html.Div([
         create_hero_section(),
         create_stats_overview(),
+        create_about_ir_section(),
         create_feature_showcase(),
         create_director_message(),
         create_quick_links(),
-        create_modern_footer()
+        create_modern_footer(),
+        create_scroll_trigger()
     ])
 
 # ============================================================================
@@ -2576,7 +2860,8 @@ def display_page(pathname, user_session):
         if user_data:
             return dcc.Location(pathname='/', id='redirect-home')
         return create_signup_page()
-
+    elif pathname == '/request-report':
+        content = create_data_request_page()
     elif pathname == '/profile':
         if not user_data:
             return dcc.Location(pathname='/login', id='redirect-login')
@@ -2605,7 +2890,7 @@ def display_page(pathname, user_session):
 # ============================================================================
 
 if __name__ == '__main__':
-
+    #init_enhanced_database()
     print("🚀 Starting USC Institutional Research Portal...")
     print("📊 Clean version with working authentication!")
     print("✅ Features:")
