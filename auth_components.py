@@ -176,7 +176,7 @@ def create_navbar_with_auth(user_info=None):
         dbc.Row([
             dbc.Col([
                 dbc.NavbarBrand([
-                    html.Img(src="/assets/usc-logo.png", height="40px", className="me-2"),
+                    html.Img(src="assets/usc-logo.png", height="40px", className="me-2"),
                     "USC Institutional Research"
                 ], href="/", style={'color': USC_COLORS['accent_yellow'], 'font-weight': 'bold'})
             ], width="auto"),

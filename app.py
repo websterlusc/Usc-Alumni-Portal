@@ -381,7 +381,7 @@ def create_signup_page():
         dbc.Row([
             dbc.Col([
                 html.Div([
-                    html.Img(src="/assets/usc-logo.png", style={'height': '120px', 'marginBottom': '20px'},
+                    html.Img(src="assets/usc-logo.png", style={'height': '120px', 'marginBottom': '20px'},
                              className="mx-auto d-block"),
                     html.H2("Create USC IR Account", className="text-center mb-4",
                             style={'color': USC_COLORS['primary_green']}),
@@ -2099,7 +2099,7 @@ def create_modern_navbar(user_data=None):
         dbc.Container([
             # Brand (your exact design)
             dbc.NavbarBrand([
-                html.Img(src="/assets/usc-logo.png", height="45", className="me-3"),
+                html.Img(src="assets/usc-logo.png", height="45", className="me-3"),
                 html.Div([
                     html.Div("Institutional Research", style={
                         'fontSize': '1.2rem', 'fontWeight': '700',
@@ -2646,7 +2646,7 @@ def create_login_page():
         dbc.Row([
             dbc.Col([
                 html.Div([
-                    html.Img(src="/assets/usc-logo.png", style={'height': '120px', 'marginBottom': '20px'},
+                    html.Img(src="assets/usc-logo.png", style={'height': '120px', 'marginBottom': '20px'},
                              className="mx-auto d-block"),
                     html.H2("USC Institutional Research Portal", className="text-center mb-4",
                             style={'color': USC_COLORS['primary_green']}),
