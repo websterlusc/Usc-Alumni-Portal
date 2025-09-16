@@ -159,46 +159,6 @@
       <option name="presentableId" value="Default" />
       <updated>1756998738082</updated>
     </task>
-    <task id="LOCAL-00010" summary="First Commit">
-      <option name="closed" value="true" />
-      <created>1757086054520</created>
-      <option name="number" value="00010" />
-      <option name="presentableId" value="LOCAL-00010" />
-      <option name="project" value="LOCAL" />
-      <updated>1757086054520</updated>
-    </task>
-    <task id="LOCAL-00011" summary="First Commit">
-      <option name="closed" value="true" />
-      <created>1757086119013</created>
-      <option name="number" value="00011" />
-      <option name="presentableId" value="LOCAL-00011" />
-      <option name="project" value="LOCAL" />
-      <updated>1757086119013</updated>
-    </task>
-    <task id="LOCAL-00012" summary="First Commit">
-      <option name="closed" value="true" />
-      <created>1757086446611</created>
-      <option name="number" value="00012" />
-      <option name="presentableId" value="LOCAL-00012" />
-      <option name="project" value="LOCAL" />
-      <updated>1757086446611</updated>
-    </task>
-    <task id="LOCAL-00013" summary="First Commit">
-      <option name="closed" value="true" />
-      <created>1757086483041</created>
-      <option name="number" value="00013" />
-      <option name="presentableId" value="LOCAL-00013" />
-      <option name="project" value="LOCAL" />
-      <updated>1757086483041</updated>
-    </task>
-    <task id="LOCAL-00014" summary="First Commit">
-      <option name="closed" value="true" />
-      <created>1757086602275</created>
-      <option name="number" value="00014" />
-      <option name="presentableId" value="LOCAL-00014" />
-      <option name="project" value="LOCAL" />
-      <updated>1757086602275</updated>
-    </task>
     <task id="LOCAL-00015" summary="First Commit">
       <option name="closed" value="true" />
       <created>1757086619557</created>
@@ -551,7 +511,47 @@
       <option name="project" value="LOCAL" />
       <updated>1758026886739</updated>
     </task>
-    <option name="localTasksCounter" value="59" />
+    <task id="LOCAL-00059" summary="google auth not working">
+      <option name="closed" value="true" />
+      <created>1758027043128</created>
+      <option name="number" value="00059" />
+      <option name="presentableId" value="LOCAL-00059" />
+      <option name="project" value="LOCAL" />
+      <updated>1758027043128</updated>
+    </task>
+    <task id="LOCAL-00060" summary="google auth not working">
+      <option name="closed" value="true" />
+      <created>1758027104094</created>
+      <option name="number" value="00060" />
+      <option name="presentableId" value="LOCAL-00060" />
+      <option name="project" value="LOCAL" />
+      <updated>1758027104094</updated>
+    </task>
+    <task id="LOCAL-00061" summary="google auth not working">
+      <option name="closed" value="true" />
+      <created>1758027392972</created>
+      <option name="number" value="00061" />
+      <option name="presentableId" value="LOCAL-00061" />
+      <option name="project" value="LOCAL" />
+      <updated>1758027392972</updated>
+    </task>
+    <task id="LOCAL-00062" summary="google auth not working">
+      <option name="closed" value="true" />
+      <created>1758027606267</created>
+      <option name="number" value="00062" />
+      <option name="presentableId" value="LOCAL-00062" />
+      <option name="project" value="LOCAL" />
+      <updated>1758027606268</updated>
+    </task>
+    <task id="LOCAL-00063" summary="google auth not working">
+      <option name="closed" value="true" />
+      <created>1758027642990</created>
+      <option name="number" value="00063" />
+      <option name="presentableId" value="LOCAL-00063" />
+      <option name="project" value="LOCAL" />
+      <updated>1758027642990</updated>
+    </task>
+    <option name="localTasksCounter" value="64" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
