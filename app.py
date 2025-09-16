@@ -2891,20 +2891,9 @@ def display_page(pathname, user_session):
 
 if __name__ == '__main__':
     init_enhanced_database()
-    print("🚀 Starting USC Institutional Research Portal...")
-    print("📊 Clean version with working authentication!")
-    print("✅ Features:")
-    print("   • Your complete existing design preserved")
-    print("   • Working login button and modal")
-    print("   • 3-tier access control system")
-    print("   • Dynamic navbar based on user permissions")
-    print("   • Demo users for testing")
-    print(f"🌐 Visit: http://localhost:8050")
-    print()
-    print("🎮 Test the login:")
-    print("   1. Click 'Sign In' button in navbar")
-    print("   2. Choose demo user (try different tiers)")
-    print("   3. Test access to different pages")
-    print("   4. Notice navbar updates with user info")
-
-    app.run_server(debug=True, host='0.0.0.0', port=8050)
+    port = int(os.environ.get('PORT', 8050))
+    app.run_server(
+        debug=False,  # Set to False for production
+        host='0.0.0.0',
+        port=port
+    )
