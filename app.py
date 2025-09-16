@@ -2890,7 +2890,7 @@ def display_page(pathname, user_session):
 # ============================================================================
 
 if __name__ == '__main__':
-    init_enhanced_database()
+    #init_enhanced_database()
     port = int(os.environ.get('PORT', 8050))
     app.run_server(
         debug=False,  # Set to False for production
