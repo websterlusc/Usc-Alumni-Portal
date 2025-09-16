@@ -140,22 +140,21 @@ def send_request_emails(data, request_id):
         smtp_password = os.getenv('SMTP_PASSWORD', '')
 
         if not smtp_user or not smtp_password:
-            print("📧 Email notifications skipped (no SMTP config)")
-            return
+            print(f"Request #{request_id} saved - email disabled (no SMTP config)")
+            return True
 
         # Create message
         msg = MIMEMultipart()
         msg['From'] = smtp_user
         msg['To'] = 'ir@usc.edu.tt'
+        msg['Reply-To'] = data['email']
         msg['Subject'] = f"New Data Request #{request_id}: {data['title']}"
 
-        body = f"""
-New data request submitted:
+        body = f"""New Data Request #{request_id}
 
-Requester: {data['name']} ({data['email']})
+From: {data['name']} ({data['email']})
 Organization: {data['organization'] or 'Not specified'}
 Category: {data['category']}
-Priority: {data['priority']}
 Title: {data['title']}
 
 Description:
@@ -164,43 +163,23 @@ Description:
 Purpose:
 {data['purpose']}
 
-Formats: {data['formats']}
-Deadline: {data['deadline'] or 'Not specified'}
-
-Login to the admin dashboard to manage this request.
+Check the admin dashboard to manage this request.
 """
 
         msg.attach(MIMEText(body, 'plain'))
 
-        # Send email
-        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
         server.starttls()
         server.login(smtp_user, smtp_password)
         server.sendmail(smtp_user, 'ir@usc.edu.tt', msg.as_string())
         server.quit()
 
-        print(f"📧 Email sent for request #{request_id}")
+        print(f"Email sent for request #{request_id}")
+        return True
 
     except Exception as e:
-        print(f"📧 Email error: {str(e)}")
-
-
-def get_all_data_requests():
-    """Get all data requests for admin"""
-    conn = sqlite3.connect('usc_ir.db')
-    cursor = conn.cursor()
-
-    try:
-        cursor.execute('''
-            SELECT dr.*, u.full_name as assigned_name
-            FROM data_requests dr
-            LEFT JOIN users u ON dr.assigned_to = u.id
-            ORDER BY dr.created_at DESC
-        ''')
-        return cursor.fetchall()
-    finally:
-        conn.close()
-
+        print(f"Email error: {str(e)}")
+        return True  # Don't break the form if email fails
 
 def update_request_status(request_id, status, admin_id, notes=None):
     """Update request status"""

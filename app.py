@@ -2562,7 +2562,7 @@ def create_quick_links():
     links = [
         {'title': 'USC Main Website', 'url': 'https://www.usc.edu.tt', 'icon': 'fas fa-globe', 'color': '#1B5E20'},
         {'title': 'USC eLearn', 'url': 'https://elearn.usc.edu.tt', 'icon': 'fas fa-laptop', 'color': '#4CAF50'},
-        {'title': 'Aerion Portal', 'url': 'https://aerion.usc.edu.tt', 'icon': 'fas fa-door-open', 'color': '#FDD835'},
+        {'title': 'Aeorion Portal', 'url': 'https://aeorion.usc.edu.tt', 'icon': 'fas fa-door-open', 'color': '#FDD835'},
         {'title': 'Email Support', 'url': 'mailto:ir@usc.edu.tt', 'icon': 'fas fa-envelope', 'color': '#28A745'}
     ]
 
