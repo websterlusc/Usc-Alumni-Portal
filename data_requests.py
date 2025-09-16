@@ -168,8 +168,8 @@ Check the admin dashboard to manage this request.
 
         msg.attach(MIMEText(body, 'plain'))
 
+        # Try SSL port 465 instead of 587
         server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-        server.starttls()
         server.login(smtp_user, smtp_password)
         server.sendmail(smtp_user, 'ir@usc.edu.tt', msg.as_string())
         server.quit()
@@ -179,7 +179,23 @@ Check the admin dashboard to manage this request.
 
     except Exception as e:
         print(f"Email error: {str(e)}")
-        return True  # Don't break the form if email fails
+        return True
+def get_all_data_requests():
+    """Get all data requests for admin"""
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('''
+            SELECT dr.*, u.full_name as assigned_name
+            FROM data_requests dr
+            LEFT JOIN users u ON dr.assigned_to = u.id
+            ORDER BY dr.created_at DESC
+        ''')
+        return cursor.fetchall()
+    finally:
+        conn.close()
+
 
 def update_request_status(request_id, status, admin_id, notes=None):
     """Update request status"""
