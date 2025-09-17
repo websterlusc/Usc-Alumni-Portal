@@ -134,7 +134,7 @@ def save_data_request(data):
 
 
 def send_request_emails(data, request_id):
-    """Send email notifications"""
+    """Send email notifications to both IR team and requester"""
     try:
         smtp_user = os.getenv('SMTP_USERNAME', '')
         smtp_password = os.getenv('SMTP_PASSWORD', '')
@@ -143,14 +143,17 @@ def send_request_emails(data, request_id):
             print(f"Request #{request_id} saved - email disabled (no SMTP config)")
             return True
 
-        # Create message
-        msg = MIMEMultipart()
-        msg['From'] = smtp_user
-        msg['To'] = 'ir@usc.edu.tt'
-        msg['Reply-To'] = data['email']
-        msg['Subject'] = f"New Data Request #{request_id}: {data['title']}"
+        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+        server.login(smtp_user, smtp_password)
 
-        body = f"""USC INSTITUTIONAL RESEARCH - NEW DATA REQUEST
+        # Email 1: Notification to IR team
+        ir_msg = MIMEMultipart()
+        ir_msg['From'] = smtp_user
+        ir_msg['To'] = 'ir@usc.edu.tt'
+        ir_msg['Reply-To'] = data['email']
+        ir_msg['Subject'] = f"New Data Request #{request_id}: {data['title']}"
+
+        ir_body = f"""USC INSTITUTIONAL RESEARCH - NEW DATA REQUEST
 
 REQUEST ID: #{request_id}
 SUBMITTED: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
@@ -184,14 +187,54 @@ Please log into the USC IR Portal admin dashboard to manage this request.
 Reply directly to {data['email']} when completed.
 """
 
-        msg.attach(MIMEText(body, 'plain'))
+        ir_msg.attach(MIMEText(ir_body, 'plain'))
+        server.sendmail(smtp_user, 'ir@usc.edu.tt', ir_msg.as_string())
 
-        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-        server.login(smtp_user, smtp_password)
-        server.sendmail(smtp_user, 'ir@usc.edu.tt', msg.as_string())
+        # Email 2: Confirmation to requester
+        user_msg = MIMEMultipart()
+        user_msg['From'] = smtp_user
+        user_msg['To'] = data['email']
+        user_msg['Subject'] = f"USC IR: Data Request Confirmation #{request_id}"
+
+        user_body = f"""Dear {data['name']},
+
+Thank you for submitting your data request to the USC Institutional Research department.
+
+REQUEST CONFIRMATION:
+Request ID: #{request_id}
+Title: {data['title']}
+Category: {data['category']}
+Priority: {data['priority']}
+Submitted: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+WHAT HAPPENS NEXT:
+1. Our team will review your request within 1-2 business days
+2. We may contact you if additional clarification is needed
+3. We will provide the requested data within the specified timeframe
+4. You will receive the final deliverable via email
+
+ESTIMATED COMPLETION TIME:
+- Standard requests: 5-10 business days
+- High priority: 2-5 business days  
+- Urgent requests: 1-2 business days
+
+If you have questions about your request, please contact us at ir@usc.edu.tt and reference Request ID #{request_id}.
+
+Best regards,
+USC Institutional Research Team
+University of the Southern Caribbean
+
+---
+This is an automated confirmation. Please do not reply to this email.
+For questions, contact: ir@usc.edu.tt
+"""
+
+        user_msg.attach(MIMEText(user_body, 'plain'))
+        server.sendmail(smtp_user, data['email'], user_msg.as_string())
+
         server.quit()
 
-        print(f"Email sent for request #{request_id}")
+        print(f"Emails sent for request #{request_id}: IR team + confirmation to {data['email']}")
         return True
 
     except Exception as e:
@@ -627,6 +670,8 @@ def render_data_requests_list():
 # Data request form submission
 @callback(
     [Output('data-request-alerts', 'children'),
+     Output('dr-submit-btn', 'children'),
+     Output('dr-submit-btn', 'disabled'),
      Output('dr-name', 'value'),
      Output('dr-email', 'value'),
      Output('dr-org', 'value'),
@@ -659,7 +704,7 @@ def render_data_requests_list():
 def handle_data_request_submission(n_clicks, name, email, org, position, category, priority,
                                    title, description, purpose, formats, deadline, notes, agreement):
     if not n_clicks:
-        return [dash.no_update] * 14
+        return [dash.no_update] * 16
 
     # Validation
     errors = []
@@ -685,9 +730,11 @@ def handle_data_request_submission(n_clicks, name, email, org, position, categor
             html.H6("Please fix these errors:"),
             html.Ul([html.Li(error) for error in errors])
         ], color="danger", dismissable=True)
-        return [alert] + [dash.no_update] * 13
+        normal_button = [html.I(className="fas fa-paper-plane me-2"), "Submit Request"]
+        # Fixed: return exactly 16 items to match outputs
+        return [alert, normal_button, False] + [dash.no_update] * 13
 
-    # Save request
+    # Save request (this is where the spinner would show during processing)
     data = {
         'name': name.strip(),
         'email': email.strip().lower(),
@@ -706,15 +753,17 @@ def handle_data_request_submission(n_clicks, name, email, org, position, categor
     result = save_data_request(data)
 
     if result['success']:
+        success_button = [html.I(className="fas fa-check me-2"), "Submitted!"]
         alert = dbc.Alert([
             html.I(className="fas fa-check-circle me-2"),
             f"Request submitted successfully! Request ID: #{result['id']}"
         ], color="success", dismissable=True)
-        # Clear form
-        return [alert, "", "", "", "", "", "standard", "", "", "", ["excel"], "", "", []]
+        # Clear form and show success button
+        return [alert, success_button, True, "", "", "", "", "", "standard", "", "", "", ["excel"], "", "", []]
     else:
+        normal_button = [html.I(className="fas fa-paper-plane me-2"), "Submit Request"]
         alert = dbc.Alert(f"Error: {result['error']}", color="danger")
-        return [alert] + [dash.no_update] * 13
+        return [alert, normal_button, False] + [dash.no_update] * 13
 
 
 # Admin data requests callbacks
