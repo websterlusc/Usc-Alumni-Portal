@@ -5,8 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f6f93d84-f206-4ef2-8de4-7f980a01f4aa" name="Changes" comment="google auth not working">
+      <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" afterPath="$PROJECT_DIR$/.env" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/usc_ir.db" beforeDir="false" afterPath="$PROJECT_DIR$/usc_ir.db" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -161,14 +161,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1756998738082</updated>
-    </task>
-    <task id="LOCAL-00020" summary="First Commit">
-      <option name="closed" value="true" />
-      <created>1757087562682</created>
-      <option name="number" value="00020" />
-      <option name="presentableId" value="LOCAL-00020" />
-      <option name="project" value="LOCAL" />
-      <updated>1757087562682</updated>
     </task>
     <task id="LOCAL-00021" summary="First Commit">
       <option name="closed" value="true" />
@@ -554,7 +546,15 @@
       <option name="project" value="LOCAL" />
       <updated>1758055927555</updated>
     </task>
-    <option name="localTasksCounter" value="69" />
+    <task id="LOCAL-00069" summary="google auth not working">
+      <option name="closed" value="true" />
+      <created>1758056308194</created>
+      <option name="number" value="00069" />
+      <option name="presentableId" value="LOCAL-00069" />
+      <option name="project" value="LOCAL" />
+      <updated>1758056308194</updated>
+    </task>
+    <option name="localTasksCounter" value="70" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
