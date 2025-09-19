@@ -11,6 +11,7 @@ import os
 from dash import ALL  # Add this line
 from datetime import datetime
 import hashlib
+from auth_utils import generate_random_password, send_password_reset_email, send_account_creation_email
 import secrets
 from datetime import timedelta
 # Load environment variables
@@ -237,34 +238,43 @@ def verify_password(password, password_hash):
     return hashlib.sha256(password.encode()).hexdigest() == password_hash
 
 
-def create_user(email, password, full_name):
-    """Create a new user account - all require manual approval"""
+def create_user_admin(email, full_name, role, access_tier, admin_id):
+    """Admin creates user with email notification"""
     conn = sqlite3.connect('usc_ir.db')
     cursor = conn.cursor()
 
     try:
-        # Check if user already exists
+        # Check if user exists
         cursor.execute('SELECT email FROM users WHERE email = ?', (email,))
         if cursor.fetchone():
-            return {"success": False, "message": "Email already registered"}
+            return {"success": False, "message": "Email already exists"}
 
-        # All new users start with Tier 1 and pending status
-        access_tier = 1
-        status = 'pending'
+        # Generate random password
+        from auth_utils import generate_random_password, send_account_creation_email
+        temp_password = generate_random_password()
+        password_hash = hash_password(temp_password)
 
-        password_hash = hash_password(password)
-
+        # Create user
         cursor.execute('''
-            INSERT INTO users (email, password_hash, full_name, access_tier, registration_status)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (email, password_hash, full_name, access_tier, status))
+            INSERT INTO users (email, password_hash, full_name, role, access_tier, registration_status, is_active)
+            VALUES (?, ?, ?, ?, ?, 'approved', 1)
+        ''', (email, password_hash, full_name, role, access_tier))
 
         conn.commit()
-        return {"success": True, "message": "Account created successfully. Please wait for admin approval.",
-                "access_tier": access_tier}
+
+        # Send email with credentials
+        email_sent = send_account_creation_email(email, full_name, temp_password, "admin")
+
+        message = f"User {full_name} created successfully"
+        if email_sent:
+            message += f" and credentials sent to {email}"
+        else:
+            message += " but email notification failed"
+
+        return {"success": True, "message": message}
 
     except Exception as e:
-        return {"success": False, "message": f"Error creating account: {str(e)}"}
+        return {"success": False, "message": f"Error creating user: {str(e)}"}
     finally:
         conn.close()
 
@@ -665,16 +675,36 @@ def delete_user(user_id, admin_id):
 
 
 def reset_user_password(user_id, new_password, admin_id):
-    """Admin reset of user password"""
+    """Admin reset of user password with email notification"""
     conn = sqlite3.connect('usc_ir.db')
     cursor = conn.cursor()
 
     try:
+        # Get user details
+        cursor.execute('SELECT email, full_name FROM users WHERE id = ?', (user_id,))
+        user_data = cursor.fetchone()
+
+        if not user_data:
+            return {"success": False, "message": "User not found"}
+
+        user_email, user_name = user_data
+
+        # Update password
         password_hash = hash_password(new_password)
         cursor.execute('UPDATE users SET password_hash = ? WHERE id = ?', (password_hash, user_id))
-
         conn.commit()
-        return {"success": True, "message": "Password reset successfully"}
+
+        # Send email notification
+        from auth_utils import send_password_reset_email
+        email_sent = send_password_reset_email(user_email, user_name, new_password, "admin")
+
+        message = "Password reset successfully"
+        if email_sent:
+            message += f" and notification sent to {user_email}"
+        else:
+            message += " but email notification failed"
+
+        return {"success": True, "message": message}
 
     except Exception as e:
         return {"success": False, "message": f"Error resetting password: {str(e)}"}
@@ -1753,6 +1783,30 @@ def authenticate_user_enhanced(email, password):
 # ADD THESE CALLBACKS TO YOUR EXISTING APP
 # ============================================================================
 
+def create_user(email, password, full_name):
+    """Create a new user account"""
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('SELECT email FROM users WHERE email = ?', (email,))
+        if cursor.fetchone():
+            return {"success": False, "message": "Email already registered"}
+
+        password_hash = hash_password(password)
+        cursor.execute('''
+            INSERT INTO users (email, password_hash, full_name, access_tier, registration_status)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (email, password_hash, full_name, 1, 'pending'))  # Make sure full_name is here
+
+        conn.commit()
+        return {"success": True, "message": "Account created successfully"}
+
+    except Exception as e:
+        return {"success": False, "message": f"Error creating account: {str(e)}"}
+    finally:
+        conn.close()
+
 # Signup callback
 @callback(
     [Output('signup-alert', 'children'), Output('url', 'pathname', allow_duplicate=True)],
@@ -1765,7 +1819,7 @@ def handle_signup(n_clicks, name, email, password, confirm_password):
     if not n_clicks:
         return "", dash.no_update
 
-    # Validation
+    # Your existing validation...
     if not all([name, email, password, confirm_password]):
         return dbc.Alert("Please fill in all fields", color="danger"), dash.no_update
 
@@ -1779,10 +1833,12 @@ def handle_signup(n_clicks, name, email, password, confirm_password):
     result = create_user(email.strip().lower(), password, name.strip())
 
     if result["success"]:
-        if email.endswith('@usc.edu.tt'):
-            return dbc.Alert("Account created! You can now sign in.", color="success"), "/login"
-        else:
-            return dbc.Alert("Account created! Please wait for approval.", color="info"), "/login"
+        # Send confirmation email
+        from auth_utils import send_signup_confirmation_email
+        send_signup_confirmation_email(email.strip().lower(), name.strip())
+
+        return dbc.Alert("Account created! Check your email for confirmation. Please wait for admin approval.",
+                         color="success"), "/login"
     else:
         return dbc.Alert(result["message"], color="danger"), dash.no_update
 
@@ -2688,11 +2744,69 @@ def create_login_page():
                             "Don't have an account? ",
                             html.A("Sign up here", href="/signup", style={'color': USC_COLORS['primary_green']})
                         ], className="text-center mb-0"),
+                    dbc.Card([
+                        dbc.CardBody([
+                            html.H6("Forgot Password?", className="card-title"),
+                            html.P("Enter your email to receive a new password:", className="small"),
+                            dbc.Input(id="forgot-email", type="email", placeholder="Enter your email",
+                                      className="mb-2"),
+                            dbc.Button("Send New Password", id="forgot-password-btn", color="outline-primary",
+                                       size="sm"),
+                            html.Div(id="forgot-password-alert", className="mt-2")
+                        ])
+                    ], className="mt-3")
                     ])
                 ], className="mt-3")
-            ], width=12, md=6, lg=4)
+            ], width=12, md=6, lg=4),
+
         ], justify="center", className="min-vh-100 d-flex align-items-center")
     ], fluid=True, className="bg-light")
+
+
+@callback(
+    Output('forgot-password-alert', 'children'),
+    Input('forgot-password-btn', 'n_clicks'),
+    State('forgot-email', 'value'),
+    prevent_initial_call=True
+)
+def handle_forgot_password(n_clicks, email):
+    if not n_clicks or not email:
+        return ""
+
+    conn = sqlite3.connect('usc_ir.db')
+    cursor = conn.cursor()
+
+    try:
+        # Check if user exists
+        cursor.execute('SELECT id, full_name FROM users WHERE email = ?', (email,))
+        user_data = cursor.fetchone()
+
+        if not user_data:
+            return dbc.Alert("Email not found in our system", color="danger", dismissable=True)
+
+        user_id, user_name = user_data
+
+        # Generate new password
+        from auth_utils import generate_random_password, send_password_reset_email
+        new_password = generate_random_password()
+
+        # Update password in database
+        password_hash = hash_password(new_password)
+        cursor.execute('UPDATE users SET password_hash = ? WHERE id = ?', (password_hash, user_id))
+        conn.commit()
+
+        # Send email
+        email_sent = send_password_reset_email(email, user_name, new_password, "forgot")
+
+        if email_sent:
+            return dbc.Alert("New password sent to your email", color="success", dismissable=True)
+        else:
+            return dbc.Alert("Password reset but email failed to send", color="warning", dismissable=True)
+
+    except Exception as e:
+        return dbc.Alert(f"Error: {str(e)}", color="danger", dismissable=True)
+    finally:
+        conn.close()
 def create_home_layout(user_data=None):
     """Complete home page layout"""
     return html.Div([
