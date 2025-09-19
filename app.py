@@ -12,6 +12,7 @@ from dash import ALL  # Add this line
 from datetime import datetime
 from factbook.factbook import create_factbook_landing_page
 from callback_registry import initialize_callback_registry
+from callback_registry import initialize_callback_registry
 import hashlib
 # Load environment variables
 from data_requests import (
@@ -2974,10 +2975,12 @@ def display_page(pathname, user_session):
     elif pathname == '/help':
         content = create_placeholder_page("Help Center", "Documentation and support resources")
 
+
     elif pathname == '/factbook/student-labour':
-        from pages.student_labour_report import create_factbook_student_labour_page
-        content = create_factbook_student_labour_page()
-        content = require_access(content, 3, user_data)
+
+        from pages.universal_factbook_page import create_universal_factbook_page
+
+        content = create_universal_factbook_page('student-labour')
 
     elif pathname == '/factbook/enrollment':
         from pages.universal_factbook_page import create_universal_factbook_page

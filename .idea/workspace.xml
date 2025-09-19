@@ -5,14 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f6f93d84-f206-4ef2-8de4-7f980a01f4aa" name="Changes" comment="google auth not working">
-      <change afterPath="$PROJECT_DIR$/callback_registry.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/factbook/factbook.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pages/student_labour_report.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pages/universal_factbook_page.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/universal_factbook_loader.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/usc_ir.db" beforeDir="false" afterPath="$PROJECT_DIR$/usc_ir.db" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -168,14 +161,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1756998738082</updated>
-    </task>
-    <task id="LOCAL-00024" summary="First Commit">
-      <option name="closed" value="true" />
-      <created>1757356621178</created>
-      <option name="number" value="00024" />
-      <option name="presentableId" value="LOCAL-00024" />
-      <option name="project" value="LOCAL" />
-      <updated>1757356621178</updated>
     </task>
     <task id="LOCAL-00025" summary="First Commit">
       <option name="closed" value="true" />
@@ -561,7 +546,15 @@
       <option name="project" value="LOCAL" />
       <updated>1758286256650</updated>
     </task>
-    <option name="localTasksCounter" value="73" />
+    <task id="LOCAL-00073" summary="google auth not working">
+      <option name="closed" value="true" />
+      <created>1758293095624</created>
+      <option name="number" value="00073" />
+      <option name="presentableId" value="LOCAL-00073" />
+      <option name="project" value="LOCAL" />
+      <updated>1758293095624</updated>
+    </task>
+    <option name="localTasksCounter" value="74" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
