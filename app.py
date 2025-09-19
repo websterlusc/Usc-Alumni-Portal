@@ -10,10 +10,9 @@ import sqlite3
 import os
 from dash import ALL  # Add this line
 from datetime import datetime
+from factbook.factbook import create_factbook_landing_page
+from callback_registry import initialize_callback_registry
 import hashlib
-from auth_utils import generate_random_password, send_password_reset_email, send_account_creation_email
-import secrets
-from datetime import timedelta
 # Load environment variables
 from data_requests import (
     init_data_requests_database,
@@ -63,7 +62,7 @@ app = dash.Dash(
     ],
     suppress_callback_exceptions=True
 )
-
+callback_registry = initialize_callback_registry(app)
 app.title = "USC Institutional Research Portal"
 server = app.server
 
@@ -2115,36 +2114,12 @@ def create_auth_section(user_data=None):
         )
     ])
 def create_modern_navbar(user_data=None):
-    """Your exact navbar design with authentication"""
+    """Updated navbar with factbook landing page link instead of dropdown"""
     user_access_tier = user_data.get('access_tier', 1) if user_data else 1
-
-    # Dynamic factbook menu
-    factbook_items = []
-    if user_access_tier >= 2:
-        factbook_items = [
-            dbc.DropdownMenuItem("Factbook Overview", href="/factbook"),
-            dbc.DropdownMenuItem("Enrollment Data", href="/enrollment"),
-            dbc.DropdownMenuItem("Graduation Stats", href="/graduation"),
-            dbc.DropdownMenuItem("Student Employment", href="/student-employment"),
-            dbc.DropdownMenuItem("HR Analytics", href="/hr-data")
-        ]
-
-        if user_access_tier >= 3:
-            factbook_items.extend([
-                dbc.DropdownMenuItem(divider=True),
-                dbc.DropdownMenuItem("Financial Reports", href="/financial"),
-                dbc.DropdownMenuItem("Budget Analysis", href="/budget"),
-                dbc.DropdownMenuItem("Endowments", href="/endowments")
-            ])
-    else:
-        factbook_items = [
-            dbc.DropdownMenuItem("Sign in to access factbook", disabled=True)
-        ]
 
     # Dynamic services menu
     services_items = [
         dbc.DropdownMenuItem("Request Report", href="/request-report"),
-
         dbc.DropdownMenuItem(divider=True) if user_access_tier >= 2 else None,
         dbc.DropdownMenuItem("Help", href="/help"),
         dbc.DropdownMenuItem("Contact IR", href="/contact")
@@ -2190,11 +2165,11 @@ def create_modern_navbar(user_data=None):
                     "Alumni Portal", href="/alumni",
                     style={'color': '#1B5E20', 'fontWeight': '600'}
                 )),
-                dbc.DropdownMenu(
-                    factbook_items,
-                    label="Factbook", nav=True,
-                    toggle_style={'color': '#1B5E20', 'fontWeight': '600', 'border': 'none', 'background': 'transparent'}
-                ),
+                # UPDATED: Single factbook link instead of dropdown
+                dbc.NavItem(dbc.NavLink(
+                    "Factbook", href="/factbook",
+                    style={'color': '#1B5E20', 'fontWeight': '600'}
+                )),
                 dbc.DropdownMenu(
                     services_items,
                     label="Services", nav=True,
@@ -2209,13 +2184,12 @@ def create_modern_navbar(user_data=None):
         className="shadow-sm sticky-top",
         style={'borderBottom': '3px solid #1B5E20', 'minHeight': '75px'}
     )
-
 # ============================================================================
 # YOUR EXISTING COMPONENTS (unchanged)
 # ============================================================================
 
 def create_hero_section():
-    """Enhanced hero section with simple underlined navigation links"""
+    """Updated hero section with factbook landing page link"""
     return html.Section([
         dbc.Container([
             dbc.Row([
@@ -2233,10 +2207,24 @@ def create_hero_section():
                         style={'fontSize': '1.25rem', 'opacity': '0.9', 'marginBottom': '2.5rem'}
                     ),
 
-                    # Simple Navigation Links
+                    # Updated Navigation Links with Factbook
                     html.Div([
                         html.A("About IR",
                                id="scroll-to-about",
+                               style={
+                                   'color': 'white',
+                                   'fontSize': '1.1rem',
+                                   'fontWeight': '500',
+                                   'textDecoration': 'underline',
+                                   'textUnderlineOffset': '4px',
+                                   'textDecorationThickness': '2px',
+                                   'marginRight': '30px',
+                                   'cursor': 'pointer',
+                                   'transition': 'all 0.3s ease'
+                               },
+                               className="hero-link"),
+                        html.A("View Factbook",
+                               href="/factbook",
                                style={
                                    'color': 'white',
                                    'fontSize': '1.1rem',
@@ -2307,6 +2295,7 @@ def create_hero_section():
         'padding': '50px 0',
         'position': 'relative'
     })
+
 
 def create_about_ir_section():
     """New About Institutional Research section"""
@@ -2836,7 +2825,7 @@ def require_access(content, required_tier, user_data=None):
     return content
 
 def create_access_denied_page(title, message):
-    """Access denied page"""
+    """Access denied page with working sign in button"""
     return dbc.Container([
         dbc.Row([
             dbc.Col([
@@ -2850,12 +2839,13 @@ def create_access_denied_page(title, message):
                     ], color="info"),
                     html.Div([
                         dbc.Button("Return Home", href="/", color="primary", className="me-3"),
-                        dbc.Button("Sign In", id="access-signin-btn", color="success")
+                        dbc.Button("Sign In", href="/login", color="success")  # FIXED: Use href instead of id
                     ], className="mt-4")
                 ], className="text-center")
             ], width=12, lg=8)
         ], justify="center")
     ], className="py-5")
+
 
 def create_placeholder_page(title, description):
     """Placeholder for development pages"""
@@ -2900,7 +2890,9 @@ def display_page(pathname, user_session):
     if pathname == '/login':
         if user_data:
             return dcc.Location(pathname='/', id='redirect-home')
-        return create_login_page()    # Route pages
+        return create_login_page()
+
+    # Route pages
     if pathname == '/' or pathname is None:
         content = create_home_layout(user_data)
 
@@ -2931,70 +2923,84 @@ def display_page(pathname, user_session):
     elif pathname == '/alumni':
         content = create_placeholder_page("Alumni Portal", "Connect with USC alumni network")
 
-    # Factbook pages (Tier 2 required)
+    # ADD THIS NEW FACTBOOK ROUTE
     elif pathname == '/factbook':
-        factbook_content = create_placeholder_page("Interactive Factbook", "Comprehensive institutional data and analytics")
+        factbook_content = create_factbook_landing_page(user_data)
         content = require_access(factbook_content, 2, user_data)
 
-    elif pathname == '/enrollment':
-        enrollment_content = create_placeholder_page("Enrollment Data", "Student enrollment trends and analysis")
-        content = require_access(enrollment_content, 2, user_data)
+    # REMOVE THESE OLD FACTBOOK ROUTES - they're now handled by the landing page
+    # elif pathname == '/enrollment':
+    # elif pathname == '/graduation':
+    # elif pathname == '/student-employment':
+    # elif pathname == '/hr-data':
+    # elif pathname == '/financial':
+    # elif pathname == '/budget':
+    # elif pathname == '/endowments':
 
-    elif pathname == '/graduation':
-        graduation_content = create_placeholder_page("Graduation Statistics", "Graduation rates and outcomes")
-        content = require_access(graduation_content, 2, user_data)
+    elif pathname.startswith('/factbook/'):
+        section = pathname.split('/factbook/')[-1]
+        content = create_placeholder_page(
+            f"Factbook: {section.title().replace('-', ' ')}",
+            f"Detailed {section.replace('-', ' ')} analytics and data visualizations"
+        )
+        # Apply appropriate tier requirements
+        if section in ['financial-data', 'endowment-funds', 'gate-funding', 'income-units',
+                       'scholarships', 'subsidies', 'debt-collection']:
+            content = require_access(content, 3, user_data)
+        else:
+            content = require_access(content, 2, user_data)
 
-    elif pathname == '/student-employment':
-        employment_content = create_placeholder_page("Student Employment", "Student employment analytics")
-        content = require_access(employment_content, 2, user_data)
-
-    elif pathname == '/hr-data':
-        hr_content = create_placeholder_page("HR Analytics", "Faculty and staff data")
-        content = require_access(hr_content, 2, user_data)
-
-    # Financial pages (Tier 3 required)
-    elif pathname == '/financial':
-        financial_content = create_placeholder_page("Financial Reports", "Comprehensive financial analysis")
-        content = require_access(financial_content, 3, user_data)
-
-    elif pathname == '/budget':
-        budget_content = create_placeholder_page("Budget Analysis", "Budget tracking and analysis")
-        content = require_access(budget_content, 3, user_data)
-
-    elif pathname == '/endowments':
-        endowment_content = create_placeholder_page("Endowment Funds", "Endowment performance data")
-        content = require_access(endowment_content, 3, user_data)
     elif pathname == '/admin':
         if not user_data or user_data.get('access_tier', 1) < 3:
             content = create_access_denied_page("Admin Access Required",
                                                 "You need administrative access to view this page.")
         else:
             content = create_comprehensive_admin_dashboard(user_data)
+
     elif pathname == '/signup':
         if user_data:
             return dcc.Location(pathname='/', id='redirect-home')
         return create_signup_page()
+
     elif pathname == '/request-report':
         content = create_data_request_page()
+
     elif pathname == '/profile':
         if not user_data:
             return dcc.Location(pathname='/login', id='redirect-login')
         return create_profile_page(user_data)
-    # Service pages
-    elif pathname == '/request-report':
-        report_content = create_placeholder_page("Request Report", "Submit custom report requests")
-        content = require_access(report_content, 2, user_data)
 
+    # Service pages
     elif pathname == '/help':
         content = create_placeholder_page("Help Center", "Documentation and support resources")
+
+    elif pathname == '/factbook/student-labour':
+        from pages.student_labour_report import create_factbook_student_labour_page
+        content = create_factbook_student_labour_page()
+        content = require_access(content, 3, user_data)
+
+    elif pathname == '/factbook/enrollment':
+        from pages.universal_factbook_page import create_universal_factbook_page
+        content = create_universal_factbook_page('enrollment')
+        content = require_access(content, 2, user_data)
+
+    elif pathname == '/factbook/financial-data':
+        from pages.universal_factbook_page import create_universal_factbook_page
+        content = create_universal_factbook_page('financial-data')
+        content = require_access(content, 3, user_data)
+
+    elif pathname == '/factbook/hr-data':
+        from pages.universal_factbook_page import create_universal_factbook_page
+        content = create_universal_factbook_page('hr-data')
+        content = require_access(content, 2, user_data)
+
+
 
     else:
         content = create_placeholder_page("Page Not Found", f"The page '{pathname}' could not be found")
 
     navbar = create_modern_navbar(user_data)
-
     return html.Div([navbar, content])
-
 
 
 
