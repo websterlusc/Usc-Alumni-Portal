@@ -2976,11 +2976,8 @@ def display_page(pathname, user_session):
         content = create_placeholder_page("Help Center", "Documentation and support resources")
 
 
-    elif pathname == '/factbook/student-labour':
 
-        from pages.universal_factbook_page import create_universal_factbook_page
 
-        content = create_universal_factbook_page('student-labour')
 
     elif pathname == '/factbook/enrollment':
         from pages.universal_factbook_page import create_universal_factbook_page
@@ -2996,7 +2993,14 @@ def display_page(pathname, user_session):
         from pages.universal_factbook_page import create_universal_factbook_page
         content = create_universal_factbook_page('hr-data')
         content = require_access(content, 2, user_data)
-
+    elif pathname == '/factbook/student-labour':
+        try:
+            from factbook.student_labour_report import create_factbook_student_labour_page
+            content = create_factbook_student_labour_page()
+            content = require_access(content, 3, user_data)  # Tier 3 for financial data
+        except ImportError:
+            content = create_placeholder_page("Student Labour Report", "Student employment and financial analytics")
+            content = require_access(content, 3, user_data)
 
 
     else:
