@@ -1,749 +1,470 @@
 """
-UI Components for Posts/Announcements System
-Dash/Bootstrap components for displaying and managing posts
+Dash Callbacks for Posts/Announcements System
+Fixed version with consistent naming and proper error handling
 """
 
-from dash import html, dcc
+from dash import Input, Output, State, callback, ALL, ctx, no_update, html
 import dash_bootstrap_components as dbc
-from datetime import datetime
-from typing import List, Dict, Optional
+from datetime import datetime, timedelta
+
+# Import posts system modules
+from posts_system import (
+    create_post, get_active_posts, get_post_by_id,
+    update_post, delete_post, add_comment, get_post_comments,
+    cleanup_expired_posts
+)
 
 USC_COLORS = {
     'primary_green': '#1B5E20',
     'secondary_green': '#4CAF50',
     'accent_yellow': '#FDD835',
     'white': '#FFFFFF',
-    'light_gray': '#F8F9FA',
-    'medium_gray': '#E9ECEF',
-    'dark_gray': '#495057'
+    'light_gray': '#F8F9FA'
 }
 
 
 # ============================================================================
-# HOMEPAGE NEWS FEED COMPONENT
+# CALLBACK 0: TOGGLE POST CREATION FORM
 # ============================================================================
 
-def create_news_feed_section(posts: List[Dict], user_data: Optional[Dict] = None) -> html.Div:
-    """
-    Create news feed section for homepage
-    Shows latest announcements/news with tier-based filtering
-    """
-    if not posts:
-        return html.Div()  # Don't show section if no posts
+@callback(
+    Output('post-form-collapse', 'is_open'),
+    Output('create-new-post-btn', 'children'),
+    Input('create-new-post-btn', 'n_clicks'),
+    Input('cancel-post-btn', 'n_clicks'),
+    Input('submit-post-btn', 'n_clicks'),
+    State('post-form-collapse', 'is_open'),
+    prevent_initial_call=True
+)
+def toggle_post_form(create_clicks, cancel_clicks, submit_clicks, is_open):
+    """Toggle the post creation form visibility"""
 
-    # Take only the 3 most recent posts for homepage
-    recent_posts = posts[:3]
+    if not ctx.triggered_id:
+        return no_update, no_update
 
-    post_cards = []
-    for post in recent_posts:
-        post_cards.append(create_post_card_compact(post, user_data))
+    # Open form when create button clicked
+    if ctx.triggered_id == 'create-new-post-btn':
+        if is_open:
+            # Close form and reset button
+            return False, [html.I(className="fas fa-plus me-2"), "Create New Post"]
+        else:
+            # Open form and change button text
+            return True, [html.I(className="fas fa-times me-2"), "Cancel"]
 
-    return html.Section([
-        dbc.Container([
-            # Section Header
-            dbc.Row([
-                dbc.Col([
-                    html.H2([
-                        html.I(className="fas fa-bullhorn me-3",
-                              style={'color': USC_COLORS['accent_yellow']}),
-                        "Latest News & Announcements"
-                    ], className="fw-bold mb-2", style={'color': USC_COLORS['primary_green']}),
-                    html.P("Stay updated with the latest from Institutional Research",
-                          className="text-muted mb-4")
-                ])
-            ]),
+    # Close form when cancel or submit is clicked
+    if ctx.triggered_id in ['cancel-post-btn', 'submit-post-btn']:
+        return False, [html.I(className="fas fa-plus me-2"), "Create New Post"]
 
-            # Posts Grid
-            dbc.Row([
-                dbc.Col(card, width=12, md=4) for card in post_cards
-            ], className="g-4 mb-4"),
-
-            # View All Link
-            dbc.Row([
-                dbc.Col([
-                    dbc.Button([
-                        "View All Announcements ",
-                        html.I(className="fas fa-arrow-right ms-2")
-                    ], href="/news", color="primary", outline=True, size="lg")
-                ], className="text-center")
-            ])
-        ], fluid=True)
-    ], className="py-5", style={'backgroundColor': USC_COLORS['light_gray']})
-
-
-def create_post_card_compact(post: Dict, user_data: Optional[Dict] = None) -> dbc.Card:
-    """Compact post card for homepage feed"""
-
-    # Category badge styling
-    category_colors = {
-        'announcement': 'primary',
-        'news': 'info',
-        'event': 'success',
-        'policy': 'warning',
-        'data_release': 'secondary'
-    }
-
-    category = post.get('category', 'announcement')
-    category_color = category_colors.get(category, 'primary')
-
-    # Format date
-    created_at = datetime.fromisoformat(post['created_at'])
-    date_str = created_at.strftime("%B %d, %Y")
-
-    # Check if pinned
-    is_pinned = post.get('is_pinned', False)
-
-    return dbc.Card([
-        dbc.CardBody([
-            # Pinned indicator
-            html.Div([
-                html.I(className="fas fa-thumbtack me-2"),
-                html.Span("Pinned", className="fw-bold")
-            ], className="text-warning mb-2 small") if is_pinned else html.Div(),
-
-            # Category badge
-            dbc.Badge(category.replace('_', ' ').title(),
-                     color=category_color, className="mb-2"),
-
-            # Title
-            html.H5(post['title'], className="card-title fw-bold mb-2",
-                   style={'color': USC_COLORS['primary_green']}),
-
-            # Excerpt (first 120 chars)
-            html.P(post['content'][:120] + "..." if len(post['content']) > 120 else post['content'],
-                  className="card-text text-muted small mb-3"),
-
-            # Footer: Date and Read More
-            html.Div([
-                html.Span([
-                    html.I(className="far fa-calendar me-2"),
-                    date_str
-                ], className="text-muted small"),
-                dbc.Button("Read More →",
-                          id={'type': 'view-post', 'post_id': post['id']},
-                          color="link", size="sm", className="p-0 ms-3")
-            ], className="d-flex justify-content-between align-items-center")
-        ])
-    ], className="h-100 shadow-sm hover-shadow",
-       style={'transition': 'all 0.3s ease', 'border': 'none'})
+    return no_update, no_update
 
 
 # ============================================================================
-# FULL NEWS PAGE
+# CALLBACK 1: TOGGLE CUSTOM DATE PICKER
 # ============================================================================
 
-def create_news_page(posts: List[Dict], user_data: Optional[Dict] = None) -> html.Div:
-    """Full news/announcements page with all posts (NO NAVBAR - add separately)"""
-
-    user_tier = user_data.get('access_tier', 1) if user_data else 1
-
-    # Separate pinned and regular posts
-    pinned_posts = [p for p in posts if p.get('is_pinned', False)]
-    regular_posts = [p for p in posts if not p.get('is_pinned', False)]
-
-    return html.Div([
-        # Hero Section (NO NAVBAR HERE - it's added in the route)
-        html.Section([
-            dbc.Container([
-                html.H1([
-                    html.I(className="fas fa-newspaper me-3"),
-                    "News & Announcements"
-                ], className="display-4 fw-bold mb-3",
-                   style={'color': USC_COLORS['primary_green']}),
-                html.P("Official updates from the Department of Institutional Research",
-                      className="lead text-muted")
-            ])
-        ], className="py-5", style={'backgroundColor': USC_COLORS['light_gray']}),
-
-        # Main Content
-        dbc.Container([
-            # Pinned Posts Section
-            html.Div([
-                html.H3([
-                    html.I(className="fas fa-thumbtack me-2",
-                          style={'color': USC_COLORS['accent_yellow']}),
-                    "Pinned Announcements"
-                ], className="fw-bold mb-4", style={'color': USC_COLORS['primary_green']}),
-                html.Div([
-                    create_post_card_full(post, user_data)
-                    for post in pinned_posts
-                ])
-            ], className="mb-5") if pinned_posts else html.Div(),
-
-            # Regular Posts
-            html.H3("Recent Posts", className="fw-bold mb-4",
-                   style={'color': USC_COLORS['primary_green']}),
-            html.Div([
-                create_post_card_full(post, user_data)
-                for post in regular_posts
-            ]) if regular_posts else dbc.Alert("No posts available", color="info")
-
-        ], fluid=True, className="py-5")
-    ])
-
-
-def create_post_card_full(post: Dict, user_data: Optional[Dict] = None) -> dbc.Card:
-    """Full-width post card for news page"""
-
-    # Category badge
-    category_colors = {
-        'announcement': 'primary',
-        'news': 'info',
-        'event': 'success',
-        'policy': 'warning',
-        'data_release': 'secondary'
-    }
-    category = post.get('category', 'announcement')
-
-    # Format dates
-    created_at = datetime.fromisoformat(post['created_at'])
-    date_str = created_at.strftime("%B %d, %Y at %I:%M %p")
-
-    # Check expiration
-    expires_at = post.get('expires_at')
-    expiration_badge = None
-    if expires_at and not post.get('is_permanent'):
-        exp_date = datetime.fromisoformat(expires_at)
-        if exp_date > datetime.now():
-            days_left = (exp_date - datetime.now()).days
-            if days_left <= 7:
-                expiration_badge = dbc.Badge(
-                    f"Expires in {days_left} days",
-                    color="warning", className="ms-2"
-                )
-
-    # Comments count
-    comments_count = post.get('comment_count', 0)
-    comments_enabled = post.get('comments_enabled', False)
-
-    return dbc.Card([
-        dbc.CardBody([
-            # Header row
-            dbc.Row([
-                dbc.Col([
-                    # Category and pinned indicator
-                    html.Div([
-                        dbc.Badge(category.replace('_', ' ').title(),
-                                 color=category_colors.get(category, 'primary')),
-                        dbc.Badge("Pinned", color="warning", className="ms-2")
-                            if post.get('is_pinned') else html.Span(),
-                        expiration_badge if expiration_badge else html.Span()
-                    ])
-                ], width="auto"),
-                dbc.Col([
-                    html.Div([
-                        html.I(className="fas fa-eye me-2"),
-                        f"{post.get('view_count', 0)} views"
-                    ], className="text-muted small text-end")
-                ])
-            ], className="mb-3"),
-
-            # Title
-            html.H4(post['title'], className="card-title fw-bold mb-3",
-                   style={'color': USC_COLORS['primary_green']}),
-
-            # Content
-            html.P(post['content'], className="card-text mb-3",
-                  style={'whiteSpace': 'pre-wrap'}),
-
-            # Footer
-            html.Div([
-                # Author and date
-                html.Div([
-                    html.I(className="fas fa-user-circle me-2"),
-                    html.Span(post.get('author_name', 'Unknown'), className="fw-bold me-3"),
-                    html.I(className="far fa-calendar me-2"),
-                    html.Span(date_str, className="text-muted small")
-                ], className="d-inline-block"),
-
-                # Comments button
-                dbc.Button([
-                    html.I(className="fas fa-comments me-2"),
-                    f"View Comments ({comments_count})" if comments_count > 0 else "No Comments"
-                ], id={'type': 'view-comments', 'post_id': post['id']},
-                   color="outline-primary", size="sm", className="float-end"
-                ) if comments_enabled else html.Div()
-            ])
-        ])
-    ], className="mb-4 shadow-sm", style={'border': 'none'})
+@callback(
+    Output('custom-date-container', 'style'),
+    Input('post-duration-dropdown', 'value'),
+    prevent_initial_call=True
+)
+def toggle_custom_date_picker(duration_value):
+    """Show/hide custom date picker based on duration selection"""
+    if duration_value == 'custom':
+        return {'display': 'block'}
+    return {'display': 'none'}
 
 
 # ============================================================================
-# ADMIN POST CREATION/EDITING FORM
+# CALLBACK 2: SUBMIT NEW POST
 # ============================================================================
 
-def create_admin_post_form(edit_mode: bool = False, post_data: Optional[Dict] = None) -> dbc.Form:
-    """Admin form for creating/editing posts"""
+@callback(
+    Output('admin-alerts', 'children', allow_duplicate=True),
+    Output('post-title-input', 'value'),
+    Output('post-content-input', 'value'),
+    Output('posts-refresh-trigger', 'data'),
+    Input('submit-post-btn', 'n_clicks'),
+    State('post-title-input', 'value'),
+    State('post-content-input', 'value'),
+    State('post-tier-dropdown', 'value'),
+    State('post-category-dropdown', 'value'),
+    State('post-duration-dropdown', 'value'),
+    State('post-expiration-date', 'value'),
+    State('post-options-checklist', 'value'),
+    State('user-session', 'data'),
+    prevent_initial_call=True
+)
+def submit_new_post(n_clicks, title, content, tier, category, duration,
+                    custom_date, options, user_session):
+    """Handle post creation submission"""
 
-    form_title = "Edit Post" if edit_mode else "Create New Post"
-    button_text = "Update Post" if edit_mode else "Publish Post"
+    if not n_clicks:
+        return no_update, no_update, no_update, no_update
 
-    # Default values
-    defaults = post_data if post_data else {
-        'title': '',
-        'content': '',
-        'min_access_tier': 1,
-        'comments_enabled': False,
-        'is_permanent': False,
-        'expires_at': '',
-        'category': 'announcement',
-        'is_pinned': False
-    }
+    # Validation
+    if not title or not content:
+        return dbc.Alert("Title and content are required", color="danger", dismissable=True), no_update, no_update, no_update
 
-    return dbc.Form([
-        # Form Header
-        html.H4(form_title, className="mb-4 fw-bold",
-               style={'color': USC_COLORS['primary_green']}),
+    if not user_session or user_session.get('access_tier', 0) < 4:
+        return dbc.Alert("Admin access required", color="danger", dismissable=True), no_update, no_update, no_update
 
-        # Title
-        dbc.Row([
-            dbc.Col([
-                dbc.Label("Post Title *", className="fw-bold"),
-                dbc.Input(
-                    id="post-title-input",
-                    type="text",
-                    placeholder="Enter post title...",
-                    value=defaults['title'],
-                    required=True,
-                    className="mb-3"
-                )
-            ])
-        ]),
+    # Sanitize inputs
+    import html as html_module
+    title_clean = html_module.escape(title.strip())
+    content_clean = html_module.escape(content.strip())
 
-        # Content
-        dbc.Row([
-            dbc.Col([
-                dbc.Label("Post Content *", className="fw-bold"),
-                dbc.Textarea(
-                    id="post-content-input",
-                    placeholder="Write your announcement or news content here...",
-                    value=defaults['content'],
-                    rows=8,
-                    required=True,
-                    className="mb-3"
-                )
-            ])
-        ]),
+    # Calculate expiration date
+    is_permanent = (duration == 'permanent')
+    expires_at = None
 
-        # Settings Row 1: Access Control and Category
-        dbc.Row([
-            dbc.Col([
-                dbc.Label("Minimum Access Tier *", className="fw-bold"),
-                dcc.Dropdown(
-                    id="post-tier-dropdown",
-                    options=[
-                        {'label': 'Tier 1 - Public (Everyone)', 'value': 1},
-                        {'label': 'Tier 2 - Limited Access', 'value': 2},
-                        {'label': 'Tier 3 - Complete Access', 'value': 3},
-                        {'label': 'Tier 4 - Admin Only', 'value': 4}
-                    ],
-                    value=defaults['min_access_tier'],
-                    clearable=False,
-                    className="mb-3"
-                ),
-                html.Small("Who can view this post?", className="text-muted")
-            ], md=6),
+    if not is_permanent:
+        if duration == 'custom' and custom_date:
+            expires_at = f"{custom_date}T23:59:59"
+        elif duration in ['7', '30', '90']:
+            days = int(duration)
+            exp_date = datetime.now() + timedelta(days=days)
+            expires_at = exp_date.isoformat()
 
-            dbc.Col([
-                dbc.Label("Category *", className="fw-bold"),
-                dcc.Dropdown(
-                    id="post-category-dropdown",
-                    options=[
-                        {'label': '📢 Announcement', 'value': 'announcement'},
-                        {'label': '📰 News', 'value': 'news'},
-                        {'label': '📅 Event', 'value': 'event'},
-                        {'label': '📋 Policy Update', 'value': 'policy'},
-                        {'label': '📊 Data Release', 'value': 'data_release'}
-                    ],
-                    value=defaults['category'],
-                    clearable=False,
-                    className="mb-3"
-                )
-            ], md=6)
-        ]),
+    # Parse options
+    comments_enabled = 'comments' in (options or [])
+    is_pinned = 'pinned' in (options or [])
 
-        # Settings Row 2: Time and Display Options
-        dbc.Row([
-            dbc.Col([
-                dbc.Label("Post Duration", className="fw-bold"),
-                dcc.Dropdown(
-                    id="post-duration-dropdown",
-                    options=[
-                        {'label': '📌 Permanent (No Expiration)', 'value': 'permanent'},
-                        {'label': '📅 7 Days', 'value': '7'},
-                        {'label': '📅 30 Days', 'value': '30'},
-                        {'label': '📅 90 Days', 'value': '90'},
-                        {'label': '🗓️ Custom Date', 'value': 'custom'}
-                    ],
-                    value='permanent' if defaults['is_permanent'] else '30',
-                    clearable=False,
-                    className="mb-3"
-                ),
-
-                # Custom date picker (hidden unless 'custom' selected)
-                html.Div([
-                    dbc.Label("Expiration Date", className="fw-bold mt-2"),
-                    dbc.Input(
-                        id="post-expiration-date",
-                        type="date",
-                        value=defaults['expires_at'][:10] if defaults.get('expires_at') else '',
-                        className="mb-3"
-                    )
-                ], id="custom-date-container", style={'display': 'none'})
-            ], md=6),
-
-            dbc.Col([
-                dbc.Label("Display Options", className="fw-bold"),
-                dbc.Checklist(
-                    id="post-options-checklist",
-                    options=[
-                        {'label': ' Enable Comments', 'value': 'comments'},
-                        {'label': ' Pin to Top', 'value': 'pinned'}
-                    ],
-                    value=[
-                        'comments' if defaults['comments_enabled'] else None,
-                        'pinned' if defaults['is_pinned'] else None
-                    ],
-                    inline=False,
-                    className="mb-3"
-                )
-            ], md=6)
-        ]),
-
-        # Preview Section
-        html.Hr(className="my-4"),
-        html.H5("Preview", className="fw-bold mb-3",
-               style={'color': USC_COLORS['primary_green']}),
-        html.Div(id="post-preview-container", className="mb-4"),
-
-        # Action Buttons
-        dbc.Row([
-            dbc.Col([
-                dbc.Button([
-                    html.I(className="fas fa-check me-2"),
-                    button_text
-                ], id="submit-post-btn", color="success", size="lg", className="me-3"),
-
-                dbc.Button([
-                    html.I(className="fas fa-eye me-2"),
-                    "Preview"
-                ], id="preview-post-btn", color="info", size="lg", outline=True, className="me-3"),
-
-                dbc.Button("Cancel", id="cancel-post-btn", color="secondary",
-                          size="lg", outline=True)
-            ])
-        ])
-    ])
-
-
-# ============================================================================
-# ADMIN POST MANAGEMENT DASHBOARD
-# ============================================================================
-
-def create_posts_management_tab(posts: List[Dict]) -> html.Div:
-    """Admin dashboard tab for managing all posts"""
-
-    if not posts:
-        return dbc.Alert([
-            html.H5("No Posts Yet", className="alert-heading"),
-            html.P("Create your first post to get started!"),
-            dbc.Button("Create Post", id="create-first-post-btn", color="primary")
-        ], color="info")
-
-    # Statistics cards
-    stats_cards = create_posts_statistics_cards(posts)
-
-    # Posts table
-    posts_table = create_posts_management_table(posts)
-
-    return html.Div([
-        # Stats Overview
-        dbc.Row([
-            dbc.Col(stats_cards, className="mb-4")
-        ]),
-
-        # Create New Post Button
-        dbc.Row([
-            dbc.Col([
-                dbc.Button([
-                    html.I(className="fas fa-plus me-2"),
-                    "Create New Post"
-                ], id="create-new-post-btn", color="primary", size="lg", className="mb-4")
-            ])
-        ]),
-
-        # ✅ ADD THIS: Collapsible form container
-        dbc.Collapse([
-            dbc.Card([
-                dbc.CardBody([
-                    create_admin_post_form(edit_mode=False)
-                ])
-            ], className="mb-4 shadow")
-        ], id="post-form-collapse", is_open=False),
-
-        # Posts Management Table
-        dbc.Row([
-            dbc.Col([
-                html.H4("All Posts", className="fw-bold mb-3",
-                       style={'color': USC_COLORS['primary_green']}),
-                posts_table
-            ])
-        ])
-    ])
-
-
-def create_posts_statistics_cards(posts: List[Dict]) -> dbc.Row:
-    """Create statistics cards for posts dashboard"""
-
-    total_posts = len(posts)
-    active_posts = len([p for p in posts if p['status'] == 'published'])
-    pinned_posts = len([p for p in posts if p.get('is_pinned', False)])
-    total_views = sum([p.get('view_count', 0) for p in posts])
-
-    cards = [
-        {
-            'icon': 'fas fa-newspaper',
-            'title': 'Total Posts',
-            'value': total_posts,
-            'color': 'primary'
-        },
-        {
-            'icon': 'fas fa-check-circle',
-            'title': 'Active Posts',
-            'value': active_posts,
-            'color': 'success'
-        },
-        {
-            'icon': 'fas fa-thumbtack',
-            'title': 'Pinned Posts',
-            'value': pinned_posts,
-            'color': 'warning'
-        },
-        {
-            'icon': 'fas fa-eye',
-            'title': 'Total Views',
-            'value': total_views,
-            'color': 'info'
-        }
-    ]
-
-    return dbc.Row([
-        dbc.Col([
-            dbc.Card([
-                dbc.CardBody([
-                    html.Div([
-                        html.I(className=f"{card['icon']} fa-2x mb-2",
-                              style={'color': USC_COLORS['accent_yellow']}),
-                        html.H3(card['value'], className="fw-bold mb-0",
-                               style={'color': USC_COLORS['primary_green']}),
-                        html.P(card['title'], className="text-muted small mb-0")
-                    ], className="text-center")
-                ])
-            ], className="shadow-sm h-100")
-        ], width=12, md=3) for card in cards
-    ])
-
-
-def create_posts_management_table(posts: List[Dict]) -> dbc.Table:
-    """Create table of all posts with management actions"""
-
-    table_header = [
-        html.Thead(html.Tr([
-            html.Th("Status"),
-            html.Th("Title"),
-            html.Th("Category"),
-            html.Th("Access Tier"),
-            html.Th("Views"),
-            html.Th("Created"),
-            html.Th("Actions")
-        ]))
-    ]
-
-    rows = []
-    for post in posts:
-        # Status badge
-        status = post['status']
-        status_badge = dbc.Badge(
-            status.title(),
-            color='success' if status == 'published' else 'secondary'
+    # Create post
+    try:
+        post_id = create_post(
+            title=title_clean,
+            content=content_clean,
+            author_id=user_session['id'],
+            min_access_tier=tier or 1,
+            comments_enabled=comments_enabled,
+            is_permanent=is_permanent,
+            expires_at=expires_at,
+            category=category or 'announcement',
+            is_pinned=is_pinned
         )
 
-        # Pinned indicator
-        if post.get('is_pinned'):
-            status_badge = html.Span([
-                status_badge,
-                html.I(className="fas fa-thumbtack ms-2 text-warning")
-            ])
+        if post_id:
+            return (
+                dbc.Alert([
+                    html.I(className="fas fa-check-circle me-2"),
+                    f"Post created successfully!"
+                ], color="success", dismissable=True),
+                '',  # Clear title
+                '',  # Clear content
+                {'timestamp': datetime.now().isoformat(), 'action': 'post_created'}  # Trigger refresh
+            )
+        else:
+            return dbc.Alert("Error creating post", color="danger", dismissable=True), no_update, no_update, no_update
 
-        # Format date
-        created_date = datetime.fromisoformat(post['created_at']).strftime("%b %d, %Y")
-
-        # Action buttons
-        actions = dbc.ButtonGroup([
-            dbc.Button(html.I(className="fas fa-eye"),
-                      id={'type': 'view-post-admin', 'post_id': post['id']},
-                      color="info", size="sm", outline=True),
-            dbc.Button(html.I(className="fas fa-edit"),
-                      id={'type': 'edit-post', 'post_id': post['id']},
-                      color="primary", size="sm", outline=True),
-            dbc.Button(html.I(className="fas fa-trash"),
-                      id={'type': 'delete-post', 'post_id': post['id']},
-                      color="danger", size="sm", outline=True)
-        ], size="sm")
-
-        rows.append(html.Tr([
-            html.Td(status_badge),
-            html.Td(post['title'][:50] + "..." if len(post['title']) > 50 else post['title']),
-            html.Td(post.get('category', 'N/A').replace('_', ' ').title()),
-            html.Td(f"Tier {post['min_access_tier']}"),
-            html.Td(post.get('view_count', 0)),
-            html.Td(created_date),
-            html.Td(actions)
-        ]))
-
-    table_body = [html.Tbody(rows)]
-
-    return dbc.Table(
-        table_header + table_body,
-        bordered=True,
-        hover=True,
-        responsive=True,
-        className="mb-0"
-    )
+    except Exception as e:
+        return dbc.Alert(f"Error: {str(e)}", color="danger", dismissable=True), no_update, no_update, no_update
 
 
 # ============================================================================
-# COMMENT COMPONENTS
+# CALLBACK 3: DELETE POST CONFIRMATION
 # ============================================================================
 
-def create_comments_section(post_id: int, comments: List[Dict],
-                           user_data: Optional[Dict] = None) -> html.Div:
-    """Create comments section for a post"""
+@callback(
+    Output('delete-post-modal', 'is_open'),
+    Output('delete-post-id-store', 'data'),
+    Input({'type': 'delete-post', 'post_id': ALL}, 'n_clicks'),
+    Input('cancel-delete-post', 'n_clicks'),
+    Input('confirm-delete-post', 'n_clicks'),
+    State('delete-post-id-store', 'data'),
+    State('user-session', 'data'),
+    prevent_initial_call=True
+)
+def handle_delete_post_modal(delete_clicks, cancel_click, confirm_click, stored_post_id, user_session):
+    """Handle post deletion confirmation modal"""
 
-    if not user_data:
+    if not ctx.triggered_id:
+        return no_update, no_update
+
+    # Check admin access
+    if not user_session or user_session.get('access_tier', 0) < 4:
+        return False, None
+
+    # Open modal with post ID
+    if isinstance(ctx.triggered_id, dict) and ctx.triggered_id['type'] == 'delete-post':
+        post_id = ctx.triggered_id['post_id']
+        return True, post_id
+
+    # Cancel deletion
+    if ctx.triggered_id == 'cancel-delete-post':
+        return False, None
+
+    # Confirm deletion
+    if ctx.triggered_id == 'confirm-delete-post' and stored_post_id:
+        success = delete_post(stored_post_id, soft_delete=True)
+        return False, None
+
+    return no_update, no_update
+
+
+# ============================================================================
+# CALLBACK 4: REFRESH POSTS TABLE AFTER DELETE
+# ============================================================================
+
+@callback(
+    Output('admin-alerts', 'children', allow_duplicate=True),
+    Input('confirm-delete-post', 'n_clicks'),
+    State('delete-post-id-store', 'data'),
+    State('user-session', 'data'),
+    prevent_initial_call=True
+)
+def delete_post_and_notify(n_clicks, post_id, user_session):
+    """Delete post and show notification"""
+
+    if not n_clicks or not post_id:
+        return no_update
+
+    if not user_session or user_session.get('access_tier', 0) < 4:
+        return dbc.Alert("Unauthorized", color="danger", dismissable=True)
+
+    success = delete_post(post_id, soft_delete=True)
+
+    if success:
         return dbc.Alert([
-            html.I(className="fas fa-info-circle me-2"),
-            "Please sign in to view and post comments."
-        ], color="info")
-
-    comment_items = []
-    for comment in comments:
-        comment_items.append(create_comment_card(comment, user_data))
-
-    return html.Div([
-        html.H5([
-            html.I(className="fas fa-comments me-2"),
-            f"Comments ({len(comments)})"
-        ], className="fw-bold mb-3", style={'color': USC_COLORS['primary_green']}),
-
-        # Add comment form
-        dbc.Card([
-            dbc.CardBody([
-                dbc.Textarea(
-                    id={'type': 'comment-input', 'post_id': post_id},
-                    placeholder="Write a comment...",
-                    rows=3,
-                    className="mb-3"
-                ),
-                dbc.Button([
-                    html.I(className="fas fa-paper-plane me-2"),
-                    "Post Comment"
-                ], id={'type': 'submit-comment', 'post_id': post_id},
-                   color="primary", size="sm")
-            ])
-        ], className="mb-4"),
-
-        # Comments list
-        html.Div(comment_items if comment_items else
-                dbc.Alert("No comments yet. Be the first to comment!", color="light"))
-    ])
+            html.I(className="fas fa-check-circle me-2"),
+            "Post deleted successfully"
+        ], color="success", dismissable=True)
+    else:
+        return dbc.Alert("Failed to delete post", color="danger", dismissable=True)
 
 
-def create_comment_card(comment: Dict, user_data: Optional[Dict]) -> dbc.Card:
-    """Create individual comment card"""
+# ============================================================================
+# CALLBACK 5: SUBMIT COMMENT
+# ============================================================================
 
-    # Format date
-    created_at = datetime.fromisoformat(comment['created_at'])
-    time_ago = format_time_ago(created_at)
+@callback(
+    Output({'type': 'comment-input', 'post_id': ALL}, 'value'),
+    Output('admin-alerts', 'children', allow_duplicate=True),
+    Input({'type': 'submit-comment', 'post_id': ALL}, 'n_clicks'),
+    State({'type': 'comment-input', 'post_id': ALL}, 'value'),
+    State({'type': 'comment-input', 'post_id': ALL}, 'id'),
+    State('user-session', 'data'),
+    prevent_initial_call=True
+)
+def submit_comment(submit_clicks, comment_texts, comment_ids, user_session):
+    """Handle comment submission"""
 
-    # Check if user can delete (own comment or admin)
-    can_delete = (
-        user_data and
-        (user_data['id'] == comment['user_id'] or user_data.get('access_tier', 1) >= 4)
-    )
+    if not ctx.triggered_id or not user_session:
+        return no_update, no_update
+
+    # Get the post_id from triggered button
+    post_id = ctx.triggered_id['post_id']
+
+    # Find the matching comment text by post_id
+    comment_text = None
+    for i, comment_id in enumerate(comment_ids):
+        if comment_id['post_id'] == post_id:
+            comment_text = comment_texts[i]
+            break
+
+    if not comment_text or not comment_text.strip():
+        return no_update, dbc.Alert("Comment cannot be empty", color="warning", dismissable=True)
+
+    # Add comment
+    try:
+        comment_id = add_comment(
+            post_id=post_id,
+            user_id=user_session['id'],
+            content=comment_text.strip()
+        )
+
+        if comment_id:
+            # Clear all comment inputs
+            return [''] * len(comment_texts), dbc.Alert("Comment posted!", color="success", duration=3000, dismissable=True)
+        else:
+            return no_update, dbc.Alert("Failed to post comment", color="danger", dismissable=True)
+
+    except Exception as e:
+        return no_update, dbc.Alert(f"Error: {str(e)}", color="danger", dismissable=True)
+
+
+# ============================================================================
+# CALLBACK 6: DELETE COMMENT
+# ============================================================================
+
+@callback(
+    Output('admin-alerts', 'children', allow_duplicate=True),
+    Input({'type': 'delete-comment', 'comment_id': ALL}, 'n_clicks'),
+    State('user-session', 'data'),
+    prevent_initial_call=True
+)
+def delete_comment_handler(delete_clicks, user_session):
+    """Handle comment deletion"""
+
+    if not ctx.triggered_id or not user_session:
+        return no_update
+
+    comment_id = ctx.triggered_id['comment_id']
+    user_id = user_session['id']
+    is_admin = user_session.get('access_tier', 1) >= 4
+
+    try:
+        from posts_system import delete_comment
+        success = delete_comment(comment_id, user_id, is_admin)
+
+        if success:
+            return dbc.Alert("Comment deleted", color="success", duration=3000, dismissable=True)
+        else:
+            return dbc.Alert("Failed to delete comment", color="danger", dismissable=True)
+    except Exception as e:
+        return dbc.Alert(f"Error: {str(e)}", color="danger", dismissable=True)
+
+
+# ============================================================================
+# CALLBACK 7: AUTO-CLEANUP EXPIRED POSTS (RUNS HOURLY)
+# ============================================================================
+
+@callback(
+    Output('cleanup-status-dummy', 'data'),
+    Input('cleanup-interval', 'n_intervals'),
+    prevent_initial_call=True
+)
+def auto_cleanup_expired_posts(n_intervals):
+    """
+    Automatically archive expired posts
+    Runs every hour based on interval component
+    """
+    try:
+        archived_count = cleanup_expired_posts()
+        return {
+            'last_cleanup': datetime.now().isoformat(),
+            'archived_count': archived_count
+        }
+    except Exception as e:
+        print(f"Error in auto cleanup: {str(e)}")
+        return {'error': str(e)}
+
+
+# ============================================================================
+# CALLBACK 8: PREVIEW POST (OPTIONAL)
+# ============================================================================
+
+@callback(
+    Output('post-preview-container', 'children'),
+    Input('preview-post-btn', 'n_clicks'),
+    State('post-title-input', 'value'),
+    State('post-content-input', 'value'),
+    State('post-category-dropdown', 'value'),
+    State('post-options-checklist', 'value'),
+    prevent_initial_call=True
+)
+def preview_post(n_clicks, title, content, category, options):
+    """Generate live preview of the post"""
+
+    if not n_clicks or not title or not content:
+        return dbc.Alert("Fill in title and content to preview", color="info")
+
+    # Create preview card
+    category_colors = {
+        'announcement': 'primary',
+        'news': 'info',
+        'event': 'success',
+        'policy': 'warning',
+        'data_release': 'secondary'
+    }
+
+    is_pinned = 'pinned' in (options or [])
 
     return dbc.Card([
         dbc.CardBody([
-            dbc.Row([
-                dbc.Col([
-                    html.Div([
-                        html.Strong(comment.get('commenter_name', 'Anonymous')),
-                        html.Span(f" • {time_ago}", className="text-muted small ms-2")
-                    ])
-                ]),
-                dbc.Col([
-                    dbc.Button(html.I(className="fas fa-trash"),
-                              id={'type': 'delete-comment', 'comment_id': comment['id']},
-                              color="link", size="sm", className="text-danger p-0 float-end"
-                    ) if can_delete else html.Div()
-                ], width="auto")
-            ], className="mb-2"),
-
-            html.P(comment['content'], className="mb-0",
-                  style={'whiteSpace': 'pre-wrap'})
+            dbc.Badge("PREVIEW", color="info", className="mb-2"),
+            dbc.Badge(
+                (category or 'announcement').replace('_', ' ').title(),
+                color=category_colors.get(category, 'primary'),
+                className="ms-2 mb-2"
+            ),
+            dbc.Badge("Pinned", color="warning", className="ms-2 mb-2") if is_pinned else html.Span(),
+            html.H4(title, className="fw-bold mt-2 mb-3", style={'color': USC_COLORS['primary_green']}),
+            html.P(content, style={'whiteSpace': 'pre-wrap'}),
+            html.Hr(),
+            html.Small([
+                html.I(className="fas fa-user me-2"),
+                "You • Just now"
+            ], className="text-muted")
         ])
-    ], className="mb-3 shadow-sm", style={'border': 'none', 'backgroundColor': USC_COLORS['light_gray']})
-
-
-def format_time_ago(dt: datetime) -> str:
-    """Format datetime as 'X time ago'"""
-    now = datetime.now()
-    diff = now - dt
-
-    seconds = diff.total_seconds()
-
-    if seconds < 60:
-        return "just now"
-    elif seconds < 3600:
-        minutes = int(seconds / 60)
-        return f"{minutes} minute{'s' if minutes != 1 else ''} ago"
-    elif seconds < 86400:
-        hours = int(seconds / 3600)
-        return f"{hours} hour{'s' if hours != 1 else ''} ago"
-    elif seconds < 604800:
-        days = int(seconds / 86400)
-        return f"{days} day{'s' if days != 1 else ''} ago"
-    else:
-        return dt.strftime("%b %d, %Y")
+    ], className="shadow-sm", style={'backgroundColor': USC_COLORS['light_gray']})
 
 
 # ============================================================================
-# MODAL DIALOGS
+# CALLBACK 9: VIEW POST DETAILS (MODAL)
 # ============================================================================
 
-def create_post_modal() -> dbc.Modal:
-    """Modal for creating/editing posts"""
-    return dbc.Modal([
-        dbc.ModalHeader(dbc.ModalTitle("Create/Edit Post")),
-        dbc.ModalBody(id="post-modal-body"),
-        dbc.ModalFooter([
-            dbc.Button("Close", id="close-post-modal", color="secondary")
-        ])
-    ], id="post-modal", size="xl", scrollable=True)
+@callback(
+    Output('post-detail-modal', 'is_open'),
+    Output('post-detail-content', 'children'),
+    Input({'type': 'view-post', 'post_id': ALL}, 'n_clicks'),
+    Input({'type': 'view-post-admin', 'post_id': ALL}, 'n_clicks'),
+    Input('close-post-detail', 'n_clicks'),
+    State('user-session', 'data'),
+    prevent_initial_call=True
+)
+def view_post_detail(view_clicks, admin_view_clicks, close_click, user_session):
+    """Display full post with comments in modal"""
+
+    if not ctx.triggered_id:
+        return no_update, no_update
+
+    # Close modal
+    if ctx.triggered_id == 'close-post-detail':
+        return False, None
+
+    # Get post ID from triggered button
+    post_id = None
+    if isinstance(ctx.triggered_id, dict):
+        post_id = ctx.triggered_id['post_id']
+
+    if not post_id:
+        return no_update, no_update
+
+    # Fetch post (increment view count)
+    post = get_post_by_id(post_id, increment_views=True)
+
+    if not post:
+        return True, dbc.Alert("Post not found", color="danger")
+
+    # Check user access
+    user_tier = user_session.get('access_tier', 1) if user_session else 1
+    if post['min_access_tier'] > user_tier:
+        return True, dbc.Alert([
+            html.I(className="fas fa-lock me-2"),
+            f"This post requires Tier {post['min_access_tier']} access"
+        ], color="warning")
+
+    # Build post display
+    from posts_ui import create_post_card_full
+
+    # Get comments if enabled
+    comments_html = html.Div()
+    if post['comments_enabled']:
+        comments = get_post_comments(post_id)
+        from posts_ui import create_comments_section
+        comments_html = create_comments_section(post_id, comments, user_session)
+
+    # Build modal content
+    content = html.Div([
+        create_post_card_full(post, user_session),
+        html.Hr(className="my-4"),
+        comments_html
+    ])
+
+    return True, content
 
 
-def create_delete_confirmation_modal() -> dbc.Modal:
-    """Modal for confirming post deletion"""
-    return dbc.Modal([
-        dbc.ModalHeader(dbc.ModalTitle("Confirm Deletion")),
-        dbc.ModalBody([
-            html.I(className="fas fa-exclamation-triangle fa-3x text-warning mb-3 d-block text-center"),
-            html.H5("Are you sure you want to delete this post?", className="text-center"),
-            html.P("This action cannot be undone. All comments will also be deleted.",
-                  className="text-muted text-center")
-        ]),
-        dbc.ModalFooter([
-            dbc.Button("Cancel", id="cancel-delete-post", color="secondary"),
-            dbc.Button("Delete Post", id="confirm-delete-post", color="danger")
-        ])
-    ], id="delete-post-modal", centered=True)
+# ============================================================================
+# DUMMY OUTPUTS (Required for some callbacks)
+# ============================================================================
+
+# Add this to your app.layout in app.py:
+# dcc.Store(id='cleanup-status-dummy', storage_type='memory')
+# dbc.Modal(id='post-detail-modal', size='xl', scrollable=True, children=[
+#     dbc.ModalHeader("Post Details"),
+#     dbc.ModalBody(id='post-detail-content'),
+#     dbc.ModalFooter(dbc.Button("Close", id='close-post-detail'))
+# ])
+
+
+print("✅ Posts callbacks registered successfully")

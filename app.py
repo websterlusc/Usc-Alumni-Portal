@@ -1616,10 +1616,11 @@ def handle_access_requests(approve_clicks, deny_clicks, deny_reasons, user_sessi
 
 @callback(
     Output('admin-content', 'children'),
-    Input('admin-tabs', 'active_tab'),
-    State('user-session', 'data')
+    Input('admin-tabs', 'active_tab'),        # Parameter 1
+    Input('posts-refresh-trigger', 'data'),   # Parameter 2 (you added this)
+    State('user-session', 'data')              # Parameter 3
 )
-def render_admin_content(active_tab, user_session):
+def render_admin_content(active_tab, refresh_trigger, user_session):  # ✅ 3 parameters now
     """Render content based on active admin tab"""
 
     if not user_session or user_session.get('access_tier', 0) < 3:
@@ -1640,16 +1641,13 @@ def render_admin_content(active_tab, user_session):
     elif active_tab == "data-requests":
         return create_admin_data_requests_tab()
 
-    # ✅ ADD THIS: Posts Management Handler
     elif active_tab == "posts-management":
-        # Only Tier 4 (Admin) can manage posts
         if user_session.get('access_tier', 0) < 4:
             return dbc.Alert([
                 html.I(className="fas fa-lock me-2"),
                 "Posts management requires Tier 4 (Admin) access."
             ], color="warning")
 
-        # Get all posts including expired ones for admin view
         from posts_system import get_active_posts
         from posts_ui import create_posts_management_tab
 
@@ -1660,7 +1658,6 @@ def render_admin_content(active_tab, user_session):
         return create_request_history_tab()
 
     return html.Div("Select a tab to view content")
-
 
 @callback(
     [Output('edit-user-modal', 'is_open'),
