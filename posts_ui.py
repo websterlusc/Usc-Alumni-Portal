@@ -133,58 +133,58 @@ def create_post_card_compact(post: Dict, user_data: Optional[Dict] = None) -> db
 # ============================================================================
 
 def create_news_page(posts: List[Dict], user_data: Optional[Dict] = None) -> html.Div:
-    """Full news/announcements page with all posts"""
-    
+    """Full news/announcements page with all posts (NO NAVBAR - add separately)"""
+
     user_tier = user_data.get('access_tier', 1) if user_data else 1
-    
+
     # Separate pinned and regular posts
     pinned_posts = [p for p in posts if p.get('is_pinned', False)]
     regular_posts = [p for p in posts if not p.get('is_pinned', False)]
-    
+
     return html.Div([
-        # Hero Section
+        # Hero Section (NO NAVBAR HERE - it's added in the route)
         html.Section([
             dbc.Container([
                 html.H1([
                     html.I(className="fas fa-newspaper me-3"),
                     "News & Announcements"
-                ], className="display-4 fw-bold mb-3", 
+                ], className="display-4 fw-bold mb-3",
                    style={'color': USC_COLORS['primary_green']}),
                 html.P("Official updates from the Department of Institutional Research",
                       className="lead text-muted")
             ])
         ], className="py-5", style={'backgroundColor': USC_COLORS['light_gray']}),
-        
+
         # Main Content
         dbc.Container([
             # Pinned Posts Section
             html.Div([
                 html.H3([
-                    html.I(className="fas fa-thumbtack me-2", 
+                    html.I(className="fas fa-thumbtack me-2",
                           style={'color': USC_COLORS['accent_yellow']}),
                     "Pinned Announcements"
                 ], className="fw-bold mb-4", style={'color': USC_COLORS['primary_green']}),
                 html.Div([
-                    create_post_card_full(post, user_data) 
+                    create_post_card_full(post, user_data)
                     for post in pinned_posts
                 ])
             ], className="mb-5") if pinned_posts else html.Div(),
-            
+
             # Regular Posts
-            html.H3("Recent Posts", className="fw-bold mb-4", 
+            html.H3("Recent Posts", className="fw-bold mb-4",
                    style={'color': USC_COLORS['primary_green']}),
             html.Div([
-                create_post_card_full(post, user_data) 
+                create_post_card_full(post, user_data)
                 for post in regular_posts
             ]) if regular_posts else dbc.Alert("No posts available", color="info")
-            
+
         ], fluid=True, className="py-5")
     ])
 
 
 def create_post_card_full(post: Dict, user_data: Optional[Dict] = None) -> dbc.Card:
     """Full-width post card for news page"""
-    
+
     # Category badge
     category_colors = {
         'announcement': 'primary',
@@ -194,11 +194,11 @@ def create_post_card_full(post: Dict, user_data: Optional[Dict] = None) -> dbc.C
         'data_release': 'secondary'
     }
     category = post.get('category', 'announcement')
-    
+
     # Format dates
     created_at = datetime.fromisoformat(post['created_at'])
     date_str = created_at.strftime("%B %d, %Y at %I:%M %p")
-    
+
     # Check expiration
     expires_at = post.get('expires_at')
     expiration_badge = None
@@ -208,14 +208,14 @@ def create_post_card_full(post: Dict, user_data: Optional[Dict] = None) -> dbc.C
             days_left = (exp_date - datetime.now()).days
             if days_left <= 7:
                 expiration_badge = dbc.Badge(
-                    f"Expires in {days_left} days", 
+                    f"Expires in {days_left} days",
                     color="warning", className="ms-2"
                 )
-    
+
     # Comments count
     comments_count = post.get('comment_count', 0)
     comments_enabled = post.get('comments_enabled', False)
-    
+
     return dbc.Card([
         dbc.CardBody([
             # Header row
@@ -223,9 +223,9 @@ def create_post_card_full(post: Dict, user_data: Optional[Dict] = None) -> dbc.C
                 dbc.Col([
                     # Category and pinned indicator
                     html.Div([
-                        dbc.Badge(category.replace('_', ' ').title(), 
+                        dbc.Badge(category.replace('_', ' ').title(),
                                  color=category_colors.get(category, 'primary')),
-                        dbc.Badge("Pinned", color="warning", className="ms-2") 
+                        dbc.Badge("Pinned", color="warning", className="ms-2")
                             if post.get('is_pinned') else html.Span(),
                         expiration_badge if expiration_badge else html.Span()
                     ])
@@ -237,15 +237,15 @@ def create_post_card_full(post: Dict, user_data: Optional[Dict] = None) -> dbc.C
                     ], className="text-muted small text-end")
                 ])
             ], className="mb-3"),
-            
+
             # Title
             html.H4(post['title'], className="card-title fw-bold mb-3",
                    style={'color': USC_COLORS['primary_green']}),
-            
+
             # Content
             html.P(post['content'], className="card-text mb-3",
                   style={'whiteSpace': 'pre-wrap'}),
-            
+
             # Footer
             html.Div([
                 # Author and date
@@ -255,7 +255,7 @@ def create_post_card_full(post: Dict, user_data: Optional[Dict] = None) -> dbc.C
                     html.I(className="far fa-calendar me-2"),
                     html.Span(date_str, className="text-muted small")
                 ], className="d-inline-block"),
-                
+
                 # Comments button
                 dbc.Button([
                     html.I(className="fas fa-comments me-2"),
@@ -274,10 +274,10 @@ def create_post_card_full(post: Dict, user_data: Optional[Dict] = None) -> dbc.C
 
 def create_admin_post_form(edit_mode: bool = False, post_data: Optional[Dict] = None) -> dbc.Form:
     """Admin form for creating/editing posts"""
-    
+
     form_title = "Edit Post" if edit_mode else "Create New Post"
     button_text = "Update Post" if edit_mode else "Publish Post"
-    
+
     # Default values
     defaults = post_data if post_data else {
         'title': '',
@@ -289,12 +289,12 @@ def create_admin_post_form(edit_mode: bool = False, post_data: Optional[Dict] = 
         'category': 'announcement',
         'is_pinned': False
     }
-    
+
     return dbc.Form([
         # Form Header
-        html.H4(form_title, className="mb-4 fw-bold", 
+        html.H4(form_title, className="mb-4 fw-bold",
                style={'color': USC_COLORS['primary_green']}),
-        
+
         # Title
         dbc.Row([
             dbc.Col([
@@ -309,7 +309,7 @@ def create_admin_post_form(edit_mode: bool = False, post_data: Optional[Dict] = 
                 )
             ])
         ]),
-        
+
         # Content
         dbc.Row([
             dbc.Col([
@@ -324,7 +324,7 @@ def create_admin_post_form(edit_mode: bool = False, post_data: Optional[Dict] = 
                 )
             ])
         ]),
-        
+
         # Settings Row 1: Access Control and Category
         dbc.Row([
             dbc.Col([
@@ -343,7 +343,7 @@ def create_admin_post_form(edit_mode: bool = False, post_data: Optional[Dict] = 
                 ),
                 html.Small("Who can view this post?", className="text-muted")
             ], md=6),
-            
+
             dbc.Col([
                 dbc.Label("Category *", className="fw-bold"),
                 dcc.Dropdown(
@@ -361,7 +361,7 @@ def create_admin_post_form(edit_mode: bool = False, post_data: Optional[Dict] = 
                 )
             ], md=6)
         ]),
-        
+
         # Settings Row 2: Time and Display Options
         dbc.Row([
             dbc.Col([
@@ -379,7 +379,7 @@ def create_admin_post_form(edit_mode: bool = False, post_data: Optional[Dict] = 
                     clearable=False,
                     className="mb-3"
                 ),
-                
+
                 # Custom date picker (hidden unless 'custom' selected)
                 html.Div([
                     dbc.Label("Expiration Date", className="fw-bold mt-2"),
@@ -391,7 +391,7 @@ def create_admin_post_form(edit_mode: bool = False, post_data: Optional[Dict] = 
                     )
                 ], id="custom-date-container", style={'display': 'none'})
             ], md=6),
-            
+
             dbc.Col([
                 dbc.Label("Display Options", className="fw-bold"),
                 dbc.Checklist(
@@ -409,13 +409,13 @@ def create_admin_post_form(edit_mode: bool = False, post_data: Optional[Dict] = 
                 )
             ], md=6)
         ]),
-        
+
         # Preview Section
         html.Hr(className="my-4"),
-        html.H5("Preview", className="fw-bold mb-3", 
+        html.H5("Preview", className="fw-bold mb-3",
                style={'color': USC_COLORS['primary_green']}),
         html.Div(id="post-preview-container", className="mb-4"),
-        
+
         # Action Buttons
         dbc.Row([
             dbc.Col([
@@ -423,13 +423,13 @@ def create_admin_post_form(edit_mode: bool = False, post_data: Optional[Dict] = 
                     html.I(className="fas fa-check me-2"),
                     button_text
                 ], id="submit-post-btn", color="success", size="lg", className="me-3"),
-                
+
                 dbc.Button([
                     html.I(className="fas fa-eye me-2"),
                     "Preview"
                 ], id="preview-post-btn", color="info", size="lg", outline=True, className="me-3"),
-                
-                dbc.Button("Cancel", id="cancel-post-btn", color="secondary", 
+
+                dbc.Button("Cancel", id="cancel-post-btn", color="secondary",
                           size="lg", outline=True)
             ])
         ])
@@ -442,26 +442,26 @@ def create_admin_post_form(edit_mode: bool = False, post_data: Optional[Dict] = 
 
 def create_posts_management_tab(posts: List[Dict]) -> html.Div:
     """Admin dashboard tab for managing all posts"""
-    
+
     if not posts:
         return dbc.Alert([
             html.H5("No Posts Yet", className="alert-heading"),
             html.P("Create your first post to get started!"),
             dbc.Button("Create Post", id="create-first-post-btn", color="primary")
         ], color="info")
-    
+
     # Statistics cards
     stats_cards = create_posts_statistics_cards(posts)
-    
+
     # Posts table
     posts_table = create_posts_management_table(posts)
-    
+
     return html.Div([
         # Stats Overview
         dbc.Row([
             dbc.Col(stats_cards, className="mb-4")
         ]),
-        
+
         # Create New Post Button
         dbc.Row([
             dbc.Col([
@@ -471,11 +471,20 @@ def create_posts_management_tab(posts: List[Dict]) -> html.Div:
                 ], id="create-new-post-btn", color="primary", size="lg", className="mb-4")
             ])
         ]),
-        
+
+        # ✅ ADD THIS: Collapsible form container
+        dbc.Collapse([
+            dbc.Card([
+                dbc.CardBody([
+                    create_admin_post_form(edit_mode=False)
+                ])
+            ], className="mb-4 shadow")
+        ], id="post-form-collapse", is_open=False),
+
         # Posts Management Table
         dbc.Row([
             dbc.Col([
-                html.H4("All Posts", className="fw-bold mb-3", 
+                html.H4("All Posts", className="fw-bold mb-3",
                        style={'color': USC_COLORS['primary_green']}),
                 posts_table
             ])
@@ -485,12 +494,12 @@ def create_posts_management_tab(posts: List[Dict]) -> html.Div:
 
 def create_posts_statistics_cards(posts: List[Dict]) -> dbc.Row:
     """Create statistics cards for posts dashboard"""
-    
+
     total_posts = len(posts)
     active_posts = len([p for p in posts if p['status'] == 'published'])
     pinned_posts = len([p for p in posts if p.get('is_pinned', False)])
     total_views = sum([p.get('view_count', 0) for p in posts])
-    
+
     cards = [
         {
             'icon': 'fas fa-newspaper',
@@ -517,7 +526,7 @@ def create_posts_statistics_cards(posts: List[Dict]) -> dbc.Row:
             'color': 'info'
         }
     ]
-    
+
     return dbc.Row([
         dbc.Col([
             dbc.Card([
@@ -537,7 +546,7 @@ def create_posts_statistics_cards(posts: List[Dict]) -> dbc.Row:
 
 def create_posts_management_table(posts: List[Dict]) -> dbc.Table:
     """Create table of all posts with management actions"""
-    
+
     table_header = [
         html.Thead(html.Tr([
             html.Th("Status"),
@@ -549,7 +558,7 @@ def create_posts_management_table(posts: List[Dict]) -> dbc.Table:
             html.Th("Actions")
         ]))
     ]
-    
+
     rows = []
     for post in posts:
         # Status badge
@@ -558,30 +567,30 @@ def create_posts_management_table(posts: List[Dict]) -> dbc.Table:
             status.title(),
             color='success' if status == 'published' else 'secondary'
         )
-        
+
         # Pinned indicator
         if post.get('is_pinned'):
             status_badge = html.Span([
                 status_badge,
                 html.I(className="fas fa-thumbtack ms-2 text-warning")
             ])
-        
+
         # Format date
         created_date = datetime.fromisoformat(post['created_at']).strftime("%b %d, %Y")
-        
+
         # Action buttons
         actions = dbc.ButtonGroup([
-            dbc.Button(html.I(className="fas fa-eye"), 
+            dbc.Button(html.I(className="fas fa-eye"),
                       id={'type': 'view-post-admin', 'post_id': post['id']},
                       color="info", size="sm", outline=True),
-            dbc.Button(html.I(className="fas fa-edit"), 
+            dbc.Button(html.I(className="fas fa-edit"),
                       id={'type': 'edit-post', 'post_id': post['id']},
                       color="primary", size="sm", outline=True),
-            dbc.Button(html.I(className="fas fa-trash"), 
+            dbc.Button(html.I(className="fas fa-trash"),
                       id={'type': 'delete-post', 'post_id': post['id']},
                       color="danger", size="sm", outline=True)
         ], size="sm")
-        
+
         rows.append(html.Tr([
             html.Td(status_badge),
             html.Td(post['title'][:50] + "..." if len(post['title']) > 50 else post['title']),
@@ -591,9 +600,9 @@ def create_posts_management_table(posts: List[Dict]) -> dbc.Table:
             html.Td(created_date),
             html.Td(actions)
         ]))
-    
+
     table_body = [html.Tbody(rows)]
-    
+
     return dbc.Table(
         table_header + table_body,
         bordered=True,
@@ -607,26 +616,26 @@ def create_posts_management_table(posts: List[Dict]) -> dbc.Table:
 # COMMENT COMPONENTS
 # ============================================================================
 
-def create_comments_section(post_id: int, comments: List[Dict], 
+def create_comments_section(post_id: int, comments: List[Dict],
                            user_data: Optional[Dict] = None) -> html.Div:
     """Create comments section for a post"""
-    
+
     if not user_data:
         return dbc.Alert([
             html.I(className="fas fa-info-circle me-2"),
             "Please sign in to view and post comments."
         ], color="info")
-    
+
     comment_items = []
     for comment in comments:
         comment_items.append(create_comment_card(comment, user_data))
-    
+
     return html.Div([
         html.H5([
             html.I(className="fas fa-comments me-2"),
             f"Comments ({len(comments)})"
         ], className="fw-bold mb-3", style={'color': USC_COLORS['primary_green']}),
-        
+
         # Add comment form
         dbc.Card([
             dbc.CardBody([
@@ -643,26 +652,26 @@ def create_comments_section(post_id: int, comments: List[Dict],
                    color="primary", size="sm")
             ])
         ], className="mb-4"),
-        
+
         # Comments list
-        html.Div(comment_items if comment_items else 
+        html.Div(comment_items if comment_items else
                 dbc.Alert("No comments yet. Be the first to comment!", color="light"))
     ])
 
 
 def create_comment_card(comment: Dict, user_data: Optional[Dict]) -> dbc.Card:
     """Create individual comment card"""
-    
+
     # Format date
     created_at = datetime.fromisoformat(comment['created_at'])
     time_ago = format_time_ago(created_at)
-    
+
     # Check if user can delete (own comment or admin)
     can_delete = (
-        user_data and 
+        user_data and
         (user_data['id'] == comment['user_id'] or user_data.get('access_tier', 1) >= 4)
     )
-    
+
     return dbc.Card([
         dbc.CardBody([
             dbc.Row([
@@ -679,8 +688,8 @@ def create_comment_card(comment: Dict, user_data: Optional[Dict]) -> dbc.Card:
                     ) if can_delete else html.Div()
                 ], width="auto")
             ], className="mb-2"),
-            
-            html.P(comment['content'], className="mb-0", 
+
+            html.P(comment['content'], className="mb-0",
                   style={'whiteSpace': 'pre-wrap'})
         ])
     ], className="mb-3 shadow-sm", style={'border': 'none', 'backgroundColor': USC_COLORS['light_gray']})
@@ -690,9 +699,9 @@ def format_time_ago(dt: datetime) -> str:
     """Format datetime as 'X time ago'"""
     now = datetime.now()
     diff = now - dt
-    
+
     seconds = diff.total_seconds()
-    
+
     if seconds < 60:
         return "just now"
     elif seconds < 3600:
@@ -730,7 +739,7 @@ def create_delete_confirmation_modal() -> dbc.Modal:
         dbc.ModalBody([
             html.I(className="fas fa-exclamation-triangle fa-3x text-warning mb-3 d-block text-center"),
             html.H5("Are you sure you want to delete this post?", className="text-center"),
-            html.P("This action cannot be undone. All comments will also be deleted.", 
+            html.P("This action cannot be undone. All comments will also be deleted.",
                   className="text-muted text-center")
         ]),
         dbc.ModalFooter([
