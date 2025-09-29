@@ -27,6 +27,8 @@ USC_COLORS = {
 # CALLBACK 0: TOGGLE POST CREATION FORM
 # ============================================================================
 
+# Add this callback to app.py (after all your other callbacks)
+
 @callback(
     Output('post-form-collapse', 'is_open'),
     Output('create-new-post-btn', 'children'),
@@ -38,28 +40,25 @@ USC_COLORS = {
 )
 def toggle_post_form(create_clicks, cancel_clicks, submit_clicks, is_open):
     """Toggle the post creation form visibility"""
-    print(f"🔍 Callback triggered!")
-    print(f"   Triggered by: {ctx.triggered_id}")
-    print(f"   is_open: {is_open}")
-    print(f"   create_clicks: {create_clicks}")
+    from dash import ctx, no_update, html
+
+    print(f"🔍 Button clicked! Trigger: {ctx.triggered_id}, is_open: {is_open}")
+
     if not ctx.triggered_id:
         return no_update, no_update
 
     # Open form when create button clicked
     if ctx.triggered_id == 'create-new-post-btn':
         if is_open:
-            # Close form and reset button
             return False, [html.I(className="fas fa-plus me-2"), "Create New Post"]
         else:
-            # Open form and change button text
             return True, [html.I(className="fas fa-times me-2"), "Cancel"]
 
-    # Close form when cancel or submit is clicked
+    # Close form when cancel or submit clicked
     if ctx.triggered_id in ['cancel-post-btn', 'submit-post-btn']:
         return False, [html.I(className="fas fa-plus me-2"), "Create New Post"]
 
     return no_update, no_update
-
 
 # ============================================================================
 # CALLBACK 1: TOGGLE CUSTOM DATE PICKER

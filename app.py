@@ -1641,37 +1641,18 @@ def render_admin_content(active_tab, refresh_trigger, user_session):  # ✅ 3 pa
     elif active_tab == "data-requests":
         return create_admin_data_requests_tab()
 
-
     elif active_tab == "posts-management":
-
         if user_session.get('access_tier', 0) < 4:
-            return dbc.Alert("Tier 4 required", color="warning")
+            return dbc.Alert([
+                html.I(className="fas fa-lock me-2"),
+                "Posts management requires Tier 4 (Admin) access."
+            ], color="warning")
 
-        # ULTRA SIMPLE TEST
+        from posts_system import get_active_posts
+        from posts_ui import create_posts_management_tab
 
-        return html.Div([
-
-            html.H3("Posts Management Test"),
-
-            dbc.Button("TEST BUTTON", id="create-new-post-btn", color="primary", className="mb-3"),
-
-            dbc.Collapse([
-
-                dbc.Card([
-
-                    dbc.CardBody([
-
-                        html.H4("Form appears!"),
-
-                        html.P("If you see this, the collapse works!")
-
-                    ])
-
-                ])
-
-            ], id="post-form-collapse", is_open=False)
-
-        ])
+        posts = get_active_posts(user_tier=4, include_expired=True)
+        return create_posts_management_tab(posts)
 
     elif active_tab == "history":
         return create_request_history_tab()
