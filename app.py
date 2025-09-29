@@ -49,7 +49,7 @@ from posts_ui import (
     create_post_modal,
     create_delete_confirmation_modal
 )
-import posts_callbacks
+
 # USC Brand Colors
 USC_COLORS = {
     'primary_green': '#1B5E20',
@@ -3169,6 +3169,7 @@ if __name__ == '__main__':
     from posts_system import init_posts_database
 
     init_posts_database()
+    import posts_callbacks
     port = int(os.environ.get('PORT', 8050))
     app.run_server(
         debug=False,  # Set to False for production

@@ -40,7 +40,7 @@ USC_COLORS = {
 )
 def toggle_post_form(create_clicks, cancel_clicks, submit_clicks, is_open):
     """Toggle the post creation form visibility"""
-    from dash import ctx, no_update, html
+
 
     print(f"🔍 Button clicked! Trigger: {ctx.triggered_id}, is_open: {is_open}")
 
