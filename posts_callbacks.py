@@ -38,7 +38,10 @@ USC_COLORS = {
 )
 def toggle_post_form(create_clicks, cancel_clicks, submit_clicks, is_open):
     """Toggle the post creation form visibility"""
-
+    print(f"🔍 Callback triggered!")
+    print(f"   Triggered by: {ctx.triggered_id}")
+    print(f"   is_open: {is_open}")
+    print(f"   create_clicks: {create_clicks}")
     if not ctx.triggered_id:
         return no_update, no_update
 
@@ -452,6 +455,7 @@ def view_post_detail(view_clicks, admin_view_clicks, close_click, user_session):
     ])
 
     return True, content
+
 
 
 # ============================================================================
