@@ -46,8 +46,6 @@ from posts_ui import (
     create_news_feed_section,
     create_news_page,
     create_posts_management_tab,
-    create_post_modal,
-    create_delete_confirmation_modal
 )
 
 # USC Brand Colors
@@ -774,8 +772,6 @@ def create_comprehensive_admin_dashboard(user_data):
         ], id="admin-tabs", active_tab="overview"),
 
         html.Div(id="admin-content", className="mt-4"),
-        create_post_modal(),
-        create_delete_confirmation_modal(),
         dcc.Store(id='delete-post-id-store', storage_type='memory'),
         dcc.Store(id='posts-refresh-trigger', storage_type='memory'),
         # Edit User Modal
