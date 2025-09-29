@@ -12,30 +12,52 @@ def create_factbook_landing_page(user=None):
     user_tier = user['access_tier'] if user else 1
     
     # Define all factbook sections based on your file list
+    # REMOVE Student Labour from tier_2_sections:
     tier_2_sections = [
-        {"title": "Counselling Services", "href": "/factbook/counselling", "icon": "fas fa-heart", "file": "counselling.xlsx"},
-        {"title": "Credits Analysis", "href": "/factbook/credits", "icon": "fas fa-graduation-cap", "file": "credits.xlsx"},
-        {"title": "Enrollment Data", "href": "/factbook/enrollment", "icon": "fas fa-users", "file": "enrolment_data.xlsx"},
-        {"title": "Graduation Statistics", "href": "/factbook/graduation", "icon": "fas fa-certificate", "file": "GraduationData.xlsx"},
-        {"title": "Governance & Administration", "href": "/factbook/governance-admin", "icon": "fas fa-sitemap", "file": "GovernenceAndAdmin.xlsx"},
-        {"title": "Higher Faculty", "href": "/factbook/higher-faculty", "icon": "fas fa-chalkboard-teacher", "file": "HigherFaculty.xlsx"},
-        {"title": "HR Appointments", "href": "/factbook/hr-appointments", "icon": "fas fa-user-plus", "file": "HrAppointments.xlsx"},
+        {"title": "Counselling Services", "href": "/factbook/counselling", "icon": "fas fa-heart",
+         "file": "counselling.xlsx"},
+        {"title": "Credits Analysis", "href": "/factbook/credits", "icon": "fas fa-graduation-cap",
+         "file": "credits.xlsx"},
+        {"title": "Enrollment Data", "href": "/factbook/enrollment", "icon": "fas fa-users",
+         "file": "enrolment_data.xlsx"},
+        {"title": "Graduation Statistics", "href": "/factbook/graduation", "icon": "fas fa-certificate",
+         "file": "GraduationData.xlsx"},
+        {"title": "Governance & Administration", "href": "/factbook/governance-admin", "icon": "fas fa-sitemap",
+         "file": "GovernenceAndAdmin.xlsx"},
+        {"title": "Higher Faculty", "href": "/factbook/higher-faculty", "icon": "fas fa-chalkboard-teacher",
+         "file": "HigherFaculty.xlsx"},
+        {"title": "HR Appointments", "href": "/factbook/hr-appointments", "icon": "fas fa-user-plus",
+         "file": "HrAppointments.xlsx"},
         {"title": "HR Data", "href": "/factbook/hr-data", "icon": "fas fa-user-tie", "file": "HrData.xlsx"},
-        {"title": "OJT Training Report", "href": "/factbook/ojt-training", "icon": "fas fa-tools", "file": "ojt_training_report.xlsx"},
-        {"title": "Outreach Activities", "href": "/factbook/outreach", "icon": "fas fa-hands-helping", "file": "outreach_activities.xlsx"},
-        {"title": "Programme Offerings", "href": "/factbook/programmes", "icon": "fas fa-book-open", "file": "ProgrammeOffering.xlsx"},
-        {"title": "Student Labour Report", "href": "/factbook/student-labour", "icon": "fas fa-briefcase", "file": "student_labour_report.xlsx"},
-        {"title": "Teaching Load", "href": "/factbook/teaching-load", "icon": "fas fa-chalkboard", "file": "Teaching Load.xlsx"}
+        {"title": "OJT Training Report", "href": "/factbook/ojt-training", "icon": "fas fa-tools",
+         "file": "ojt_training_report.xlsx"},
+        {"title": "Outreach Activities", "href": "/factbook/outreach", "icon": "fas fa-hands-helping",
+         "file": "outreach_activities.xlsx"},
+        {"title": "Programme Offerings", "href": "/factbook/programmes", "icon": "fas fa-book-open",
+         "file": "ProgrammeOffering.xlsx"},
+        # REMOVED: Student Labour Report - moved to tier_3_sections
+        {"title": "Teaching Load", "href": "/factbook/teaching-load", "icon": "fas fa-chalkboard",
+         "file": "Teaching Load.xlsx"}
     ]
-    
+
+    # ADD Student Labour to tier_3_sections:
     tier_3_sections = [
-        {"title": "Debt Collection", "href": "/factbook/debt-collection", "icon": "fas fa-file-invoice-dollar", "file": "debt_collection.xlsx"},
-        {"title": "Endowment Funds", "href": "/factbook/endowment-funds", "icon": "fas fa-piggy-bank", "file": "endowment_funds.xlsx"},
-        {"title": "Financial Data", "href": "/factbook/financial-data", "icon": "fas fa-chart-line", "file": "financial.xlsx"},
-        {"title": "GATE Funding", "href": "/factbook/gate-funding", "icon": "fas fa-graduation-cap", "file": "gate_funding.xlsx"},
-        {"title": "Income Generating Units", "href": "/factbook/income-units", "icon": "fas fa-dollar-sign", "file": "income_generating_units.xlsx"},
-        {"title": "Scholarships & Discounts", "href": "/factbook/scholarships", "icon": "fas fa-award", "file": "scholarship_discount_tuition.xlsx"},
-        {"title": "Subsidies", "href": "/factbook/subsidies", "icon": "fas fa-hand-holding-usd", "file": "subsidies.xlsx"}
+        {"title": "Debt Collection", "href": "/factbook/debt-collection", "icon": "fas fa-file-invoice-dollar",
+         "file": "debt_collection.xlsx"},
+        {"title": "Endowment Funds", "href": "/factbook/endowment-funds", "icon": "fas fa-piggy-bank",
+         "file": "endowment_funds.xlsx"},
+        {"title": "Financial Data", "href": "/factbook/financial-data", "icon": "fas fa-chart-line",
+         "file": "financial.xlsx"},
+        {"title": "GATE Funding", "href": "/factbook/gate-funding", "icon": "fas fa-graduation-cap",
+         "file": "gate_funding.xlsx"},
+        {"title": "Income Generating Units", "href": "/factbook/income-units", "icon": "fas fa-dollar-sign",
+         "file": "income_generating_units.xlsx"},
+        {"title": "Scholarships & Discounts", "href": "/factbook/scholarships", "icon": "fas fa-award",
+         "file": "scholarship_discount_tuition.xlsx"},
+        {"title": "Student Labour Report", "href": "/factbook/student-labour", "icon": "fas fa-briefcase",
+         "file": "student_labour_report.xlsx"},  # MOVED HERE
+        {"title": "Subsidies", "href": "/factbook/subsidies", "icon": "fas fa-hand-holding-usd",
+         "file": "subsidies.xlsx"}
     ]
     
     def create_section_card(section, accessible=True, tier_required=2):

@@ -2925,9 +2925,35 @@ def display_page(pathname, user_session):
         content = create_placeholder_page("Alumni Portal", "Connect with USC alumni network")
 
     # ADD THIS NEW FACTBOOK ROUTE
+    # ENSURE ONLY ONE FACTBOOK ROUTE IN app.py:
+
     elif pathname == '/factbook':
-        factbook_content = create_factbook_landing_page(user_data)
-        content = require_access(factbook_content, 2, user_data)
+        # USE THE WORKING VERSION - import from factbook/factbook.py
+        try:
+            from factbook.factbook import create_factbook_landing_page
+            content = create_factbook_landing_page(user_data)
+            content = require_access(content, 2, user_data)
+        except ImportError:
+            # Fallback if import fails
+            content = create_placeholder_page(
+                "USC Factbook",
+                "Comprehensive institutional data and analytics"
+            )
+            content = require_access(content, 2, user_data)
+
+    # REMOVE ANY OTHER /factbook ROUTES - keep only this one
+
+    # Keep your individual section routes:
+    elif pathname == '/factbook/student-labour':
+        try:
+            from factbook.student_labour_report import create_factbook_student_labour_page
+            content = create_factbook_student_labour_page()
+            content = require_access(content, 3, user_data)  # or 2 if you prefer
+        except ImportError:
+            content = create_placeholder_page("Student Labour Report", "Student employment analytics")
+            content = require_access(content, 3, user_data)
+
+    # Add other section routes as needed...
 
     # REMOVE THESE OLD FACTBOOK ROUTES - they're now handled by the landing page
     # elif pathname == '/enrollment':
@@ -2995,11 +3021,32 @@ def display_page(pathname, user_session):
         content = require_access(content, 2, user_data)
     elif pathname == '/factbook/student-labour':
         try:
+            # Add debug print to see if we reach this route
+            print(f"[DEBUG] Accessing student-labour route for user: {user_data}")
+
             from factbook.student_labour_report import create_factbook_student_labour_page
             content = create_factbook_student_labour_page()
+
+            # Check user access level
+            user_tier = user_data.get('access_tier', 1) if user_data else 1
+            print(f"[DEBUG] User tier: {user_tier}, Required: 3")
+
             content = require_access(content, 3, user_data)  # Tier 3 for financial data
-        except ImportError:
-            content = create_placeholder_page("Student Labour Report", "Student employment and financial analytics")
+
+        except ImportError as e:
+            print(f"[ERROR] Import failed for student_labour_report: {e}")
+            content = create_placeholder_page(
+                "Student Labour Report",
+                "Student employment and financial analytics. Import error - check file exists."
+            )
+            content = require_access(content, 3, user_data)
+
+        except Exception as e:
+            print(f"[ERROR] Student labour page creation failed: {e}")
+            content = create_placeholder_page(
+                "Student Labour Report Error",
+                f"An error occurred loading the page: {str(e)}"
+            )
             content = require_access(content, 3, user_data)
 
 
