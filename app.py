@@ -35,7 +35,21 @@ try:
     PAGES_AVAILABLE = True
 except ImportError:
     PAGES_AVAILABLE = False
-
+from posts_system import init_posts_database
+# Add these imports to the top of app.py
+from posts_system import (
+    init_posts_database,
+    get_active_posts,
+    cleanup_expired_posts
+)
+from posts_ui import (
+    create_news_feed_section,
+    create_news_page,
+    create_posts_management_tab,
+    create_post_modal,
+    create_delete_confirmation_modal
+)
+import posts_callbacks
 # USC Brand Colors
 USC_COLORS = {
     'primary_green': '#1B5E20',
@@ -754,12 +768,16 @@ def create_comprehensive_admin_dashboard(user_data):
             dbc.Tab(label="User Management", tab_id="users"),
             dbc.Tab(label="Registration Requests", tab_id="registrations"),
             dbc.Tab(label="Access Requests", tab_id="access-requests"),
-            dbc.Tab(label="Data Requests", tab_id="data-requests"),  # ADD THIS LINE
+            dbc.Tab(label="Data Requests", tab_id="data-requests"),
+            dbc.Tab(label="Posts Management", tab_id="posts-management"),
             dbc.Tab(label="Request History", tab_id="history")
         ], id="admin-tabs", active_tab="overview"),
 
         html.Div(id="admin-content", className="mt-4"),
-
+        create_post_modal(),
+        create_delete_confirmation_modal(),
+        dcc.Store(id='delete-post-id-store', storage_type='memory'),
+        dcc.Store(id='posts-refresh-trigger', storage_type='memory'),
         # Edit User Modal
         dbc.Modal([
             dbc.ModalHeader("Edit User Information"),
@@ -1599,22 +1617,49 @@ def handle_access_requests(approve_clicks, deny_clicks, deny_reasons, user_sessi
 @callback(
     Output('admin-content', 'children'),
     Input('admin-tabs', 'active_tab'),
-    prevent_initial_call=False
+    State('user-session', 'data')
 )
-def render_admin_tab_content(active_tab):
+def render_admin_content(active_tab, user_session):
+    """Render content based on active admin tab"""
+
+    if not user_session or user_session.get('access_tier', 0) < 3:
+        return dbc.Alert("Access Denied", color="danger")
+
     if active_tab == "overview":
         return create_overview_tab()
+
     elif active_tab == "users":
         return create_user_management_tab()
+
     elif active_tab == "registrations":
         return create_user_registrations_tab()
+
     elif active_tab == "access-requests":
         return create_access_requests_tab()
-    elif active_tab == "data-requests":  # ADD THIS CASE
+
+    elif active_tab == "data-requests":
         return create_admin_data_requests_tab()
+
+    # ✅ ADD THIS: Posts Management Handler
+    elif active_tab == "posts-management":
+        # Only Tier 4 (Admin) can manage posts
+        if user_session.get('access_tier', 0) < 4:
+            return dbc.Alert([
+                html.I(className="fas fa-lock me-2"),
+                "Posts management requires Tier 4 (Admin) access."
+            ], color="warning")
+
+        # Get all posts including expired ones for admin view
+        from posts_system import get_active_posts
+        from posts_ui import create_posts_management_tab
+
+        posts = get_active_posts(user_tier=4, include_expired=True)
+        return create_posts_management_tab(posts)
+
     elif active_tab == "history":
         return create_request_history_tab()
-    return html.Div("Select a tab")
+
+    return html.Div("Select a tab to view content")
 
 
 @callback(
@@ -2114,8 +2159,10 @@ def create_auth_section(user_data=None):
             align_end=True
         )
     ])
+
+
 def create_modern_navbar(user_data=None):
-    """Updated navbar with factbook landing page link instead of dropdown"""
+    """Updated navbar with news link"""
     user_access_tier = user_data.get('access_tier', 1) if user_data else 1
 
     # Dynamic services menu
@@ -2129,7 +2176,7 @@ def create_modern_navbar(user_data=None):
 
     return dbc.Navbar(
         dbc.Container([
-            # Brand (your exact design)
+            # Brand
             dbc.NavbarBrand([
                 html.Img(src="assets/usc-logo.png", height="45", className="me-3"),
                 html.Div([
@@ -2159,14 +2206,19 @@ def create_modern_navbar(user_data=None):
                     dbc.DropdownMenuItem("Governance", href="/governance"),
                     dbc.DropdownMenuItem("Contact", href="/contact")
                 ],
-                label="About USC", nav=True,
-                toggle_style={'color': '#1B5E20', 'fontWeight': '600', 'border': 'none', 'background': 'transparent'}
+                    label="About USC", nav=True,
+                    toggle_style={'color': '#1B5E20', 'fontWeight': '600', 'border': 'none',
+                                  'background': 'transparent'}
                 ),
+
+                # ADD THIS: News link
                 dbc.NavItem(dbc.NavLink(
-                    "Alumni Portal", href="/alumni",
+                    [html.I(className="fas fa-bullhorn me-2"), "News"],
+                    href="/news",
                     style={'color': '#1B5E20', 'fontWeight': '600'}
                 )),
-                # UPDATED: Single factbook link instead of dropdown
+
+                # UPDATED: Single factbook link
                 dbc.NavItem(dbc.NavLink(
                     "Factbook", href="/factbook",
                     style={'color': '#1B5E20', 'fontWeight': '600'}
@@ -2174,10 +2226,11 @@ def create_modern_navbar(user_data=None):
                 dbc.DropdownMenu(
                     services_items,
                     label="Services", nav=True,
-                    toggle_style={'color': '#1B5E20', 'fontWeight': '600', 'border': 'none', 'background': 'transparent'}
+                    toggle_style={'color': '#1B5E20', 'fontWeight': '600', 'border': 'none',
+                                  'background': 'transparent'}
                 ),
 
-                # Authentication section
+                # Authentication section (your existing code)
                 create_auth_section(user_data)
             ])
         ], fluid=True, style={'display': 'flex', 'alignItems': 'center'}),
@@ -2797,11 +2850,26 @@ def handle_forgot_password(n_clicks, email):
         return dbc.Alert(f"Error: {str(e)}", color="danger", dismissable=True)
     finally:
         conn.close()
+
+
 def create_home_layout(user_data=None):
-    """Complete home page layout"""
+    """Complete home page layout with news feed"""
+
+    # Get posts for news feed
+    from posts_system import get_active_posts
+    user_tier = user_data.get('access_tier', 1) if user_data else 1
+    posts = get_active_posts(user_tier=user_tier, include_expired=False)
+
+    # Import news feed component
+    from posts_ui import create_news_feed_section
+
     return html.Div([
         create_hero_section(),
         create_stats_overview(),
+
+        # ADD THIS: News feed section (only shows if posts exist)
+        create_news_feed_section(posts, user_data) if posts else html.Div(),
+
         create_about_ir_section(),
         create_feature_showcase(),
         create_director_message(),
@@ -2871,10 +2939,36 @@ app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
     dcc.Store(id='user-session', storage_type='session'),
     dcc.Interval(id='user-check-interval', interval=5000, n_intervals=0),
-    html.Div(id='page-content')
-    # Modal is now included in the admin dashboard itself
-])
 
+    # ✅ ADD THESE for posts system
+    dcc.Store(id='delete-post-id-store', storage_type='memory'),
+    dcc.Store(id='cleanup-status-dummy', storage_type='memory'),
+    dcc.Interval(id='cleanup-interval', interval=3600000, n_intervals=0),  # 1 hour
+
+    # Post detail modal
+    dbc.Modal([
+        dbc.ModalHeader("Post Details"),
+        dbc.ModalBody(id='post-detail-content'),
+        dbc.ModalFooter(dbc.Button("Close", id='close-post-detail', color="secondary"))
+    ], id='post-detail-modal', size='xl', scrollable=True),
+
+    # Delete confirmation modal
+    dbc.Modal([
+        dbc.ModalHeader(dbc.ModalTitle("Confirm Deletion")),
+        dbc.ModalBody([
+            html.I(className="fas fa-exclamation-triangle fa-3x text-warning mb-3 d-block text-center"),
+            html.H5("Are you sure you want to delete this post?", className="text-center"),
+            html.P("This action cannot be undone. All comments will also be deleted.",
+                   className="text-muted text-center")
+        ]),
+        dbc.ModalFooter([
+            dbc.Button("Cancel", id="cancel-delete-post", color="secondary"),
+            dbc.Button("Delete Post", id="confirm-delete-post", color="danger")
+        ])
+    ], id='delete-post-modal', centered=True),
+
+    html.Div(id='page-content')
+])
 # ============================================================================
 # CALLBACKS - CLEAN AND WORKING
 # ============================================================================
@@ -3003,7 +3097,17 @@ def display_page(pathname, user_session):
 
 
 
+    elif pathname == '/news':
+        from posts_system import get_active_posts
+        from posts_ui import create_news_page
 
+        user_tier = user_data.get('access_tier', 1) if user_data else 1
+        posts = get_active_posts(user_tier=user_tier, include_expired=False)
+
+        content = html.Div([
+            #create_modern_navbar(user_data),  # ✅ One navbar here
+            create_news_page(posts, user_data)  # ✅ No navbar inside
+        ])
 
     elif pathname == '/factbook/enrollment':
         from pages.universal_factbook_page import create_universal_factbook_page
@@ -3065,6 +3169,9 @@ def display_page(pathname, user_session):
 
 if __name__ == '__main__':
     #init_enhanced_database()
+    from posts_system import init_posts_database
+
+    init_posts_database()
     port = int(os.environ.get('PORT', 8050))
     app.run_server(
         debug=False,  # Set to False for production

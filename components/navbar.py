@@ -106,7 +106,11 @@ def create_navbar(user=None):
         user_section = dbc.Nav([
             dbc.NavItem(dbc.NavLink("Login", href="/login", className="text-white fw-bold"))
         ])
-
+    dbc.NavItem(dbc.NavLink(
+        "News & Announcements",
+        href="/news",
+        style={'color': '#1B5E20', 'fontWeight': '600'}
+    ))
     return dbc.Navbar(
         dbc.Container([
             dbc.Row([
