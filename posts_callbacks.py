@@ -322,4 +322,11 @@ def auto_cleanup(n_intervals):
         return {'error': str(e)}
 
 
+def register_callbacks(dash_app):
+    """Explicitly register all callbacks with the app"""
+    # All your @callback decorators automatically register
+    # when this module is imported with the app in scope
+    pass
+
+# Auto-register when imported
 print("✅ Posts callbacks registered successfully")
