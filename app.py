@@ -3159,6 +3159,13 @@ def display_page(pathname, user_session):
 # ============================================================================
 # RUN APPLICATION
 # ============================================================================
+try:
+    from posts_system import init_posts_database
+    print("🔧 Initializing posts database...")
+    init_posts_database()
+    print("✅ Posts database ready")
+except Exception as e:
+    print(f"❌ Database init error: {e}")
 
 if __name__ == '__main__':
     #init_enhanced_database()
