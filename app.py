@@ -47,6 +47,7 @@ from posts_ui import (
     create_news_page,
     create_posts_management_tab,
 )
+# Don't just import - explicitly register callbacks
 
 # USC Brand Colors
 USC_COLORS = {
@@ -3154,7 +3155,8 @@ def display_page(pathname, user_session):
     return html.Div([navbar, content])
 
 
-
+from posts_callbacks import register_posts_callbacks
+register_posts_callbacks(app)
 
 # ============================================================================
 # RUN APPLICATION

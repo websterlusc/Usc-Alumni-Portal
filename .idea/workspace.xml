@@ -160,14 +160,6 @@
       <option name="presentableId" value="Default" />
       <updated>1756998738082</updated>
     </task>
-    <task id="LOCAL-00035" summary="First Commit">
-      <option name="closed" value="true" />
-      <created>1757441956987</created>
-      <option name="number" value="00035" />
-      <option name="presentableId" value="LOCAL-00035" />
-      <option name="project" value="LOCAL" />
-      <updated>1757441956987</updated>
-    </task>
     <task id="LOCAL-00036" summary="well hello">
       <option name="closed" value="true" />
       <created>1757442010642</created>
@@ -552,7 +544,15 @@
       <option name="project" value="LOCAL" />
       <updated>1759239073169</updated>
     </task>
-    <option name="localTasksCounter" value="84" />
+    <task id="LOCAL-00084" summary="attempting to get render working with new posts">
+      <option name="closed" value="true" />
+      <created>1759239726390</created>
+      <option name="number" value="00084" />
+      <option name="presentableId" value="LOCAL-00084" />
+      <option name="project" value="LOCAL" />
+      <updated>1759239726390</updated>
+    </task>
+    <option name="localTasksCounter" value="85" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
