@@ -328,42 +328,5 @@ def register_callbacks(dash_app):
     # when this module is imported with the app in scope
     pass
 
-
-def register_posts_callbacks(app):
-    """
-    Force callback registration - needed for Render deployment
-    Call this function explicitly after app creation
-    """
-    print("🔧 Registering posts callbacks...")
-
-    # Re-declare callbacks with explicit app reference
-    @app.callback(
-        Output('post-form-collapse', 'is_open'),
-        Output('create-new-post-btn', 'children'),
-        Input('create-new-post-btn', 'n_clicks'),
-        State('post-form-collapse', 'is_open'),
-        prevent_initial_call=True
-    )
-    def toggle_post_form(n_clicks, is_open):
-        """Open/close the post creation form"""
-
-        print(f"🔘 CREATE POST BUTTON CLICKED ON RENDER")
-        print(f"   n_clicks: {n_clicks}")
-        print(f"   Current state (is_open): {is_open}")
-
-        if n_clicks:
-            if is_open:
-                print("   → Closing form")
-                return False, [html.I(className="fas fa-plus me-2"), "Create New Post"]
-            else:
-                print("   → Opening form")
-                return True, [html.I(className="fas fa-times me-2"), "Cancel"]
-
-        return no_update, no_update
-
-    # Add all other callbacks here too (copy them from above)
-    # For now, just this one to test
-
-    print("✅ Posts callbacks registered with app")
 # Auto-register when imported
 print("✅ Posts callbacks registered successfully")

@@ -79,7 +79,19 @@ app = dash.Dash(
 callback_registry = initialize_callback_registry(app)
 app.title = "USC Institutional Research Portal"
 server = app.server
+# 2. Initialize databases
+print("🔧 Initializing databases...")
+try:
+    from posts_system import init_posts_database
+    init_posts_database()
+    print("✅ Posts database initialized")
+except Exception as e:
+    print(f"❌ Database error: {e}")
 
+# 3. THEN import callbacks (MUST be after app creation)
+print("🔧 Importing posts callbacks...")
+import posts_callbacks
+print("✅ Posts callbacks import complete")
 # Add this CSS for hero link hover effects
 app.index_string = '''
 <!DOCTYPE html>
@@ -2934,30 +2946,23 @@ app.layout = html.Div([
     dcc.Store(id='user-session', storage_type='session'),
     dcc.Interval(id='user-check-interval', interval=5000, n_intervals=0),
 
-    # ✅ ADD THESE for posts system
+    # ✅ Posts system components
+    dcc.Store(id='posts-refresh-trigger', storage_type='memory'),
     dcc.Store(id='delete-post-id-store', storage_type='memory'),
     dcc.Store(id='cleanup-status-dummy', storage_type='memory'),
-    dcc.Interval(id='cleanup-interval', interval=3600000, n_intervals=0),  # 1 hour
+    dcc.Interval(id='cleanup-interval', interval=3600000, n_intervals=0),
 
-    # Post detail modal
-    dbc.Modal([
-        dbc.ModalHeader("Post Details"),
-        dbc.ModalBody(id='post-detail-content'),
-        dbc.ModalFooter(dbc.Button("Close", id='close-post-detail', color="secondary"))
-    ], id='post-detail-modal', size='xl', scrollable=True),
-
-    # Delete confirmation modal
+    # ✅ Delete confirmation modal
     dbc.Modal([
         dbc.ModalHeader(dbc.ModalTitle("Confirm Deletion")),
         dbc.ModalBody([
             html.I(className="fas fa-exclamation-triangle fa-3x text-warning mb-3 d-block text-center"),
             html.H5("Are you sure you want to delete this post?", className="text-center"),
-            html.P("This action cannot be undone. All comments will also be deleted.",
-                   className="text-muted text-center")
+            html.P("This action cannot be undone.", className="text-muted text-center")
         ]),
         dbc.ModalFooter([
             dbc.Button("Cancel", id="cancel-delete-post", color="secondary"),
-            dbc.Button("Delete Post", id="confirm-delete-post", color="danger")
+            dbc.Button("Delete", id="confirm-delete-post", color="danger")
         ])
     ], id='delete-post-modal', centered=True),
 
@@ -3155,8 +3160,7 @@ def display_page(pathname, user_session):
     return html.Div([navbar, content])
 
 
-from posts_callbacks import register_posts_callbacks
-register_posts_callbacks(app)
+
 
 # ============================================================================
 # RUN APPLICATION
