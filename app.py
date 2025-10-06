@@ -48,7 +48,78 @@ from posts_ui import (
     create_posts_management_tab,
 )
 # Don't just import - explicitly register callbacks
+PILL_NAV_CSS = """
+/* Pill Navigation Styles */
+.nav-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 24px;
+    border-radius: 25px;
+    background: #f5f5f5;
+    border: 2px solid transparent;
+    color: #424242;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    white-space: nowrap;
+}
 
+.nav-pill:hover {
+    background: #e8f5e9;
+    color: #1B5E20;
+    border-color: #4CAF50;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(27, 94, 32, 0.2);
+}
+
+.nav-pill.active {
+    background: linear-gradient(135deg, #1B5E20 0%, #388E3C 100%);
+    color: white;
+    border-color: #1B5E20;
+    box-shadow: 0 4px 16px rgba(27, 94, 32, 0.3);
+}
+
+.nav-pill.active:hover {
+    background: linear-gradient(135deg, #1B5E20 0%, #388E3C 100%);
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Icon styling within pills */
+.nav-pill i {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.nav-pill.active i {
+    opacity: 1;
+}
+
+/* Smooth scroll behavior */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Optional: Hide pill nav initially, show after scroll */
+.pill-nav-hidden {
+    transform: translateY(-100%);
+    opacity: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .nav-pill {
+        padding: 8px 18px;
+        font-size: 0.85rem;
+    }
+
+    #pill-nav-container {
+        top: 60px !important;
+    }
+}
+"""
 # USC Brand Colors
 USC_COLORS = {
     'primary_green': '#1B5E20',
@@ -2249,7 +2320,7 @@ def create_modern_navbar(user_data=None):
 # ============================================================================
 
 def create_hero_section():
-    """Updated hero section with factbook landing page link"""
+    """Hero section with banner background (without navigation)"""
     return html.Section([
         dbc.Container([
             dbc.Row([
@@ -2260,102 +2331,115 @@ def create_hero_section():
                             'WebkitBackgroundClip': 'text',
                             'WebkitTextFillColor': 'transparent'
                         })
-                    ], style={'fontSize': '3.5rem', 'fontWeight': '700', 'marginBottom': '1.5rem'}),
+                    ], style={
+                        'fontSize': '3.5rem',
+                        'fontWeight': '700',
+                        'marginBottom': '1.5rem',
+                        'textAlign': 'center'
+                    }),
                     html.P(
                         "Empowering data-driven decisions through comprehensive institutional analytics, "
                         "enrollment insights, and strategic planning support for USC's continued excellence.",
-                        style={'fontSize': '1.25rem', 'opacity': '0.9', 'marginBottom': '2.5rem'}
-                    ),
-
-                    # Updated Navigation Links with Factbook
-                    html.Div([
-                        html.A("About IR",
-                               id="scroll-to-about",
-                               style={
-                                   'color': 'white',
-                                   'fontSize': '1.1rem',
-                                   'fontWeight': '500',
-                                   'textDecoration': 'underline',
-                                   'textUnderlineOffset': '4px',
-                                   'textDecorationThickness': '2px',
-                                   'marginRight': '30px',
-                                   'cursor': 'pointer',
-                                   'transition': 'all 0.3s ease'
-                               },
-                               className="hero-link"),
-                        html.A("View Factbook",
-                               href="/factbook",
-                               style={
-                                   'color': 'white',
-                                   'fontSize': '1.1rem',
-                                   'fontWeight': '500',
-                                   'textDecoration': 'underline',
-                                   'textUnderlineOffset': '4px',
-                                   'textDecorationThickness': '2px',
-                                   'marginRight': '30px',
-                                   'cursor': 'pointer',
-                                   'transition': 'all 0.3s ease'
-                               },
-                               className="hero-link"),
-                        html.A("View Stats",
-                               id="scroll-to-stats",
-                               style={
-                                   'color': 'white',
-                                   'fontSize': '1.1rem',
-                                   'fontWeight': '500',
-                                   'textDecoration': 'underline',
-                                   'textUnderlineOffset': '4px',
-                                   'textDecorationThickness': '2px',
-                                   'marginRight': '30px',
-                                   'cursor': 'pointer',
-                                   'transition': 'all 0.3s ease'
-                               },
-                               className="hero-link"),
-                        html.A("Our Services",
-                               id="scroll-to-services",
-                               style={
-                                   'color': 'white',
-                                   'fontSize': '1.1rem',
-                                   'fontWeight': '500',
-                                   'textDecoration': 'underline',
-                                   'textUnderlineOffset': '4px',
-                                   'textDecorationThickness': '2px',
-                                   'marginRight': '30px',
-                                   'cursor': 'pointer',
-                                   'transition': 'all 0.3s ease'
-                               },
-                               className="hero-link"),
-                        html.A("Meet Team",
-                               id="scroll-to-team",
-                               style={
-                                   'color': 'white',
-                                   'fontSize': '1.1rem',
-                                   'fontWeight': '500',
-                                   'textDecoration': 'underline',
-                                   'textUnderlineOffset': '4px',
-                                   'textDecorationThickness': '2px',
-                                   'cursor': 'pointer',
-                                   'transition': 'all 0.3s ease'
-                               },
-                               className="hero-link")
-                    ], style={'marginTop': '20px'})
-
+                        style={
+                            'fontSize': '1.25rem',
+                            'opacity': '0.9',
+                            'marginBottom': '2.5rem',
+                            'textAlign': 'center'
+                        }
+                    )
                 ], md=10, lg=8)
-            ])
-        ], fluid=True, style={'position': 'relative', 'zIndex': '2'})
+            ], justify="center")
+        ], fluid=True, className="text-white", style={'position': 'relative', 'zIndex': '2'})
     ], style={
-        'background': f'''
+        'background': '''
             linear-gradient(135deg, rgba(27, 94, 32, 0.85) 0%, rgba(46, 125, 50, 0.85) 50%, rgba(76, 175, 80, 0.85) 100%),
             url('/assets/banner.png')
         ''',
         'backgroundSize': 'cover',
         'backgroundPosition': 'center',
         'backgroundRepeat': 'no-repeat',
-        'color': 'white',
-        'padding': '50px 0',
+        'padding': '120px 0 60px 0',
+        'minHeight': '400px',
         'position': 'relative'
     })
 
+
+def create_sticky_pill_navigation():
+    """Sticky pill navigation bar - separate component"""
+    return html.Div([
+        dbc.Container([
+            dbc.Row([
+                dbc.Col([
+                    html.Div([
+                        # About IR Button
+                        html.Button([
+                            html.I(className="fas fa-info-circle me-2"),
+                            "About IR"
+                        ],
+                            id="scroll-to-about",
+                            className="nav-pill",
+                            **{'data-target': 'about-ir-section'}
+                        ),
+
+                        # Factbook Button
+                        html.A([
+                            html.I(className="fas fa-book me-2"),
+                            "Factbook"
+                        ],
+                            href="/factbook",
+                            className="nav-pill",
+                            style={'textDecoration': 'none'}
+                        ),
+
+                        # Stats Button
+                        html.Button([
+                            html.I(className="fas fa-chart-bar me-2"),
+                            "Stats"
+                        ],
+                            id="scroll-to-stats",
+                            className="nav-pill",
+                            **{'data-target': 'stats-section'}
+                        ),
+
+                        # Services Button
+                        html.Button([
+                            html.I(className="fas fa-cogs me-2"),
+                            "Services"
+                        ],
+                            id="scroll-to-services",
+                            className="nav-pill",
+                            **{'data-target': 'services-section'}
+                        ),
+
+                        # Team Button
+                        html.Button([
+                            html.I(className="fas fa-users me-2"),
+                            "Team"
+                        ],
+                            id="scroll-to-team",
+                            className="nav-pill",
+                            **{'data-target': 'team-section'}
+                        )
+                    ], style={
+                        'display': 'flex',
+                        'gap': '12px',
+                        'flexWrap': 'wrap',
+                        'justifyContent': 'center',
+                        'alignItems': 'center'
+                    })
+                ])
+            ], justify="center")
+        ])
+    ], id="pill-nav-container", style={
+        'position': 'sticky',
+        'top': '75px',  # Height of your navbar
+        'zIndex': '999',
+        'background': 'white',
+        'padding': '15px 0',
+        'boxShadow': '0 2px 8px rgba(0,0,0,0.1)',
+        'borderBottom': '1px solid #e0e0e0',
+        'transition': 'all 0.3s ease'
+    })
 
 def create_about_ir_section():
     """New About Institutional Research section"""
@@ -2417,52 +2501,117 @@ def create_about_ir_section():
     ], style={'padding': '80px 0', 'background': 'white'}, id="about-ir-section")
 
 
-
-
-# Add this function to create the scroll trigger div
 def create_scroll_trigger():
-    """Hidden div for scroll callback trigger"""
-    return html.Div(id='scroll-trigger', style={'display': 'none'})
+    """Enhanced hidden div for scroll callback trigger"""
+    return html.Div([
+        html.Div(id='scroll-trigger', style={'display': 'none'}),
+        html.Div(id='active-section-store', style={'display': 'none'})
+    ])
 
 
-# Add this clientside callback after your other callbacks
+# Enhanced clientside callback with scroll spy functionality
 app.clientside_callback(
     '''
-    function(about_clicks, stats_clicks, services_clicks, team_clicks) {
+    function(about_clicks, stats_clicks, services_clicks, team_clicks, scroll_interval) {
+        // PART 1: Handle button clicks for smooth scrolling
         const ctx = window.dash_clientside.callback_context;
-        if (!ctx.triggered.length) {
-            return window.dash_clientside.no_update;
-        }
 
-        const triggered_id = ctx.triggered[0].prop_id.split('.')[0];
+        if (ctx.triggered.length > 0) {
+            const triggered_id = ctx.triggered[0].prop_id.split('.')[0];
 
-        const scrollTargets = {
-            'scroll-to-about': 'about-ir-section',
-            'scroll-to-stats': 'stats-section',
-            'scroll-to-services': 'services-section',
-            'scroll-to-team': 'team-section'
-        };
+            const scrollTargets = {
+                'scroll-to-about': 'about-ir-section',
+                'scroll-to-stats': 'stats-section',
+                'scroll-to-services': 'services-section',
+                'scroll-to-team': 'team-section'
+            };
 
-        const targetId = scrollTargets[triggered_id];
-        if (targetId) {
-            const element = document.getElementById(targetId);
-            if (element) {
-                element.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
+            const targetId = scrollTargets[triggered_id];
+            if (targetId) {
+                const element = document.getElementById(targetId);
+                if (element) {
+                    const navbarHeight = 75;
+                    const pillNavHeight = 60;
+                    const offset = navbarHeight + pillNavHeight;
+
+                    const elementPosition = element.getBoundingClientRect().top;
+                    const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                    });
+                }
             }
         }
+
+        // PART 2: Scroll spy - highlight active section
+        const sections = [
+            'about-ir-section',
+            'stats-section',
+            'services-section',
+            'team-section'
+        ];
+
+        const navButtons = {
+            'about-ir-section': 'scroll-to-about',
+            'stats-section': 'scroll-to-stats',
+            'services-section': 'scroll-to-services',
+            'team-section': 'scroll-to-team'
+        };
+
+        let activeSection = null;
+        const navbarHeight = 75;
+        const pillNavHeight = 60;
+        const scrollOffset = navbarHeight + pillNavHeight + 100;
+
+        // Find which section is currently in view
+        for (let sectionId of sections) {
+            const element = document.getElementById(sectionId);
+            if (element) {
+                const rect = element.getBoundingClientRect();
+                // Check if section is in viewport
+                if (rect.top <= scrollOffset && rect.bottom >= scrollOffset) {
+                    activeSection = sectionId;
+                    break;
+                }
+            }
+        }
+
+        // Update active class on buttons
+        Object.entries(navButtons).forEach(([sectionId, buttonId]) => {
+            const button = document.getElementById(buttonId);
+            if (button) {
+                if (sectionId === activeSection) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            }
+        });
 
         return window.dash_clientside.no_update;
     }
     ''',
     Output('scroll-trigger', 'children'),
-    [Input('scroll-to-about', 'n_clicks'),
-     Input('scroll-to-stats', 'n_clicks'),
-     Input('scroll-to-services', 'n_clicks'),
-     Input('scroll-to-team', 'n_clicks')]
+    [
+        Input('scroll-to-about', 'n_clicks'),
+        Input('scroll-to-stats', 'n_clicks'),
+        Input('scroll-to-services', 'n_clicks'),
+        Input('scroll-to-team', 'n_clicks'),
+        Input('scroll-interval', 'n_intervals')
+    ],
+    prevent_initial_call=False
 )
+
+
+def create_scroll_spy_interval():
+    """Interval component for scroll spy updates"""
+    return dcc.Interval(
+        id='scroll-interval',
+        interval=200,  # Update every 200ms
+        n_intervals=0
+    )
 
 def create_stats_overview():
     """Your exact stats section"""
@@ -2859,7 +3008,7 @@ def handle_forgot_password(n_clicks, email):
 
 
 def create_home_layout(user_data=None):
-    """Complete home page layout with news feed"""
+    """Complete home page layout with sticky pill navigation"""
 
     # Get posts for news feed
     from posts_system import get_active_posts
@@ -2870,10 +3019,11 @@ def create_home_layout(user_data=None):
     from posts_ui import create_news_feed_section
 
     return html.Div([
-        create_hero_section(),
+        create_hero_section(),  # Hero content
+        create_sticky_pill_navigation(),  # Pill nav (SEPARATE - will stick!)
         create_stats_overview(),
 
-        # ADD THIS: News feed section (only shows if posts exist)
+        # News feed section
         create_news_feed_section(posts, user_data) if posts else html.Div(),
 
         create_about_ir_section(),
@@ -2881,9 +3031,9 @@ def create_home_layout(user_data=None):
         create_director_message(),
         create_quick_links(),
         create_modern_footer(),
-        create_scroll_trigger()
+        create_scroll_trigger(),
+        create_scroll_spy_interval()  # ADD THIS for scroll spy
     ])
-
 # ============================================================================
 # ACCESS CONTROL AND HELPER PAGES
 # ============================================================================
