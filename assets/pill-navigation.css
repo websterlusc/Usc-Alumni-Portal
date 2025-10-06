@@ -205,3 +205,337 @@ html {
         color: white;
     }
 }
+/* Pill Navigation Container */
+#pill-nav-container {
+    position: sticky;
+    top: 75px;
+    z-index: 999;
+    background: white;
+    padding: 15px 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-bottom: 1px solid #e0e0e0;
+    transition: all 0.3s ease;
+}
+
+/* Base Pill Button Styles */
+.nav-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 24px;
+    border-radius: 25px;
+    background: #f5f5f5;
+    border: 2px solid transparent;
+    color: #424242;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
+    white-space: nowrap;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Hover State */
+.nav-pill:hover {
+    background: #e8f5e9;
+    color: #1B5E20;
+    border-color: #4CAF50;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(27, 94, 32, 0.2);
+}
+
+/* Active State (Currently Viewing Section) */
+.nav-pill.active {
+    background: linear-gradient(135deg, #1B5E20 0%, #388E3C 100%);
+    color: white;
+    border-color: #1B5E20;
+    box-shadow: 0 4px 16px rgba(27, 94, 32, 0.3);
+    transform: scale(1.05);
+}
+
+.nav-pill.active:hover {
+    background: linear-gradient(135deg, #1B5E20 0%, #388E3C 100%);
+    color: white;
+    transform: scale(1.05) translateY(-2px);
+}
+
+/* Icon Styling Within Pills */
+.nav-pill i {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+.nav-pill.active i {
+    opacity: 1;
+}
+
+/* Ripple Effect on Click */
+.nav-pill::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.nav-pill:active::before {
+    width: 300px;
+    height: 300px;
+}
+
+/* Smooth Scroll Behavior */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Optional: Fade in animation when page loads */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.nav-pill {
+    animation: fadeInUp 0.5s ease backwards;
+}
+
+.nav-pill:nth-child(1) { animation-delay: 0.1s; }
+.nav-pill:nth-child(2) { animation-delay: 0.2s; }
+.nav-pill:nth-child(3) { animation-delay: 0.3s; }
+.nav-pill:nth-child(4) { animation-delay: 0.4s; }
+.nav-pill:nth-child(5) { animation-delay: 0.5s; }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    #pill-nav-container {
+        top: 60px !important;
+        padding: 12px 0;
+    }
+
+    .nav-pill {
+        padding: 8px 18px;
+        font-size: 0.85rem;
+        gap: 6px;
+    }
+
+    .nav-pill i {
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 576px) {
+    #pill-nav-container {
+        padding: 10px 0;
+    }
+
+    .nav-pill {
+        padding: 6px 14px;
+        font-size: 0.8rem;
+    }
+
+    /* Stack pills on very small screens if needed */
+    #pill-nav-container > div > div {
+        gap: 8px !important;
+    }
+}
+
+/* Optional: Hide navigation when scrolled to bottom */
+.pill-nav-hidden {
+    transform: translateY(-100%);
+    opacity: 0;
+}
+
+/* Focus state for accessibility */
+.nav-pill:focus {
+    outline: 2px solid #FDD835;
+    outline-offset: 2px;
+}
+
+.nav-pill:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Loading state (optional) */
+.nav-pill.loading {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.nav-pill.loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 0.6s linear infinite;
+    margin-left: 8px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Dark mode support (optional) */
+@media (prefers-color-scheme: dark) {
+    #pill-nav-container {
+        background: #1a1a1a;
+        border-bottom-color: #333;
+    }
+
+    .nav-pill {
+        background: #2a2a2a;
+        color: #e0e0e0;
+    }
+
+    .nav-pill:hover {
+        background: #1B5E20;
+        color: white;
+    }
+}
+
+/* ============================================================================
+   NAVBAR PILL AUTHENTICATION STYLES
+   Pill-styled login button and user dropdown for navbar
+   ============================================================================ */
+
+/* Navbar Pill Button Styles - Subtle Version */
+.nav-pill-navbar {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 20px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white !important;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.nav-pill-navbar:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: white !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.nav-pill-navbar:active {
+    transform: translateY(0);
+}
+
+/* Dropdown toggle pill styling */
+.nav-pill-dropdown .dropdown-toggle {
+    padding: 8px 20px !important;
+    border-radius: 20px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: white !important;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.nav-pill-dropdown .dropdown-toggle:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.nav-pill-dropdown .dropdown-toggle::after {
+    margin-left: 8px;
+}
+
+/* Remove default Bootstrap button styles */
+.nav-pill-navbar:focus,
+.nav-pill-dropdown .dropdown-toggle:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(253, 216, 53, 0.3) !important;
+}
+
+/* Icon styling within navbar pills */
+.nav-pill-navbar i,
+.nav-pill-dropdown i {
+    font-size: 0.85rem;
+    opacity: 0.9;
+}
+
+/* Bold Yellow Version - Stands out more */
+.nav-pill-navbar-bold {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 20px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #FDD835 0%, #FFEB3B 100%);
+    border: 2px solid #FDD835;
+    color: #1B5E20 !important;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(253, 216, 53, 0.3);
+}
+
+.nav-pill-navbar-bold:hover {
+    background: linear-gradient(135deg, #FFEB3B 0%, #FDD835 100%);
+    border-color: #FFEB3B;
+    color: #1B5E20 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(253, 216, 53, 0.5);
+}
+
+.nav-pill-navbar-bold:active {
+    transform: translateY(0);
+}
+
+/* Bold dropdown toggle */
+.nav-pill-dropdown .nav-pill-navbar-bold.dropdown-toggle {
+    padding: 8px 20px !important;
+    border-radius: 20px !important;
+    background: linear-gradient(135deg, #FDD835 0%, #FFEB3B 100%) !important;
+    border: 2px solid #FDD835 !important;
+    color: #1B5E20 !important;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(253, 216, 53, 0.3);
+}
+
+.nav-pill-dropdown .nav-pill-navbar-bold.dropdown-toggle:hover {
+    background: linear-gradient(135deg, #FFEB3B 0%, #FDD835 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(253, 216, 53, 0.5);
+}
+
+/* Responsive adjustments for navbar pills */
+@media (max-width: 768px) {
+    .nav-pill-navbar,
+    .nav-pill-navbar-bold {
+        padding: 6px 16px;
+        font-size: 0.85rem;
+    }
+
+    .nav-pill-dropdown .dropdown-toggle {
+        padding: 6px 16px !important;
+        font-size: 0.85rem;
+    }
+}

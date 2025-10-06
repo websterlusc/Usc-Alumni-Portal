@@ -2183,15 +2183,19 @@ def handle_navbar_logout(n_clicks):
 
 
 def create_auth_section(user_data=None):
-    """Enhanced authentication section with 4-tier display"""
+    """Pill-styled authentication section for navbar"""
     if not user_data or not user_data.get('authenticated'):
-        return dbc.NavItem(dbc.Button(
-            "Sign In",
-            id="navbar-login-btn",
-            color="outline-success",
-            size="sm",
-            href="/login"
-        ))
+        return dbc.NavItem(
+            html.A([
+                html.I(className="fas fa-sign-in-alt me-2"),
+                "Sign In"
+            ],
+                href="/login",
+                className="nav-pill-navbar",  # ← Subtle version
+                style={'textDecoration': 'none'}
+            )
+        )
+
 
     user_tier = user_data.get('access_tier', 1)
     tier_info = TIER_INFO.get(user_tier, TIER_INFO[1])
@@ -2290,7 +2294,7 @@ def create_modern_navbar(user_data=None):
 
                 # ADD THIS: News link
                 dbc.NavItem(dbc.NavLink(
-                    [html.I(className="fas fa-bullhorn me-2"), "News"],
+                    [html.I(className=""), "News"],
                     href="/news",
                     style={'color': '#1B5E20', 'fontWeight': '600'}
                 )),
