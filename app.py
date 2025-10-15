@@ -2294,7 +2294,8 @@ def create_modern_navbar(user_data=None):
 
                 # ADD THIS: News link
                 dbc.NavItem(dbc.NavLink(
-                    [html.I(className=""), "News"],
+                    [html.I(className=""
+                                      ""), "News"],
                     href="/news",
                     style={'color': '#1B5E20', 'fontWeight': '600'}
                 )),
