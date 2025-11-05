@@ -2376,6 +2376,15 @@ def create_sticky_pill_navigation():
             dbc.Row([
                 dbc.Col([
                     html.Div([
+                        # Stats Button
+                        html.Button([
+                            html.I(className="fas fa-chart-bar me-2"),
+                            "Stats"
+                        ],
+                            id="scroll-to-stats",
+                            className="nav-pill",
+                            **{'data-target': 'stats-section'}
+                        ),
                         # About IR Button
                         html.Button([
                             html.I(className="fas fa-info-circle me-2"),
@@ -2386,25 +2395,9 @@ def create_sticky_pill_navigation():
                             **{'data-target': 'about-ir-section'}
                         ),
 
-                        # Factbook Button
-                        html.A([
-                            html.I(className="fas fa-book me-2"),
-                            "Factbook"
-                        ],
-                            href="/factbook",
-                            className="nav-pill",
-                            style={'textDecoration': 'none'}
-                        ),
 
-                        # Stats Button
-                        html.Button([
-                            html.I(className="fas fa-chart-bar me-2"),
-                            "Stats"
-                        ],
-                            id="scroll-to-stats",
-                            className="nav-pill",
-                            **{'data-target': 'stats-section'}
-                        ),
+
+
 
                         # Services Button
                         html.Button([
@@ -2424,6 +2417,15 @@ def create_sticky_pill_navigation():
                             id="scroll-to-team",
                             className="nav-pill",
                             **{'data-target': 'team-section'}
+                        ),
+                        # Factbook Button
+                        html.A([
+                            html.I(className="fas fa-book me-2"),
+                            "Factbook"
+                        ],
+                            href="/factbook",
+                            className="nav-pill",
+                            style={'textDecoration': 'none'}
                         )
                     ], style={
                         'display': 'flex',
@@ -2660,7 +2662,7 @@ def create_stats_overview():
 def create_feature_showcase():
     """Your exact feature showcase"""
     features = [
-        {'title': 'Interactive Factbook', 'desc': 'Comprehensive institutional data with interactive visualizations.', 'icon': 'fas fa-chart-line'},
+        {'title': 'Interactive Factbook', 'desc': 'Comprehensive institutional data with interactive visualizations.', 'icon': 'fas fa-chart-line', 'href': 'https://your-factbook-url.com', 'external': True},
         {'title': 'Alumni Portal', 'desc': 'Connect with USC alumni and access alumni services and networks.', 'icon': 'fas fa-graduation-cap'},
         {'title': 'Yearly Reports', 'desc': 'Annual institutional reports and comprehensive data analysis.', 'icon': 'fas fa-calendar-alt'},
         {'title': 'Custom Reports', 'desc': 'Request tailored analytical reports for your specific needs.', 'icon': 'fas fa-file-alt'}
@@ -2670,6 +2672,19 @@ def create_feature_showcase():
     for feature in features:
         if feature['title'] == 'Custom Reports':
             button = dbc.Button("Request Report", color="outline-primary", size="sm", href="/request-report")
+        elif feature['title'] == 'Interactive Factbook':
+            # External factbook link
+            button = html.A([
+                dbc.Button([
+                    html.I(className="fas fa-external-link-alt me-1"),
+                    "Access Factbook"
+                ], color="outline-primary", size="sm")
+            ],
+                href=feature['href'],
+                target="_blank",
+                rel="noopener noreferrer",
+                style={'textDecoration': 'none'}
+            )
         else:
             button = dbc.Button("Explore", color="outline-primary", size="sm")
 
@@ -2686,6 +2701,7 @@ def create_feature_showcase():
                 ], style={'boxShadow': '0 4px 15px rgba(0,0,0,0.1)', 'border': 'none', 'height': '100%'})
             ], md=3, className="mb-4")
         )
+
 
     return html.Section([
         dbc.Container([
@@ -2822,7 +2838,9 @@ def create_quick_links():
         {'title': 'USC Main Website', 'url': 'https://www.usc.edu.tt', 'icon': 'fas fa-globe', 'color': '#1B5E20'},
         {'title': 'USC eLearn', 'url': 'https://elearn.usc.edu.tt', 'icon': 'fas fa-laptop', 'color': '#4CAF50'},
         {'title': 'Aeorion Portal', 'url': 'https://aeorion.usc.edu.tt', 'icon': 'fas fa-door-open', 'color': '#FDD835'},
-        {'title': 'Email Support', 'url': 'mailto:ir@usc.edu.tt', 'icon': 'fas fa-envelope', 'color': '#28A745'}
+        {'title': 'Email Support', 'url': 'mailto:ir@usc.edu.tt', 'icon': 'fas fa-envelope', 'color': '#28A745'},
+        {'title': 'Donate', 'url': 'https://usc.edu.tt/give/', 'icon': 'fas fa-handshake', 'color': '#28A745'},
+        {'title': 'Directory', 'url': 'https://directory.usc.edu.tt/', 'icon': 'fas fa-address-book', 'color': '#28A745'}
     ]
 
     link_items = []
@@ -2853,7 +2871,7 @@ def create_quick_links():
                     'height': '100%',
                     'transition': 'transform 0.3s ease, box-shadow 0.3s ease'
                 }, className="h-100")
-            ], sm=6, md=3, className="mb-4")
+            ], sm=4, md=4, className="mb-4")
         )
 
     return html.Section([
@@ -2881,14 +2899,15 @@ def create_modern_footer():
                     html.P([
                         html.Strong("Director: "), "Nordian C. Swaby Robinson", html.Br(),
                         html.Strong("Email: "), html.A("ir@usc.edu.tt", href="mailto:ir@usc.edu.tt", style={'color': '#FDD835'}), html.Br(),
-                        html.Strong("Phone: "), "868-645-3265 ext. 2150"
+                        html.Strong("Phone: "), "1868-662-2241 ext. 1005"
                     ], style={'opacity': '0.9'})
                 ], md=4),
                 dbc.Col([
                     html.H6("Development Team", style={'color': '#FDD835', 'fontWeight': '600'}),
                     html.P([
                         html.Strong("Web Developer: "), "Liam Webster", html.Br(),
-                        html.Strong("Email: "), html.A("websterl@usc.edu.tt", href="mailto:websterl@usc.edu.tt", style={'color': '#FDD835'})
+                        html.Strong("Email: "), html.A("websterl@usc.edu.tt", href="mailto:websterl@usc.edu.tt", style={'color': '#FDD835'}),html.Br(),
+                        html.Strong("Phone: "), "1868-662-2241 ext. 1004"
                     ], style={'opacity': '0.9'})
                 ], md=4)
             ]),
@@ -3176,54 +3195,30 @@ def display_page(pathname, user_session):
     # ENSURE ONLY ONE FACTBOOK ROUTE IN app.py:
 
     elif pathname == '/factbook':
-        # USE THE WORKING VERSION - import from factbook/factbook.py
-        try:
-            from factbook.factbook import create_factbook_landing_page
-            content = create_factbook_landing_page(user_data)
-            content = require_access(content, 2, user_data)
-        except ImportError:
-            # Fallback if import fails
-            content = create_placeholder_page(
-                "USC Factbook",
-                "Comprehensive institutional data and analytics"
-            )
-            content = require_access(content, 2, user_data)
 
-    # REMOVE ANY OTHER /factbook ROUTES - keep only this one
+        content = dbc.Container([
 
-    # Keep your individual section routes:
-    elif pathname == '/factbook/student-labour':
-        try:
-            from factbook.student_labour_report import create_factbook_student_labour_page
-            content = create_factbook_student_labour_page()
-            content = require_access(content, 3, user_data)  # or 2 if you prefer
-        except ImportError:
-            content = create_placeholder_page("Student Labour Report", "Student employment analytics")
-            content = require_access(content, 3, user_data)
+            dbc.Alert([
 
-    # Add other section routes as needed...
+                html.H4("Factbook Moved", className="alert-heading"),
 
-    # REMOVE THESE OLD FACTBOOK ROUTES - they're now handled by the landing page
-    # elif pathname == '/enrollment':
-    # elif pathname == '/graduation':
-    # elif pathname == '/student-employment':
-    # elif pathname == '/hr-data':
-    # elif pathname == '/financial':
-    # elif pathname == '/budget':
-    # elif pathname == '/endowments':
+                html.P("The USC Factbook is now available as a separate application."),
 
-    elif pathname.startswith('/factbook/'):
-        section = pathname.split('/factbook/')[-1]
-        content = create_placeholder_page(
-            f"Factbook: {section.title().replace('-', ' ')}",
-            f"Detailed {section.replace('-', ' ')} analytics and data visualizations"
-        )
-        # Apply appropriate tier requirements
-        if section in ['financial-data', 'endowment-funds', 'gate-funding', 'income-units',
-                       'scholarships', 'subsidies', 'debt-collection']:
-            content = require_access(content, 3, user_data)
-        else:
-            content = require_access(content, 2, user_data)
+                html.Hr(),
+
+                dbc.Button("Access Factbook",
+
+                           href="https://your-factbook-url.com",  # ⚠️ REPLACE
+
+                           target="_blank",
+
+                           color="primary",
+
+                           external_link=True)
+
+            ], color="info")
+
+        ], className="py-5")
 
     elif pathname == '/admin':
         if not user_data or user_data.get('access_tier', 1) < 3:

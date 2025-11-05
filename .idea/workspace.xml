@@ -7,7 +7,8 @@
     <list default="true" id="f6f93d84-f206-4ef2-8de4-7f980a01f4aa" name="Changes" comment="attempting to get render working with new posts">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/enrolment_data.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/data/enrolment_data.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/navbar.py" beforeDir="false" afterPath="$PROJECT_DIR$/components/navbar.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usc_ir.db" beforeDir="false" afterPath="$PROJECT_DIR$/usc_ir.db" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -28,6 +29,7 @@
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
+    &quot;Python.app (1).executor&quot;: &quot;Run&quot;,
     &quot;Python.database_fix.executor&quot;: &quot;Run&quot;,
     &quot;Python.databse_init.executor&quot;: &quot;Run&quot;,
     &quot;Python.migrate.executor&quot;: &quot;Run&quot;,
@@ -51,7 +53,29 @@
       <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\components" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.migrate">
+  <component name="RunManager" selected="Python.app (1)">
+    <configuration name="app (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="USCirPortalV4" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/app.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="app" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="USCirPortalV4" />
       <option name="ENV_FILES" value="" />
@@ -142,6 +166,7 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.app (1)" />
         <item itemvalue="Python.migrate" />
         <item itemvalue="Python.database_fix" />
         <item itemvalue="Python.database_init" />
@@ -163,22 +188,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1756998738082</updated>
-    </task>
-    <task id="LOCAL-00040" summary="google auth not working">
-      <option name="closed" value="true" />
-      <created>1757444204270</created>
-      <option name="number" value="00040" />
-      <option name="presentableId" value="LOCAL-00040" />
-      <option name="project" value="LOCAL" />
-      <updated>1757444204270</updated>
-    </task>
-    <task id="LOCAL-00041" summary="google auth not working">
-      <option name="closed" value="true" />
-      <created>1757445309535</created>
-      <option name="number" value="00041" />
-      <option name="presentableId" value="LOCAL-00041" />
-      <option name="project" value="LOCAL" />
-      <updated>1757445309535</updated>
     </task>
     <task id="LOCAL-00042" summary="google auth not working">
       <option name="closed" value="true" />
@@ -556,7 +565,23 @@
       <option name="project" value="LOCAL" />
       <updated>1759782346341</updated>
     </task>
-    <option name="localTasksCounter" value="89" />
+    <task id="LOCAL-00089" summary="attempting to get render working with new posts">
+      <option name="closed" value="true" />
+      <created>1760534713697</created>
+      <option name="number" value="00089" />
+      <option name="presentableId" value="LOCAL-00089" />
+      <option name="project" value="LOCAL" />
+      <updated>1760534713697</updated>
+    </task>
+    <task id="LOCAL-00090" summary="attempting to get render working with new posts">
+      <option name="closed" value="true" />
+      <created>1760534728425</created>
+      <option name="number" value="00090" />
+      <option name="presentableId" value="LOCAL-00090" />
+      <option name="project" value="LOCAL" />
+      <updated>1760534728425</updated>
+    </task>
+    <option name="localTasksCounter" value="91" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">

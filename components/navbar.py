@@ -1,6 +1,6 @@
 """
-USC Institutional Research Portal - Navigation Component
-Right-aligned navbar with simplified factbook link
+USC Institutional Research Portal - Updated Navigation Component
+Modified to redirect factbook to external web app
 """
 
 from dash import html
@@ -16,17 +16,132 @@ USC_COLORS = {
     'text_gray': '#666666'
 }
 
-def create_navbar(user=None):
-    """Create right-aligned navigation bar with simplified structure"""
+def create_auth_section(user_data=None):
+    """Create authentication section of navbar"""
+    if user_data and user_data.get('authenticated'):
+        # User is logged in
+        user_menu_items = [
+            dbc.DropdownMenuItem("Profile", href="/profile"),
+            dbc.DropdownMenuItem(divider=True),
+        ]
 
+        # Add admin link for tier 3 users
+        if user_data.get('access_tier', 1) >= 3:
+            user_menu_items.extend([
+                dbc.DropdownMenuItem("Admin Dashboard", href="/admin"),
+                dbc.DropdownMenuItem(divider=True),
+            ])
+
+        user_menu_items.append(dbc.DropdownMenuItem("Logout", href="/logout"))
+
+        return dbc.DropdownMenu(
+            user_menu_items,
+            label=f"👤 {user_data.get('email', 'User')}",
+            nav=True,
+            toggle_style={'color': '#1B5E20', 'fontWeight': '600', 'border': 'none',
+                          'background': 'transparent'}
+        )
+    else:
+        # User not logged in
+        return dbc.Nav([
+            dbc.NavItem(dbc.NavLink(
+                "Login", href="/login",
+                style={'color': '#1B5E20', 'fontWeight': '600'}
+            ))
+        ])
+
+def create_modern_navbar(user_data=None):
+    """Updated navbar with external factbook redirect"""
+    user_access_tier = user_data.get('access_tier', 1) if user_data else 1
+
+    # Dynamic services menu
+    services_items = [
+        dbc.DropdownMenuItem("Request Report", href="/request-report"),
+        dbc.DropdownMenuItem(divider=True) if user_access_tier >= 2 else None,
+        dbc.DropdownMenuItem("Help", href="/help"),
+        dbc.DropdownMenuItem("Contact IR", href="/contact")
+    ]
+    services_items = [item for item in services_items if item is not None]
+
+    return dbc.Navbar(
+        dbc.Container([
+            # Brand
+            dbc.NavbarBrand([
+                html.Img(src="assets/usc-logo.png", height="45", className="me-3"),
+                html.Div([
+                    html.Div("Institutional Research", style={
+                        'fontSize': '1.2rem', 'fontWeight': '700',
+                        'color': '#FDD835', 'lineHeight': '1.1'
+                    }),
+                    html.Div("University of the Southern Caribbean", style={
+                        'fontSize': '0.8rem', 'color': '#FFFFFF',
+                        'lineHeight': '1.1'
+                    })
+                ])
+            ], href="/"),
+
+            # Spacer
+            html.Div(style={'flex': '1'}),
+
+            # Right-aligned navigation
+            dbc.Nav([
+                dbc.NavItem(dbc.NavLink(
+                    "Home", href="/",
+                    style={'color': '#1B5E20', 'fontWeight': '600'}
+                )),
+                dbc.DropdownMenu([
+                    dbc.DropdownMenuItem("About USC", href="/about-usc"),
+                    dbc.DropdownMenuItem("Vision & Mission", href="/vision-mission"),
+                    dbc.DropdownMenuItem("Governance", href="/governance"),
+                    dbc.DropdownMenuItem("Contact", href="/contact")
+                ],
+                    label="About USC", nav=True,
+                    toggle_style={'color': '#1B5E20', 'fontWeight': '600', 'border': 'none',
+                                  'background': 'transparent'}
+                ),
+
+                # News link
+                dbc.NavItem(dbc.NavLink(
+                    [html.I(className="fas fa-newspaper me-1"), "News"],
+                    href="/news",
+                    style={'color': '#1B5E20', 'fontWeight': '600'}
+                )),
+
+                # UPDATED: External factbook link with target="_blank"
+                dbc.NavItem(html.A(
+                    [html.I(className="fas fa-chart-bar me-1"), "Factbook"],
+                    href="https://your-factbook-app.herokuapp.com",  # ⚠️ REPLACE WITH YOUR ACTUAL FACTBOOK URL
+                    target="_blank",
+                    rel="noopener noreferrer",
+                    className="nav-link",
+                    style={'color': '#1B5E20', 'fontWeight': '600', 'textDecoration': 'none'}
+                )),
+
+                dbc.DropdownMenu(
+                    services_items,
+                    label="Services", nav=True,
+                    toggle_style={'color': '#1B5E20', 'fontWeight': '600', 'border': 'none',
+                                  'background': 'transparent'}
+                ),
+
+                # Authentication section
+                create_auth_section(user_data)
+            ])
+        ], fluid=True, style={'display': 'flex', 'alignItems': 'center'}),
+        color="white",
+        className="shadow-sm sticky-top",
+        style={'borderBottom': '3px solid #1B5E20', 'minHeight': '75px'}
+    )
+
+# Backup of original navbar for reference
+def create_navbar_original(user=None):
+    """Original navbar implementation - keep for reference"""
     nav_items = []
 
-    # Home link
     nav_items.append(
         dbc.NavItem(dbc.NavLink("Home", href="/", active="exact", className="text-white fw-bold"))
     )
 
-    # Facts About USC section
     facts_menu = [
         dbc.DropdownMenuItem("About USC", href="/about-usc"),
         dbc.DropdownMenuItem("Vision, Mission & Motto", href="/vision-mission-motto"),
@@ -46,7 +161,6 @@ def create_navbar(user=None):
         )
     )
 
-    # Student Services section
     services_menu = [
         dbc.DropdownMenuItem("Admissions", href="/admissions"),
         dbc.DropdownMenuItem("Academic Programs", href="/programs"),
@@ -65,17 +179,15 @@ def create_navbar(user=None):
         )
     )
 
-    # Single Factbook link
+    # Original internal factbook link
     nav_items.append(
         dbc.NavItem(dbc.NavLink("Factbook", href="/factbook", className="text-white fw-bold"))
     )
 
-    # Request Reports link
     nav_items.append(
         dbc.NavItem(dbc.NavLink("Request Reports", href="/request-reports", className="text-white fw-bold"))
     )
 
-    # User section
     if user:
         user_menu = [
             dbc.DropdownMenuItem("View Profile", href="/profile"),
@@ -106,83 +218,16 @@ def create_navbar(user=None):
         user_section = dbc.Nav([
             dbc.NavItem(dbc.NavLink("Login", href="/login", className="text-white fw-bold"))
         ])
-    dbc.NavItem(dbc.NavLink(
-        "News & Announcements",
-        href="/news",
-        style={'color': '#1B5E20', 'fontWeight': '600'}
-    ))
+
     return dbc.Navbar(
         dbc.Container([
-            dbc.Row([
-                dbc.Col([
-                    html.Div([
-                        html.I(className="fas fa-university me-3", style={'fontSize': '2rem', 'color': 'white'}),
-                        dbc.NavbarBrand("USC Institutional Research", className="text-white fw-bold", style={'fontSize': '1.3rem'})
-                    ], className="d-flex align-items-center")
-                ], width="auto"),
-                dbc.Col([
-                    html.Div([
-                        dbc.Nav(nav_items, navbar=True, className="me-3"),
-                        user_section
-                    ], className="d-flex align-items-center")
-                ], className="d-flex justify-content-end")
-            ], align="center", className="w-100")
+            dbc.NavbarBrand([
+                html.Img(src="/assets/usc-logo.png", height="40", className="me-2"),
+                "USC Institutional Research"
+            ], href="/", className="text-white fw-bold"),
+            dbc.Nav(nav_items + [user_section], className="ms-auto", navbar=True)
         ], fluid=True),
         color=USC_COLORS['primary_green'],
         dark=True,
-        className="mb-4",
-        style={
-            'background': f'linear-gradient(135deg, {USC_COLORS["primary_green"]}, {USC_COLORS["secondary_green"]})',
-            'padding': '0.8rem 0',
-            'boxShadow': '0 2px 10px rgba(0,0,0,0.1)'
-        }
+        className="shadow-sm"
     )
-
-def create_footer():
-    """Create footer for all pages"""
-    return html.Footer([
-        dbc.Container([
-            html.Hr(style={'borderColor': USC_COLORS['light_gray']}),
-            dbc.Row([
-                dbc.Col([
-                    html.H5("USC Institutional Research", className="fw-bold mb-3", style={'color': USC_COLORS['primary_green']}),
-                    html.P("Providing comprehensive data, analytics, and insights to support evidence-based decision making at the University of the Southern Caribbean.")
-                ], width=4),
-                dbc.Col([
-                    html.H6("Quick Links", className="fw-bold mb-3", style={'color': USC_COLORS['primary_green']}),
-                    html.Ul([
-                        html.Li(html.A("USC Main Website", href="https://www.usc.edu.tt", target="_blank", className="text-decoration-none")),
-                        html.Li(html.A("USC eLearn", href="https://elearn.usc.edu.tt", target="_blank", className="text-decoration-none")),
-                        html.Li(html.A("USC Aerion Portal", href="https://aerion.usc.edu.tt", target="_blank", className="text-decoration-none")),
-                        html.Li(html.A("Request Reports", href="/request-reports", className="text-decoration-none"))
-                    ], className="list-unstyled")
-                ], width=3),
-                dbc.Col([
-                    html.H6("Contact Information", className="fw-bold mb-3", style={'color': USC_COLORS['primary_green']}),
-                    html.P([
-                        html.Strong("Director: "), "Nordian C. Swaby Robinson", html.Br(),
-                        html.Strong("Email: "), html.A("ir@usc.edu.tt", href="mailto:ir@usc.edu.tt", className="text-decoration-none"), html.Br(),
-                        html.Strong("Phone: "), "868-645-3265 ext. 2150"
-                    ], className="mb-0")
-                ], width=3),
-                dbc.Col([
-                    html.H6("Development Team", className="fw-bold mb-3", style={'color': USC_COLORS['primary_green']}),
-                    html.P([
-                        html.Strong("Web Developer: "), "Liam Webster", html.Br(),
-                        html.Strong("Email: "), html.A("websterl@usc.edu.tt", href="mailto:websterl@usc.edu.tt", className="text-decoration-none"), html.Br(),
-                        html.Strong("Phone: "), "868-645-3265 ext. 1014"
-                    ], className="mb-0")
-                ], width=2)
-            ], className="mb-4"),
-            dbc.Row([
-                dbc.Col([
-                    html.Hr(style={'borderColor': USC_COLORS['light_gray']}),
-                    html.P([
-                        "© 2025 University of the Southern Caribbean - Institutional Research Department | ",
-                        html.A("Privacy Policy", href="/privacy", className="text-muted text-decoration-none"), " | ",
-                        html.A("Terms of Use", href="/terms", className="text-muted text-decoration-none")
-                    ], className="text-center text-muted mb-0")
-                ])
-            ])
-        ], fluid=True)
-    ], className="mt-5 py-4", style={'backgroundColor': USC_COLORS['light_gray']})
