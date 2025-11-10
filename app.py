@@ -20,6 +20,7 @@ from data_requests import (
     create_data_request_page,
     create_admin_data_requests_tab
 )
+from components.usc_footer_component import create_usc_footer
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -2888,9 +2889,9 @@ def create_quick_links():
             dbc.Row(link_items)
         ])
     ], style={'padding': '80px 0', 'background': '#F8F9FA'})
-
+"""
 def create_modern_footer():
-    """Your exact footer"""
+    Your exact footer
     return html.Footer([
         dbc.Container([
             dbc.Row([
@@ -2921,7 +2922,7 @@ def create_modern_footer():
                    className="text-center", style={'opacity': '0.8'})
         ])
     ], style={'background': 'linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%)', 'color': 'white', 'padding': '60px 0 30px'})
-
+"""
 
 def create_login_page():
     """Create the login page"""
@@ -3058,8 +3059,9 @@ def create_home_layout(user_data=None):
         create_about_ir_section(),
         create_feature_showcase(),
         create_director_message(),
-        create_quick_links(),
-        create_modern_footer(),
+        #create_quick_links(),
+       # create_modern_footer(),
+        create_usc_footer(),
         create_scroll_trigger(),
         create_scroll_spy_interval()  # ADD THIS for scroll spy
     ])
