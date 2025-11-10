@@ -168,77 +168,39 @@ def create_governance_page():
         ]),
         
         # Organizational Chart Section
+        # Organizational Chart Section - UPDATED
         dbc.Row([
             dbc.Col([
                 dbc.Card([
                     dbc.CardHeader([
-                        html.H3("Organizational Structure", style={'color': USC_COLORS['primary_green']}, className="mb-0"),
-                        html.I(className="fas fa-sitemap fa-2x", style={'color': USC_COLORS['accent_yellow'], 'float': 'right'})
+                        html.H3("Organizational Structure", style={'color': USC_COLORS['primary_green']},
+                                className="mb-0"),
+                        html.I(className="fas fa-sitemap fa-2x",
+                               style={'color': USC_COLORS['accent_yellow'], 'float': 'right'})
                     ], style={'background': USC_COLORS['light_gray']}),
                     dbc.CardBody([
                         html.Div([
-                            html.P("USC's governance structure ensures effective leadership and accountability at all levels:", 
-                                   className="text-center mb-4"),
-                            
-                            # Hierarchical Structure
+                            html.P(
+                                "USC's organizational structure provides clear lines of authority and accountability:",
+                                className="text-center mb-4"),
+
+                            # Your PNG organizational chart
                             html.Div([
-                                # Board Level
-                                dbc.Card([
-                                    dbc.CardBody([
-                                        html.H5("Board of Trustees", className="text-center", style={'color': USC_COLORS['primary_green']})
-                                    ])
-                                ], style={'background': USC_COLORS['accent_yellow'], 'margin': '0 auto 20px', 'maxWidth': '300px'}),
-                                
-                                # President Level
-                                dbc.Card([
-                                    dbc.CardBody([
-                                        html.H5("University President", className="text-center", style={'color': 'white'})
-                                    ])
-                                ], style={'background': USC_COLORS['primary_green'], 'margin': '0 auto 20px', 'maxWidth': '250px'}),
-                                
-                                # Division Level
-                                html.P("Five Administrative Divisions", className="text-center mb-3", style={'fontWeight': 'bold'}),
-                                dbc.Row([
-                                    dbc.Col([
-                                        dbc.Card([
-                                            dbc.CardBody([
-                                                html.P("Provost", className="text-center small mb-0")
-                                            ])
-                                        ], style={'background': USC_COLORS['light_gray']})
-                                    ], width=2),
-                                    dbc.Col([
-                                        dbc.Card([
-                                            dbc.CardBody([
-                                                html.P("Admin & Planning", className="text-center small mb-0")
-                                            ])
-                                        ], style={'background': USC_COLORS['light_gray']})
-                                    ], width=2),
-                                    dbc.Col([
-                                        dbc.Card([
-                                            dbc.CardBody([
-                                                html.P("Financial", className="text-center small mb-0")
-                                            ])
-                                        ], style={'background': USC_COLORS['light_gray']})
-                                    ], width=2),
-                                    dbc.Col([
-                                        dbc.Card([
-                                            dbc.CardBody([
-                                                html.P("Student Services", className="text-center small mb-0")
-                                            ])
-                                        ], style={'background': USC_COLORS['light_gray']})
-                                    ], width=3),
-                                    dbc.Col([
-                                        dbc.Card([
-                                            dbc.CardBody([
-                                                html.P("Spiritual Dev.", className="text-center small mb-0")
-                                            ])
-                                        ], style={'background': USC_COLORS['light_gray']})
-                                    ], width=3)
-                                ], justify="center")
+                                html.Img(
+                                    src="/assets/organisationalchart.png",
+                                    style={
+                                        'width': '100%',
+                                        'height': 'auto',
+                                        'maxWidth': '900px',
+                                        'boxShadow': '0 4px 15px rgba(0,0,0,0.1)',
+                                        'borderRadius': '8px'
+                                    },
+                                    className="img-fluid"
+                                )
                             ], className="text-center")
                         ])
                     ])
                 ], style={'boxShadow': '0 8px 25px rgba(0,0,0,0.15)', 'border': 'none'})
             ])
-        ], className="mt-4")
+        ])
     ], className="my-5")

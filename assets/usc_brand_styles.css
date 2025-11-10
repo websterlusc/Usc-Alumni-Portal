@@ -1,0 +1,557 @@
+/*
+USC Institutional Research Portal - Brand-Compliant Styles
+Typography Scale: Major Third (1.25)
+Base font size: 18px
+*/
+
+/* ============================================================================
+   FONT IMPORTS
+============================================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+/* ============================================================================
+   USC COLOR SYSTEM
+============================================================================ */
+:root {
+  /* Primary Colors */
+  --usc-green-dark: #10633C;
+  --usc-mid-green: #139B49;
+  --usc-wash-green: #67A288;
+  --usc-yellow: #FCCA18;
+  
+  /* Custom Colors */
+  --usc-black: #000000;
+  --usc-dark-grey: #2E2E2E;
+  --usc-mid-grey: #CECECE;
+  --usc-light-grey: #EFEFEF;
+  --usc-grey95: #F2F2F2;
+  --usc-off-white: #FDFDFD;
+  
+  /* Typography Scale Variables - Major Third (1.25) */
+  --base-font-size: 18px;
+  
+  /* Desktop Typography Scale */
+  --h1-size-desktop: 68.66px;
+  --h2-size-desktop: 43.95px;  
+  --h3-size-desktop: 28.13px;
+  --p-size: 18px;
+  --small-size: 14.4px;
+  --extra-small-size: 11.52px;
+  
+  /* Mobile Typography Scale */
+  --h1-size-mobile: 54.93px;
+  --h2-size-mobile: 35.16px;
+  --h3-size-mobile: 22.5px;
+  
+  /* Font Families */
+  --heading-font: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  --body-font: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+}
+
+/* ============================================================================
+   BASE TYPOGRAPHY SYSTEM
+============================================================================ */
+html {
+  font-size: var(--base-font-size);
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--body-font);
+  font-size: var(--p-size);
+  line-height: 1.6;
+  color: var(--usc-black);
+  background-color: var(--usc-off-white);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================================
+   HEADING SYSTEM (Desktop First)
+============================================================================ */
+h1, .h1, .display-1, .display-2, .display-3, .display-4 {
+  font-family: var(--heading-font);
+  font-size: var(--h1-size-desktop);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--usc-green-dark);
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.02em;
+}
+
+h2, .h2 {
+  font-family: var(--heading-font);
+  font-size: var(--h2-size-desktop);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--usc-green-dark);
+  margin-bottom: 1.25rem;
+  letter-spacing: -0.01em;
+}
+
+h3, .h3 {
+  font-family: var(--heading-font);
+  font-size: var(--h3-size-desktop);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--usc-green-dark);
+  margin-bottom: 1rem;
+}
+
+h4, .h4 {
+  font-family: var(--heading-font);
+  font-size: calc(var(--h3-size-desktop) / 1.25);
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--usc-green-dark);
+  margin-bottom: 0.875rem;
+}
+
+h5, .h5 {
+  font-family: var(--heading-font);
+  font-size: var(--p-size);
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--usc-green-dark);
+  margin-bottom: 0.75rem;
+}
+
+h6, .h6 {
+  font-family: var(--heading-font);
+  font-size: var(--small-size);
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--usc-green-dark);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ============================================================================
+   BODY TEXT SYSTEM
+============================================================================ */
+p, .p {
+  font-family: var(--body-font);
+  font-size: var(--p-size);
+  line-height: 1.7;
+  margin-bottom: 1.25rem;
+  color: var(--usc-dark-grey);
+}
+
+.lead {
+  font-size: calc(var(--p-size) * 1.125);
+  font-weight: 400;
+  line-height: 1.8;
+}
+
+small, .small {
+  font-size: var(--small-size);
+  line-height: 1.6;
+}
+
+.extra-small {
+  font-size: var(--extra-small-size);
+  line-height: 1.5;
+}
+
+/* Text Utilities */
+.text-usc-green { color: var(--usc-green-dark) !important; }
+.text-usc-mid-green { color: var(--usc-mid-green) !important; }
+.text-usc-wash-green { color: var(--usc-wash-green) !important; }
+.text-usc-yellow { color: var(--usc-yellow) !important; }
+.text-usc-dark-grey { color: var(--usc-dark-grey) !important; }
+.text-usc-mid-grey { color: var(--usc-mid-grey) !important; }
+
+/* ============================================================================
+   RESPONSIVE TYPOGRAPHY (Mobile)
+============================================================================ */
+@media (max-width: 768px) {
+  h1, .h1, .display-1, .display-2, .display-3, .display-4 {
+    font-size: var(--h1-size-mobile);
+  }
+  
+  h2, .h2 {
+    font-size: var(--h2-size-mobile);
+  }
+  
+  h3, .h3 {
+    font-size: var(--h3-size-mobile);
+  }
+  
+  h4, .h4 {
+    font-size: calc(var(--h3-size-mobile) / 1.25);
+  }
+  
+  p, .p {
+    font-size: calc(var(--p-size) * 0.9);
+  }
+  
+  .lead {
+    font-size: var(--p-size);
+  }
+}
+
+/* ============================================================================
+   USC BRANDED COMPONENTS
+============================================================================ */
+
+/* Primary Button System */
+.btn-usc-primary {
+  background: linear-gradient(135deg, var(--usc-green-dark) 0%, var(--usc-mid-green) 100%);
+  border: 2px solid var(--usc-green-dark);
+  color: white;
+  font-family: var(--heading-font);
+  font-weight: 600;
+  padding: 12px 32px;
+  font-size: var(--p-size);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  text-transform: none;
+  letter-spacing: 0.01em;
+}
+
+.btn-usc-primary:hover {
+  background: var(--usc-green-dark);
+  border-color: var(--usc-green-dark);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(16, 99, 60, 0.3);
+}
+
+.btn-usc-secondary {
+  background: transparent;
+  border: 2px solid var(--usc-green-dark);
+  color: var(--usc-green-dark);
+  font-family: var(--heading-font);
+  font-weight: 600;
+  padding: 12px 32px;
+  font-size: var(--p-size);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.btn-usc-secondary:hover {
+  background: var(--usc-green-dark);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(16, 99, 60, 0.2);
+}
+
+.btn-usc-yellow {
+  background: var(--usc-yellow);
+  border: 2px solid var(--usc-yellow);
+  color: var(--usc-black);
+  font-family: var(--heading-font);
+  font-weight: 600;
+  padding: 12px 32px;
+  font-size: var(--p-size);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.btn-usc-yellow:hover {
+  background: #E6B800;
+  border-color: #E6B800;
+  color: var(--usc-black);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(252, 202, 24, 0.4);
+}
+
+/* ============================================================================
+   NAVIGATION SYSTEM
+============================================================================ */
+
+/* Enhanced Navbar Styling */
+.navbar-usc {
+  background: linear-gradient(135deg, var(--usc-green-dark) 0%, var(--usc-mid-green) 100%);
+  padding: 1rem 0;
+  box-shadow: 0 4px 20px rgba(16, 99, 60, 0.15);
+}
+
+.navbar-brand {
+  font-family: var(--heading-font);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white !important;
+  letter-spacing: -0.01em;
+}
+
+.navbar-nav .nav-link {
+  font-family: var(--heading-font);
+  font-weight: 500;
+  color: white !important;
+  padding: 0.75rem 1.25rem !important;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.navbar-nav .nav-link:hover {
+  color: var(--usc-yellow) !important;
+  transform: translateY(-1px);
+}
+
+.navbar-nav .nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--usc-yellow);
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
+}
+
+.navbar-nav .nav-link:hover::after {
+  width: 80%;
+}
+
+/* Pill Navigation System - Squared Edges */
+.nav-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 28px;
+  border-radius: 6px;
+  background: var(--usc-grey95);
+  border: 2px solid transparent;
+  color: var(--usc-dark-grey);
+  font-family: var(--heading-font);
+  font-size: var(--p-size);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  white-space: nowrap;
+  margin: 0 8px 8px 0;
+}
+
+.nav-pill:hover {
+  background: rgba(16, 99, 60, 0.08);
+  color: var(--usc-green-dark);
+  border-color: var(--usc-mid-green);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 99, 60, 0.15);
+}
+
+.nav-pill.active {
+  background: linear-gradient(135deg, var(--usc-green-dark) 0%, var(--usc-mid-green) 100%);
+  color: white;
+  border-color: var(--usc-green-dark);
+  box-shadow: 0 6px 25px rgba(16, 99, 60, 0.3);
+}
+
+.nav-pill.active:hover {
+  background: linear-gradient(135deg, var(--usc-green-dark) 0%, var(--usc-mid-green) 100%);
+  color: white;
+  transform: translateY(-2px);
+}
+
+/* ============================================================================
+   CARD SYSTEM
+============================================================================ */
+.card-usc {
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(16, 99, 60, 0.08);
+  transition: all 0.3s ease;
+  background: var(--usc-off-white);
+}
+
+.card-usc:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 48px rgba(16, 99, 60, 0.12);
+}
+
+.card-usc .card-header {
+  background: linear-gradient(135deg, var(--usc-green-dark) 0%, var(--usc-mid-green) 100%);
+  color: white;
+  font-family: var(--heading-font);
+  font-weight: 600;
+  border: none;
+  border-radius: 16px 16px 0 0;
+  padding: 1.5rem;
+}
+
+.card-usc .card-body {
+  padding: 2rem;
+  font-family: var(--body-font);
+}
+
+.card-usc .card-title {
+  font-family: var(--heading-font);
+  font-weight: 600;
+  color: var(--usc-green-dark);
+  margin-bottom: 1rem;
+}
+
+/* ============================================================================
+   FORM ELEMENTS
+============================================================================ */
+.form-control-usc {
+  border: 2px solid var(--usc-light-grey);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-family: var(--body-font);
+  font-size: var(--p-size);
+  transition: all 0.3s ease;
+}
+
+.form-control-usc:focus {
+  border-color: var(--usc-mid-green);
+  box-shadow: 0 0 0 3px rgba(19, 155, 73, 0.1);
+  outline: none;
+}
+
+.form-label-usc {
+  font-family: var(--heading-font);
+  font-weight: 600;
+  color: var(--usc-green-dark);
+  margin-bottom: 0.75rem;
+  font-size: var(--p-size);
+}
+
+/* ============================================================================
+   ALERT SYSTEM
+============================================================================ */
+.alert-usc-success {
+  background: rgba(19, 155, 73, 0.1);
+  border: 1px solid var(--usc-mid-green);
+  color: var(--usc-green-dark);
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  font-family: var(--body-font);
+}
+
+.alert-usc-warning {
+  background: rgba(252, 202, 24, 0.1);
+  border: 1px solid var(--usc-yellow);
+  color: var(--usc-dark-grey);
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  font-family: var(--body-font);
+}
+
+.alert-usc-info {
+  background: rgba(103, 162, 136, 0.1);
+  border: 1px solid var(--usc-wash-green);
+  color: var(--usc-green-dark);
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  font-family: var(--body-font);
+}
+
+/* ============================================================================
+   UTILITY CLASSES
+============================================================================ */
+
+/* Background Colors */
+.bg-usc-green { background-color: var(--usc-green-dark) !important; }
+.bg-usc-mid-green { background-color: var(--usc-mid-green) !important; }
+.bg-usc-wash-green { background-color: var(--usc-wash-green) !important; }
+.bg-usc-yellow { background-color: var(--usc-yellow) !important; }
+.bg-usc-grey95 { background-color: var(--usc-grey95) !important; }
+.bg-usc-off-white { background-color: var(--usc-off-white) !important; }
+
+/* Gradients */
+.bg-gradient-usc-primary {
+  background: linear-gradient(135deg, var(--usc-green-dark) 0%, var(--usc-mid-green) 100%) !important;
+}
+
+.bg-gradient-usc-secondary {
+  background: linear-gradient(135deg, var(--usc-wash-green) 0%, var(--usc-mid-green) 100%) !important;
+}
+
+/* Border Colors */
+.border-usc-green { border-color: var(--usc-green-dark) !important; }
+.border-usc-mid-green { border-color: var(--usc-mid-green) !important; }
+.border-usc-yellow { border-color: var(--usc-yellow) !important; }
+
+/* Shadow Utilities */
+.shadow-usc-sm {
+  box-shadow: 0 4px 16px rgba(16, 99, 60, 0.08) !important;
+}
+
+.shadow-usc-md {
+  box-shadow: 0 8px 32px rgba(16, 99, 60, 0.12) !important;
+}
+
+.shadow-usc-lg {
+  box-shadow: 0 16px 48px rgba(16, 99, 60, 0.16) !important;
+}
+
+/* ============================================================================
+   RESPONSIVE UTILITIES
+============================================================================ */
+@media (max-width: 576px) {
+  .nav-pill {
+    padding: 10px 20px;
+    font-size: var(--small-size);
+    margin: 0 4px 8px 0;
+  }
+
+  .btn-usc-primary,
+  .btn-usc-secondary,
+  .btn-usc-yellow {
+    padding: 10px 24px;
+    font-size: var(--small-size);
+  }
+
+  .card-usc .card-body {
+    padding: 1.5rem;
+  }
+}
+
+/* ============================================================================
+   ACCESSIBILITY ENHANCEMENTS
+============================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Focus indicators */
+.nav-pill:focus,
+.btn-usc-primary:focus,
+.btn-usc-secondary:focus,
+.btn-usc-yellow:focus {
+  outline: 3px solid var(--usc-yellow);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --usc-green-dark: #0a4e2a;
+    --usc-mid-green: #0f7835;
+  }
+}
+
+/* ============================================================================
+   PRINT STYLES
+============================================================================ */
+@media print {
+  .nav-pill,
+  .navbar-usc,
+  .btn-usc-primary,
+  .btn-usc-secondary,
+  .btn-usc-yellow {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: black !important;
+  }
+}

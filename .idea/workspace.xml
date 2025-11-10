@@ -5,9 +5,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f6f93d84-f206-4ef2-8de4-7f980a01f4aa" name="Changes" comment="attempting to get render working with new posts">
+      <change afterPath="$PROJECT_DIR$/assets/organisationalchart.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/usc_brand_styles.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/usc_brand_migration.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/navbar.py" beforeDir="false" afterPath="$PROJECT_DIR$/components/navbar.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pages/about_usc_page.py" beforeDir="false" afterPath="$PROJECT_DIR$/pages/about_usc_page.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pages/contact_page.py" beforeDir="false" afterPath="$PROJECT_DIR$/pages/contact_page.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pages/governance_page.py" beforeDir="false" afterPath="$PROJECT_DIR$/pages/governance_page.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/usc_ir.db" beforeDir="false" afterPath="$PROJECT_DIR$/usc_ir.db" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -36,18 +41,19 @@
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/savio/PycharmProjects/USCirPortalV4/assets&quot;
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/savio/PycharmProjects/USCirPortalV4&quot;
   }
 }</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
-      <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\assets" />
       <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4" />
+      <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\assets" />
       <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\pages" />
       <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\components" />
       <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\auth" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\assets" />
       <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\factbook" />
       <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4" />
       <recent name="C:\Users\savio\PycharmProjects\USCirPortalV4\components" />
@@ -188,14 +194,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1756998738082</updated>
-    </task>
-    <task id="LOCAL-00042" summary="google auth not working">
-      <option name="closed" value="true" />
-      <created>1757446137142</created>
-      <option name="number" value="00042" />
-      <option name="presentableId" value="LOCAL-00042" />
-      <option name="project" value="LOCAL" />
-      <updated>1757446137142</updated>
     </task>
     <task id="LOCAL-00043" summary="google auth not working">
       <option name="closed" value="true" />
@@ -581,7 +579,15 @@
       <option name="project" value="LOCAL" />
       <updated>1760534728425</updated>
     </task>
-    <option name="localTasksCounter" value="91" />
+    <task id="LOCAL-00091" summary="attempting to get render working with new posts">
+      <option name="closed" value="true" />
+      <created>1762357310750</created>
+      <option name="number" value="00091" />
+      <option name="presentableId" value="LOCAL-00091" />
+      <option name="project" value="LOCAL" />
+      <updated>1762357310750</updated>
+    </task>
+    <option name="localTasksCounter" value="92" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">

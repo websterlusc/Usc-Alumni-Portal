@@ -54,7 +54,7 @@ PILL_NAV_CSS = """
     display: inline-flex;
     align-items: center;
     padding: 10px 24px;
-    border-radius: 25px;
+    border-radius: 0px;
     background: #f5f5f5;
     border: 2px solid transparent;
     color: #424242;
@@ -147,7 +147,9 @@ app = dash.Dash(
     ],
     suppress_callback_exceptions=True
 )
+
 callback_registry = initialize_callback_registry(app)
+app._favicon = 'usc-logo.png'
 app.title = "USC Institutional Research Portal"
 server = app.server
 # 2. Initialize databases
@@ -2191,8 +2193,11 @@ def create_auth_section(user_data=None):
                 "Sign In"
             ],
                 href="/login",
-                className="nav-pill-navbar",  # ← Subtle version
-                style={'textDecoration': 'none'}
+                className="nav-pill-navbar",
+                style={
+                    'textDecoration': 'none',
+                    'borderRadius': '6px'  # ← Add this line
+                }
             )
         )
 
@@ -2626,7 +2631,7 @@ def create_stats_overview():
         {'title': '3,110', 'subtitle': 'Total Enrollment', 'icon': 'fas fa-users', 'color': '#1B5E20'},
         {'title': '5', 'subtitle': 'Academic Divisions', 'icon': 'fas fa-building', 'color': '#4CAF50'},
         {'title': '250+', 'subtitle': 'Employees', 'icon': 'fas fa-user-tie', 'color': '#FDD835'},
-        {'title': '100%', 'subtitle': 'Data Transparency', 'icon': 'fas fa-eye', 'color': '#28A745'}
+        {'title': '25+', 'subtitle': 'Areas of Data Collected', 'icon': 'fas fa-eye', 'color': '#28A745'}
     ]
 
     cards = []

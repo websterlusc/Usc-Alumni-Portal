@@ -65,11 +65,11 @@ def create_about_usc_page():
                             "USC offers a wide range of undergraduate and graduate programs through our five academic divisions:"
                         ]),
                         html.Ul([
-                            html.Li("Division of Arts and Sciences"),
-                            html.Li("Division of Business and Hospitality"),
-                            html.Li("Division of Education and Psychology"),
-                            html.Li("Division of Religion and Theology"),
-                            html.Li("Division of Applied Sciences and Technology")
+                            html.Li("School of Business and Entrepreneur"),
+                            html.Li("School of Science, Technology and Allied Health"),
+                            html.Li("School of Social Sciences"),
+                            html.Li("School of Education and Humanities"),
+                            html.Li("School of Theology and Religion")
                         ], style={'color': USC_COLORS['secondary_green'], 'fontWeight': '500'}),
                         html.P([
                             "Our programs are designed to integrate academic rigor with practical application, ",
