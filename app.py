@@ -2186,7 +2186,7 @@ def handle_navbar_logout(n_clicks):
 
 
 def create_auth_section(user_data=None):
-    """Pill-styled authentication section for navbar"""
+    """Fixed authentication section with proper alignment"""
     if not user_data or not user_data.get('authenticated'):
         return dbc.NavItem(
             html.A([
@@ -2197,16 +2197,26 @@ def create_auth_section(user_data=None):
                 className="nav-pill-navbar",
                 style={
                     'textDecoration': 'none',
-                    'borderRadius': '6px'  # ← Add this line
+                    'borderRadius': '0px',
+                    'padding': '8px 20px',
+                    'backgroundColor': 'rgba(27, 94, 32, 0.1)',
+                    'border': '1px solid rgba(27, 94, 32, 0.3)',
+                    'color': '#1B5E20',
+                    'fontWeight': '500',
+                    'transition': 'all 0.3s ease',
+                    'display': 'flex',
+                    'alignItems': 'center',
+                    'height': '40px',  # KEY FIX: Fixed height for alignment
+                    'whiteSpace': 'nowrap'
                 }
-            )
+            ),
+            className="d-flex align-items-center"  # KEY FIX: Parent alignment
         )
 
-
+    # Keep your existing user dropdown logic here...
     user_tier = user_data.get('access_tier', 1)
     tier_info = TIER_INFO.get(user_tier, TIER_INFO[1])
 
-    # Build dropdown menu items
     dropdown_items = [
         dbc.DropdownMenuItem([
             html.Strong(user_data.get('full_name', 'User')),
@@ -2222,7 +2232,6 @@ def create_auth_section(user_data=None):
         ], href="/profile")
     ]
 
-    # Add Admin button for Tier 4 users only
     if user_tier >= 4:
         dropdown_items.append(
             dbc.DropdownMenuItem([
@@ -2230,7 +2239,6 @@ def create_auth_section(user_data=None):
             ], href="/admin")
         )
 
-    # Add logout
     dropdown_items.extend([
         dbc.DropdownMenuItem(divider=True),
         dbc.DropdownMenuItem([
@@ -2241,15 +2249,31 @@ def create_auth_section(user_data=None):
     return dbc.NavItem([
         dbc.DropdownMenu(
             dropdown_items,
-            label=user_data.get('email', 'User'),
+            label=[
+                html.I(className="fas fa-user-circle me-2"),
+                user_data.get('full_name', 'User').split()[0]  # First name only
+            ],
             nav=True,
-            align_end=True
+            className="user-dropdown",
+            toggle_style={
+                'color': '#1B5E20',
+                'fontWeight': '500',
+                'border': 'none',
+                'background': 'transparent',
+                'height': '40px',  # Match sign in button height
+                'display': 'flex',
+                'alignItems': 'center',
+                'padding': '8px 16px',
+                'borderRadius': '0px',
+                'backgroundColor': 'rgba(27, 94, 32, 0.1)',
+                'transition': 'all 0.3s ease'
+            }
         )
-    ])
+    ], className="d-flex align-items-center")
 
 
 def create_modern_navbar(user_data=None):
-    """Updated navbar with news link"""
+    """Mobile-responsive navbar - COMPLETE REPLACEMENT"""
     user_access_tier = user_data.get('access_tier', 1) if user_data else 1
 
     # Dynamic services menu
@@ -2261,9 +2285,9 @@ def create_modern_navbar(user_data=None):
     ]
     services_items = [item for item in services_items if item is not None]
 
-    return dbc.Navbar(
+    return dbc.Navbar([
         dbc.Container([
-            # Brand
+            # Brand section
             dbc.NavbarBrand([
                 html.Img(src="assets/usc-logo.png", height="45", className="me-3"),
                 html.Div([
@@ -2276,56 +2300,67 @@ def create_modern_navbar(user_data=None):
                         'lineHeight': '1.1'
                     })
                 ])
-            ], href="/"),
+            ], href="/", className="d-flex align-items-center"),
 
-            # Spacer
-            html.Div(style={'flex': '1'}),
+            # CRITICAL: Add navbar toggler for mobile
+            dbc.NavbarToggler(id="navbar-toggler", n_clicks=0),
 
-            # Right-aligned navigation
-            dbc.Nav([
-                dbc.NavItem(dbc.NavLink(
-                    "Home", href="/",
-                    style={'color': '#1B5E20', 'fontWeight': '600'}
-                )),
-                dbc.DropdownMenu([
-                    dbc.DropdownMenuItem("About USC", href="/about-usc"),
-                    dbc.DropdownMenuItem("Vision & Mission", href="/vision-mission"),
-                    dbc.DropdownMenuItem("Governance", href="/governance"),
-                    dbc.DropdownMenuItem("Contact", href="/contact")
-                ],
-                    label="About USC", nav=True,
-                    toggle_style={'color': '#1B5E20', 'fontWeight': '600', 'border': 'none',
-                                  'background': 'transparent'}
-                ),
+            # CRITICAL: Make navigation collapsible
+            dbc.Collapse([
+                dbc.Nav([
+                    dbc.NavItem(dbc.NavLink(
+                        "Home", href="/",
+                        style={'color': '#1B5E20', 'fontWeight': '600'}
+                    )),
 
-                # ADD THIS: News link
-                dbc.NavItem(dbc.NavLink(
-                    [html.I(className=""
-                                      ""), "News"],
-                    href="/news",
-                    style={'color': '#1B5E20', 'fontWeight': '600'}
-                )),
+                    dbc.DropdownMenu([
+                        dbc.DropdownMenuItem("About USC", href="/about-usc"),
+                        dbc.DropdownMenuItem("Vision & Mission", href="/vision-mission"),
+                        dbc.DropdownMenuItem("Governance", href="/governance"),
+                        dbc.DropdownMenuItem("Contact", href="/contact")
+                    ],
+                        label="About USC", nav=True,
+                        toggle_style={'color': '#1B5E20', 'fontWeight': '600', 'border': 'none',
+                                      'background': 'transparent'}
+                    ),
 
-                # UPDATED: Single factbook link
-                dbc.NavItem(dbc.NavLink(
-                    "Factbook", href="/factbook",
-                    style={'color': '#1B5E20', 'fontWeight': '600'}
-                )),
-                dbc.DropdownMenu(
-                    services_items,
-                    label="Services", nav=True,
-                    toggle_style={'color': '#1B5E20', 'fontWeight': '600', 'border': 'none',
-                                  'background': 'transparent'}
-                ),
+                    dbc.NavItem(dbc.NavLink(
+                        [html.I(className="fas fa-newspaper me-1"), "News"],
+                        href="/news",
+                        style={'color': '#1B5E20', 'fontWeight': '600'}
+                    )),
 
-                # Authentication section (your existing code)
-                create_auth_section(user_data)
-            ])
-        ], fluid=True, style={'display': 'flex', 'alignItems': 'center'}),
+                    dbc.NavItem(dbc.NavLink(
+                        "Factbook", href="/factbook",
+                        style={'color': '#1B5E20', 'fontWeight': '600'}
+                    )),
+
+                    dbc.DropdownMenu(
+                        services_items,
+                        label="Services", nav=True,
+                        toggle_style={'color': '#1B5E20', 'fontWeight': '600', 'border': 'none',
+                                      'background': 'transparent'}
+                    ),
+
+                    # Fixed authentication section
+                    create_auth_section(user_data)
+                ], className="ms-auto align-items-center", navbar=True)
+            ], id="navbar-collapse", navbar=True, is_open=False)
+        ], fluid=True)
+    ],
         color="white",
-        className="shadow-sm sticky-top",
-        style={'borderBottom': '3px solid #1B5E20', 'minHeight': '75px'}
-    )
+        className="shadow-sm sticky-top navbar-expand-lg",  # CRITICAL: Add navbar-expand-lg
+        style={'borderBottom': '3px solid #1B5E20', 'minHeight': '75px'})
+# Navbar toggle callback for mobile menu
+@callback(
+    Output("navbar-collapse", "is_open"),
+    [Input("navbar-toggler", "n_clicks")],
+    [State("navbar-collapse", "is_open")],
+)
+def toggle_navbar_collapse(n, is_open):
+    if n:
+        return not is_open
+    return is_open
 # ============================================================================
 # YOUR EXISTING COMPONENTS (unchanged)
 # ============================================================================

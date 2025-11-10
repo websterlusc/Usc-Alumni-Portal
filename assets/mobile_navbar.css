@@ -1,0 +1,354 @@
+/* 
+USC Institutional Research Portal - Mobile Responsive Navbar CSS
+Fixes hamburger menu, sign-in button alignment, and mobile responsiveness
+*/
+
+/* ============================================================================
+   NAVBAR BASE STYLES
+============================================================================ */
+
+.navbar {
+    transition: all 0.3s ease;
+    background-color: white !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    color: #1B5E20 !important;
+    text-decoration: none;
+}
+
+.navbar-brand:hover {
+    color: #388E3C !important;
+}
+
+/* ============================================================================
+   NAVIGATION LINKS
+============================================================================ */
+
+.navbar-nav .nav-link {
+    font-weight: 600;
+    color: #1B5E20 !important;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    margin: 0 2px;
+}
+
+.navbar-nav .nav-link:hover,
+.navbar-nav .nav-link:focus {
+    color: #1B5E20 !important;
+    background-color: rgba(27, 94, 32, 0.1);
+    transform: translateY(-1px);
+}
+
+.navbar-nav .nav-link.active {
+    color: #1B5E20 !important;
+    background-color: rgba(27, 94, 32, 0.15);
+}
+
+/* ============================================================================
+   HAMBURGER MENU BUTTON
+============================================================================ */
+
+.navbar-toggler {
+    border: 2px solid #1B5E20;
+    border-radius: 8px;
+    padding: 6px 10px;
+    background-color: transparent;
+    transition: all 0.3s ease;
+}
+
+.navbar-toggler:focus {
+    box-shadow: 0 0 0 0.2rem rgba(27, 94, 32, 0.25);
+    border-color: #388E3C;
+}
+
+.navbar-toggler:hover {
+    background-color: rgba(27, 94, 32, 0.1);
+    border-color: #388E3C;
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%2827, 94, 32, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2.5' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+    width: 20px;
+    height: 20px;
+}
+
+/* ============================================================================
+   SIGN IN BUTTON FIXES
+============================================================================ */
+
+.nav-pill-navbar {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 8px 20px !important;
+    border-radius: 0px !important;  /* SQUARED EDGES */
+    background-color: rgba(27, 94, 32, 0.1) !important;
+    border: 1px solid rgba(27, 94, 32, 0.3) !important;
+    color: #1B5E20 !important;
+    font-weight: 500 !important;
+    text-decoration: none !important;
+    transition: all 0.3s ease !important;
+    height: 40px !important;
+    white-space: nowrap !important;
+    min-width: 110px !important;
+}
+
+.nav-pill-navbar:hover {
+    background-color: rgba(27, 94, 32, 0.2) !important;
+    color: #1B5E20 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(27, 94, 32, 0.2);
+    text-decoration: none !important;
+}
+
+.nav-pill-navbar:focus {
+    box-shadow: 0 0 0 0.2rem rgba(27, 94, 32, 0.25);
+    color: #1B5E20 !important;
+}
+
+/* Fix alignment for nav items containing auth section */
+.navbar-nav .nav-item {
+    display: flex;
+    align-items: center;
+}
+
+.navbar-nav .nav-item.d-flex {
+    align-items: center !important;
+}
+
+/* ============================================================================
+   USER DROPDOWN STYLING
+============================================================================ */
+
+.user-dropdown .dropdown-toggle {
+    display: flex !important;
+    align-items: center !important;
+    padding: 8px 16px !important;
+    border-radius: 0px !important;  /* SQUARED EDGES */
+    background-color: rgba(27, 94, 32, 0.1) !important;
+    border: 1px solid rgba(27, 94, 32, 0.2) !important;
+    color: #1B5E20 !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+    height: 40px !important;
+    text-decoration: none !important;
+}
+
+.user-dropdown .dropdown-toggle:hover,
+.user-dropdown .dropdown-toggle:focus {
+    background-color: rgba(27, 94, 32, 0.2) !important;
+    color: #1B5E20 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(27, 94, 32, 0.2);
+    text-decoration: none !important;
+}
+
+.user-dropdown .dropdown-toggle::after {
+    margin-left: 0.5rem;
+    border-top: 0.35em solid;
+    border-right: 0.35em solid transparent;
+    border-bottom: 0;
+    border-left: 0.35em solid transparent;
+}
+
+/* ============================================================================
+   DROPDOWN MENUS
+============================================================================ */
+
+.dropdown-menu {
+    border: 1px solid rgba(27, 94, 32, 0.2);
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    padding: 0.5rem 0;
+    margin-top: 0.5rem;
+}
+
+.dropdown-item {
+    padding: 0.5rem 1rem;
+    color: #424242;
+    transition: all 0.3s ease;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+    background-color: rgba(27, 94, 32, 0.1);
+    color: #1B5E20;
+}
+
+.dropdown-divider {
+    border-color: rgba(27, 94, 32, 0.2);
+    margin: 0.5rem 0;
+}
+
+/* ============================================================================
+   MOBILE RESPONSIVE STYLES
+============================================================================ */
+
+/* Tablet and below */
+@media (max-width: 991.98px) {
+    .navbar-collapse {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(27, 94, 32, 0.2);
+    }
+
+    .navbar-nav {
+        align-items: stretch !important;
+    }
+
+    .navbar-nav .nav-item {
+        margin-bottom: 0.5rem;
+    }
+
+    .navbar-nav .nav-link {
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        margin: 0;
+    }
+
+    /* Sign in button mobile adjustments */
+    .nav-pill-navbar {
+        width: 100% !important;
+        justify-content: center !important;
+        margin-top: 1rem !important;
+        padding: 12px 20px !important;
+        height: 48px !important;
+        font-size: 1rem !important;
+    }
+
+    /* User dropdown mobile adjustments */
+    .user-dropdown .dropdown-toggle {
+        width: 100% !important;
+        justify-content: center !important;
+        margin-top: 1rem !important;
+        padding: 12px 20px !important;
+        height: 48px !important;
+    }
+
+    /* Dropdown menu mobile */
+    .dropdown-menu {
+        position: static !important;
+        transform: none !important;
+        border: none !important;
+        box-shadow: none !important;
+        background-color: rgba(27, 94, 32, 0.05) !important;
+        margin-top: 0.5rem !important;
+        border-radius: 8px !important;
+    }
+
+    .dropdown-item {
+        padding: 0.75rem 1rem;
+    }
+
+    /* Services dropdown mobile */
+    .navbar-nav .dropdown {
+        width: 100%;
+    }
+
+    .navbar-nav .dropdown-toggle {
+        width: 100% !important;
+        text-align: left !important;
+        justify-content: space-between !important;
+    }
+}
+
+/* Mobile phones */
+@media (max-width: 576px) {
+    .navbar-brand {
+        font-size: 0.9rem;
+    }
+
+    .navbar-brand img {
+        height: 32px;
+    }
+
+    .navbar-toggler {
+        padding: 4px 8px;
+    }
+
+    .nav-pill-navbar {
+        font-size: 0.9rem !important;
+        padding: 10px 16px !important;
+        height: 44px !important;
+    }
+
+    .user-dropdown .dropdown-toggle {
+        font-size: 0.9rem !important;
+        padding: 10px 16px !important;
+        height: 44px !important;
+    }
+}
+
+/* ============================================================================
+   ACCESSIBILITY IMPROVEMENTS
+============================================================================ */
+
+/* Focus states */
+.navbar-nav .nav-link:focus,
+.nav-pill-navbar:focus,
+.user-dropdown .dropdown-toggle:focus {
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(27, 94, 32, 0.25);
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .navbar {
+        border-bottom: 3px solid #1B5E20;
+    }
+
+    .nav-pill-navbar,
+    .user-dropdown .dropdown-toggle {
+        border: 2px solid #1B5E20 !important;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .navbar-nav .nav-link,
+    .nav-pill-navbar,
+    .user-dropdown .dropdown-toggle,
+    .navbar-toggler {
+        transition: none !important;
+        transform: none !important;
+    }
+}
+
+/* ============================================================================
+   NAVBAR COLLAPSE ANIMATION
+============================================================================ */
+
+.navbar-collapse {
+    transition: all 0.3s ease-in-out;
+}
+
+.navbar-collapse.collapsing {
+    transition: height 0.3s ease;
+}
+
+/* ============================================================================
+   UTILITY CLASSES
+============================================================================ */
+
+.navbar-item-center {
+    display: flex !important;
+    align-items: center !important;
+}
+
+.navbar-pill {
+    border-radius: 0px !important;  /* SQUARED EDGES */
+    padding: 8px 20px !important;
+    background-color: rgba(27, 94, 32, 0.1) !important;
+    border: 1px solid rgba(27, 94, 32, 0.3) !important;
+    transition: all 0.3s ease !important;
+}
+
+.navbar-pill:hover {
+    background-color: rgba(27, 94, 32, 0.2) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(27, 94, 32, 0.2);
+}
