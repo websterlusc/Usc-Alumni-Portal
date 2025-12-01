@@ -6,7 +6,7 @@ Clean, working callbacks that match the new UI
 from dash import Input, Output, State, callback, ALL, ctx, no_update, html
 import dash_bootstrap_components as dbc
 from datetime import datetime, timedelta
-
+import dash as dash
 from posts_system import (
     create_post, get_active_posts, get_post_by_id,
     update_post, delete_post, cleanup_expired_posts
@@ -285,10 +285,46 @@ def handle_delete_modal(delete_clicks, cancel, confirm, stored_id):
 
 @callback(
     Output('admin-alerts', 'children', allow_duplicate=True),
-    Input('confirm-delete-post', 'n_clicks'),
-    State('delete-post-id-store', 'data'),
+    Output('posts-refresh-trigger', 'data', allow_duplicate=True),
+    Input({'type': 'simple-delete-post', 'post_id': ALL}, 'n_clicks'),
+    State('user-session', 'data'),
     prevent_initial_call=True
 )
+def simple_delete_post(n_clicks_list, user_session):
+    """Simple delete post without confirmation modal"""
+
+    if not any(n_clicks_list) or not user_session or user_session.get('access_tier', 0) < 4:
+        return dash.no_update, dash.no_update
+
+    # Find which button was clicked
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return dash.no_update, dash.no_update
+
+    import json
+    button_id = json.loads(ctx.triggered[0]['prop_id'].split('.')[0])
+    post_id = button_id['post_id']
+
+    # Delete the post
+    from posts_system import delete_post
+    success = delete_post(post_id, soft_delete=True)
+
+    if success:
+        alert = dbc.Alert([
+            html.I(className="fas fa-check-circle me-2"),
+            f"Post deleted successfully!"
+        ], color="success", dismissable=True, duration=3000)
+
+        # Trigger refresh
+        return alert, datetime.now().timestamp()
+    else:
+        alert = dbc.Alert([
+            html.I(className="fas fa-exclamation-circle me-2"),
+            "Failed to delete post"
+        ], color="danger", dismissable=True)
+
+        return alert, dash.no_update
+
 def show_delete_alert(n_clicks, post_id):
     """Show alert after deletion"""
 
